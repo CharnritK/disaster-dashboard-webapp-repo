@@ -1,0 +1,9 @@
+district_code,district_name,households_assessed,priority_need,water_access,food_insecurity,age_group,gender,latitude,longitude
+D01,North District,120,Water,Low,High,0-17,Female,18.42,-72.32
+D01,North District,96,Food,Medium,High,18-59,Male,18.43,-72.31
+D02,Central District,140,Shelter,Medium,Medium,18-59,Female,18.51,-72.21
+D02,Central District,88,Water,Low,Medium,60+,Female,18.52,-72.2
+D03,South District,102,Health,High,Low,0-17,Male,18.31,-72.41
+D03,South District,76,Food,Medium,High,18-59,Female,18.3,-72.42
+D04,East District,64,Shelter,,Medium,18-59,Male,18.47,-72.12
+D04,East District,58,Water,Low,High,,Female,18.48,-72.13

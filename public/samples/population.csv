@@ -1,0 +1,7 @@
+district_code,district_name,admin_region,total_population,children_under_18,older_adults,women_of_reproductive_age,estimated_households,poverty_rate,health_facility_count,evacuation_center_count,baseline_water_access_rate,market_functionality_score
+D01,North District,Coastal,24500,9800,2100,6200,4700,38,5,7,62,58
+D02,Central District,Metro,31000,11200,2800,7900,6100,34,8,9,70,74
+D03,South District,Highlands,18750,7600,1900,4800,3600,41,4,4,76,63
+D04,East District,River corridor,15400,5900,1200,3900,3100,47,3,5,49,46
+D05,West District,Coastal,20100,8300,1700,5200,4000,36,5,6,68,61
+D06,Lakeside District,Lake basin,17650,6900,1600,4300,3400,39,4,3,72,57
