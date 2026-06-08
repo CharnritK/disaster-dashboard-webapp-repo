@@ -9,17 +9,17 @@ export const metadata: Metadata = {
 const resources = [
   {
     title: "Code Repository",
-    href: "https://www.github.com/",
+    href: "https://github.com/datakind/disaster-dashboard-webapp-repo",
     description: "The open-sourced code behind Dashboard Copilot.",
   },
   {
     title: "License",
-    href: "https://www.github.com/?",
+    href: "https://github.com/datakind/disaster-dashboard-webapp-repo?tab=Apache-2.0-1-ov-file#readme",
     description: "Open-source licensing for Dashboard Copilot.",
   },
   {
     title: "Documentation",
-    href: "https://drive.google.com/?",
+    href: "https://github.com/datakind/disaster-dashboard-webapp-repo?tab=readme-ov-file",
     description:
       "Helpful documentation and sample datasets for Dashboard Copilot.",
   },
