@@ -19,7 +19,7 @@ const resources = [
   },
   {
     title: "Documentation",
-    href: "https://github.com/datakind/disaster-dashboard-webapp-repo?tab=readme-ov-file",
+    href: "https://drive.google.com/drive/folders/1c9RZSxU1GVyKTq7U9--8lCkhUyijyfZB?usp=sharing",
     description:
       "Helpful documentation and sample datasets for Dashboard Copilot.",
   },
