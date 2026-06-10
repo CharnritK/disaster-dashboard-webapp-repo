@@ -137,6 +137,352 @@ export function applyJoinRecommendation(
   };
 }
 
+export function selectJoinPlan(
+  datasets: Dataset[],
+  recommendations: JoinRecommendation[]
+): JoinRecommendation[] {
+  const tabularIds = new Set(
+    datasets
+      .filter((dataset) => dataset.data?.length)
+      .map((dataset) => dataset.id)
+  );
+  const usable = recommendations
+    .filter(
+      (recommendation) =>
+        tabularIds.has(recommendation.sourceDatasetId) &&
+        tabularIds.has(recommendation.targetDatasetId) &&
+        recommendation.sourceDatasetId !== recommendation.targetDatasetId
+    )
+    .sort((first, second) => second.confidenceScore - first.confidenceScore);
+  if (tabularIds.size <= 1 || usable.length === 0) return [];
+
+  const candidates = usable.map((start) =>
+    buildConnectedJoinPlan(tabularIds, usable, start)
+  );
+  return candidates.sort((first, second) => {
+    const coverageDifference = second.coveredCount - first.coveredCount;
+    if (coverageDifference !== 0) return coverageDifference;
+    const lengthDifference = second.plan.length - first.plan.length;
+    if (lengthDifference !== 0) return lengthDifference;
+    return second.confidenceTotal - first.confidenceTotal;
+  })[0]?.plan ?? [];
+}
+
+export function applyJoinRecommendations(
+  datasets: Dataset[],
+  recommendations: JoinRecommendation[],
+  cleaningRecommendations: CleaningRecommendation[] = []
+): { dataset: Dataset; transformations: TransformationStep[]; appliedJoinRecommendations: JoinRecommendation[] } {
+  const plan = selectJoinPlan(datasets, recommendations);
+  if (plan.length === 0) {
+    throw new Error("No usable join recommendations were found.");
+  }
+  if (plan.length === 1) {
+    const result = applyJoinRecommendation(datasets, plan[0], cleaningRecommendations);
+    return { ...result, appliedJoinRecommendations: plan };
+  }
+
+  const joined = applySequentialJoinPlan(datasets, plan);
+  const prepared = standardizeSafeFields(
+    joined.dataset,
+    expandCleaningRecommendationsForJoinedColumns(
+      cleaningRecommendations,
+      joined.columnAliases
+    )
+  );
+
+  return {
+    dataset: prepared.dataset,
+    transformations: [...joined.transformations, ...prepared.transformations],
+    appliedJoinRecommendations: plan
+  };
+}
+
+function buildConnectedJoinPlan(
+  tabularIds: Set<string>,
+  recommendations: JoinRecommendation[],
+  start: JoinRecommendation
+) {
+  const included = new Set([start.sourceDatasetId, start.targetDatasetId]);
+  const used = new Set([start.id]);
+  const plan = [start];
+  let next = findNextConnectedJoin(recommendations, included, used);
+
+  while (next && included.size < tabularIds.size) {
+    plan.push(next);
+    used.add(next.id);
+    included.add(next.sourceDatasetId);
+    included.add(next.targetDatasetId);
+    next = findNextConnectedJoin(recommendations, included, used);
+  }
+
+  return {
+    plan,
+    coveredCount: included.size,
+    confidenceTotal: plan.reduce((sum, join) => sum + join.confidenceScore, 0)
+  };
+}
+
+function findNextConnectedJoin(
+  recommendations: JoinRecommendation[],
+  included: Set<string>,
+  used: Set<string>
+) {
+  return recommendations.find((recommendation) => {
+    if (used.has(recommendation.id)) return false;
+    const sourceIncluded = included.has(recommendation.sourceDatasetId);
+    const targetIncluded = included.has(recommendation.targetDatasetId);
+    return sourceIncluded !== targetIncluded;
+  });
+}
+
+function applySequentialJoinPlan(
+  datasets: Dataset[],
+  plan: JoinRecommendation[]
+): {
+  dataset: Dataset;
+  transformations: TransformationStep[];
+  columnAliases: Map<string, Set<string>>;
+} {
+  const firstJoin = plan[0];
+  const initial = datasets.find((dataset) => dataset.id === firstJoin.sourceDatasetId);
+  if (!initial?.data) throw new Error("Join source dataset was not found.");
+
+  let currentRows = initial.data.map((row) => ({ ...row }));
+  let currentColumns = initial.columns ?? Object.keys(currentRows[0] ?? {});
+  let currentDatasetId = initial.id;
+  const includedDatasetIds = new Set([initial.id]);
+  const includedNames = [initial.name];
+  const columnAliases = new Map<string, Set<string>>();
+  addDatasetColumnAliases(columnAliases, initial, currentColumns);
+
+  const transformations: TransformationStep[] = [];
+
+  for (const recommendation of plan) {
+    const sourceIncluded = includedDatasetIds.has(recommendation.sourceDatasetId);
+    const targetIncluded = includedDatasetIds.has(recommendation.targetDatasetId);
+    if (sourceIncluded && targetIncluded) continue;
+
+    const includedDatasetId = sourceIncluded
+      ? recommendation.sourceDatasetId
+      : recommendation.targetDatasetId;
+    const newDatasetId = sourceIncluded
+      ? recommendation.targetDatasetId
+      : recommendation.sourceDatasetId;
+    const includedColumn = sourceIncluded
+      ? recommendation.sourceColumns[0]
+      : recommendation.targetColumns[0];
+    const newColumn = sourceIncluded
+      ? recommendation.targetColumns[0]
+      : recommendation.sourceColumns[0];
+    const newDataset = datasets.find((dataset) => dataset.id === newDatasetId);
+    const includedDataset = datasets.find((dataset) => dataset.id === includedDatasetId);
+    if (!newDataset?.data || !includedDataset) continue;
+
+    const currentJoinColumn =
+      firstAliasForColumn(columnAliases, includedDatasetId, includedColumn) ??
+      includedColumn;
+    const step = joinCurrentRowsToDataset({
+      currentRows,
+      currentColumns,
+      currentJoinColumn,
+      newDataset,
+      newColumn,
+      joinType: recommendation.joinType
+    });
+    const inputDatasetId = currentDatasetId;
+    const outputDatasetId = crypto.randomUUID();
+    currentRows = step.rows;
+    currentColumns = step.columns;
+    currentDatasetId = outputDatasetId;
+    includedDatasetIds.add(newDataset.id);
+    includedNames.push(newDataset.name);
+    for (const [column, renamedColumn] of step.newColumnAliases) {
+      addColumnAlias(columnAliases, newDataset.id, column, renamedColumn);
+    }
+
+    transformations.push(
+      createTransformationStep(
+        "join",
+        `Joined ${newDataset.name} into ${includedNames.slice(0, -1).join(" + ")} using ${includedDataset.name}.${includedColumn} = ${newDataset.name}.${newColumn}.`,
+        {
+          inputs: [inputDatasetId, newDataset.id],
+          outputs: [outputDatasetId],
+          affectedColumns: [currentJoinColumn, newColumn],
+          assumptions: recommendation.risks
+        }
+      )
+    );
+  }
+
+  const joinedDataset: Dataset = {
+    id: currentDatasetId,
+    name: `${includedNames.join(" + ")}`,
+    fileType: "csv",
+    sourceType: datasets.some((dataset) => dataset.sourceType === "upload")
+      ? "upload"
+      : "sample",
+    uploadedAt: new Date().toISOString(),
+    data: currentRows,
+    rowCount: currentRows.length,
+    columnCount: currentColumns.length,
+    columns: currentColumns,
+    sampleRows: currentRows.slice(0, 5)
+  };
+
+  return { dataset: joinedDataset, transformations, columnAliases };
+}
+
+function joinCurrentRowsToDataset({
+  currentRows,
+  currentColumns,
+  currentJoinColumn,
+  joinType,
+  newColumn,
+  newDataset
+}: {
+  currentRows: Record<string, unknown>[];
+  currentColumns: string[];
+  currentJoinColumn: string;
+  joinType: JoinRecommendation["joinType"];
+  newColumn: string;
+  newDataset: Dataset;
+}) {
+  const currentColumnNames = new Set(currentColumns);
+  const newColumns = newDataset.columns ?? Object.keys(newDataset.data?.[0] ?? {});
+  const newColumnAliases = new Map<string, string>();
+  for (const column of newColumns) {
+    newColumnAliases.set(
+      column,
+      currentColumnNames.has(column) || column === "__join_matched"
+        ? prefixedColumnName(column, newDataset.name)
+        : column
+    );
+  }
+
+  const targetIndex = new Map(
+    (newDataset.data ?? []).map((row) => [normalize(row[newColumn]), row])
+  );
+  const joined: Record<string, unknown>[] = [];
+
+  for (const currentRow of currentRows) {
+    const match = targetIndex.get(normalize(currentRow[currentJoinColumn]));
+    if (match) {
+      joined.push({
+        ...currentRow,
+        ...renameRowColumns(match, newColumnAliases),
+        __join_matched: currentRow.__join_matched === false ? false : true
+      });
+    } else if (joinType !== "inner") {
+      joined.push({ ...currentRow, __join_matched: false });
+    }
+  }
+
+  if (joinType === "outer") {
+    const sourceKeys = new Set(currentRows.map((row) => normalize(row[currentJoinColumn])));
+    for (const targetRow of newDataset.data ?? []) {
+      if (!sourceKeys.has(normalize(targetRow[newColumn]))) {
+        joined.push({
+          ...renameRowColumns(targetRow, newColumnAliases),
+          __join_matched: false
+        });
+      }
+    }
+  }
+
+  return {
+    rows: joined,
+    columns: Array.from(
+      new Set([
+        ...currentColumns,
+        ...Array.from(newColumnAliases.values()),
+        "__join_matched"
+      ])
+    ),
+    newColumnAliases
+  };
+}
+
+function addDatasetColumnAliases(
+  aliases: Map<string, Set<string>>,
+  dataset: Dataset,
+  columns: string[]
+) {
+  for (const column of columns) {
+    addColumnAlias(aliases, dataset.id, column, column);
+  }
+}
+
+function addColumnAlias(
+  aliases: Map<string, Set<string>>,
+  datasetId: string,
+  originalColumn: string,
+  joinedColumn: string
+) {
+  const key = columnAliasKey(datasetId, originalColumn);
+  const values = aliases.get(key) ?? new Set<string>();
+  values.add(joinedColumn);
+  aliases.set(key, values);
+}
+
+function firstAliasForColumn(
+  aliases: Map<string, Set<string>>,
+  datasetId: string,
+  originalColumn: string
+) {
+  return aliases.get(columnAliasKey(datasetId, originalColumn))?.values().next()
+    .value;
+}
+
+function columnAliasKey(datasetId: string, column: string) {
+  return `${datasetId}:${column}`;
+}
+
+function renameRowColumns(
+  row: Record<string, unknown>,
+  aliases: Map<string, string>
+) {
+  return Object.fromEntries(
+    Object.entries(row).map(([key, value]) => [aliases.get(key) ?? key, value])
+  );
+}
+
+function expandCleaningRecommendationsForJoinedColumns(
+  recommendations: CleaningRecommendation[],
+  aliases: Map<string, Set<string>>
+) {
+  if (recommendations.length === 0 || aliases.size === 0) return recommendations;
+  const columnsByOriginalName = new Map<string, Set<string>>();
+  for (const [key, joinedColumns] of aliases) {
+    const originalColumn = key.slice(key.indexOf(":") + 1);
+    const values = columnsByOriginalName.get(originalColumn) ?? new Set<string>();
+    for (const joinedColumn of joinedColumns) {
+      values.add(joinedColumn);
+    }
+    columnsByOriginalName.set(originalColumn, values);
+  }
+
+  return recommendations.map((recommendation) => {
+    const columns = Array.from(
+      new Set(
+        recommendation.transform.columns.flatMap((column) =>
+          columnsByOriginalName.get(column)
+            ? Array.from(columnsByOriginalName.get(column)!)
+            : [column]
+        )
+      )
+    );
+    return {
+      ...recommendation,
+      affectedColumns: columns,
+      transform: {
+        ...recommendation.transform,
+        columns
+      }
+    };
+  });
+}
+
 function describeAppliedCleaning(
   datasetName: string,
   appliedTransforms: ReturnType<typeof applyCleaningRecommendations>["appliedTransforms"]

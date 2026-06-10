@@ -344,18 +344,20 @@ function DatasetCard({
 
 export function RecommendationStep({
   recommendations,
-  join,
+  joins = [],
   datasets,
   cleaningRecommendations,
   onAccept,
 }: {
   recommendations: AIRecommendationResponse;
-  join?: JoinRecommendation;
+  joins?: JoinRecommendation[];
   datasets: Dataset[];
   cleaningRecommendations: CleaningRecommendation[];
-  onAccept: (join?: JoinRecommendation) => void;
+  onAccept: (joins?: JoinRecommendation[]) => void;
 }) {
   const [showAdjust, setShowAdjust] = useState(false);
+  const join = joins.length === 1 ? joins[0] : undefined;
+  const hasJoinPlan = joins.length > 0;
   const source = datasets.find(
     (dataset) => dataset.id === join?.sourceDatasetId,
   );
@@ -402,8 +404,8 @@ export function RecommendationStep({
           )}
         </div>
         <div className="action-row">
-          <button className="primary-button" onClick={() => onAccept(join)}>
-            {join ? "Accept recommendation" : "Prepare dataset"}
+          <button className="primary-button" onClick={() => onAccept(joins)}>
+            {hasJoinPlan ? "Accept recommendation" : "Prepare dataset"}
           </button>
           {join && (
             <button onClick={() => setShowAdjust((value) => !value)}>
@@ -462,14 +464,14 @@ export function RecommendationStep({
           <div className="action-row">
             <button
               className="primary-button"
-              onClick={() => adjustedJoin && onAccept(adjustedJoin)}
+              onClick={() => adjustedJoin && onAccept([adjustedJoin])}
             >
               Accept adjusted join
             </button>
           </div>
         </article>
       )}
-      {join && <JoinReviewCard join={join} datasets={datasets} />}
+      {hasJoinPlan && <JoinReviewCard joins={joins} datasets={datasets} />}
       <CleaningRecommendationsPanel
         recommendations={cleaningRecommendations}
         highlightTerms={highlightTerms}
@@ -479,53 +481,77 @@ export function RecommendationStep({
 }
 
 function JoinReviewCard({
-  join,
+  joins,
   datasets,
 }: {
-  join: JoinRecommendation;
+  joins: JoinRecommendation[];
   datasets: Dataset[];
 }) {
-  const source = datasets.find(
-    (dataset) => dataset.id === join.sourceDatasetId,
+  const coveredDatasetIds = new Set(
+    joins.flatMap((join) => [join.sourceDatasetId, join.targetDatasetId]),
   );
-  const target = datasets.find(
-    (dataset) => dataset.id === join.targetDatasetId,
-  );
+  const matchRates = joins
+    .map((join) => join.estimatedMatchRate)
+    .filter((value): value is number => value !== undefined);
+  const averageMatchRate =
+    matchRates.length > 0
+      ? matchRates.reduce((sum, value) => sum + value, 0) / matchRates.length
+      : undefined;
+  const planMeta =
+    joins.length > 1
+      ? `${formatCount(joins.length, "join")}, ${coveredDatasetIds.size} of ${datasets.length} sources`
+      : averageMatchRate === undefined
+        ? "Match rate not estimated"
+        : `${formatPercentage(averageMatchRate)} match rate`;
   const terms = Array.from(
     new Set([
       ...datasetTextTerms(datasets),
-      ...join.sourceColumns,
-      ...join.targetColumns,
+      ...joins.flatMap((join) => [...join.sourceColumns, ...join.targetColumns]),
     ]),
   );
-  const sourceName = source?.name ?? "source dataset";
-  const targetName = target?.name ?? "target dataset";
   return (
     <details className="card profile-accordion">
       <summary>
-        <span>Review join recommendation</span>
-        <span className="accordion-meta">
-          {join.estimatedMatchRate === undefined
-            ? "Match rate not estimated"
-            : `${formatPercentage(join.estimatedMatchRate)} match rate`}
-        </span>
+        <span>{joins.length === 1 ? "Review join recommendation" : "Review join plan"}</span>
+        <span className="accordion-meta">{planMeta}</span>
       </summary>
       <div className="accordion-content">
-        <p>
-          Join <code className="inline-code">{sourceName}</code> to{" "}
-          <code className="inline-code">{targetName}</code> using{" "}
-          <code className="inline-code">{join.sourceColumns[0]}</code>.
-        </p>
-        <p>
-          Expected match rate:{" "}
-          {join.estimatedMatchRate === undefined
-            ? "Not estimated"
-            : formatPercentage(join.estimatedMatchRate)}
-        </p>
-        <p>{renderInlineCodeText(join.rationale, terms)}</p>
-        {join.risks.length > 0 && (
-          <p>Risk: {renderInlineCodeText(join.risks.join(" "), terms)}</p>
-        )}
+        <ol className="join-plan-list">
+          {joins.map((join, index) => {
+            const source = datasets.find(
+              (dataset) => dataset.id === join.sourceDatasetId,
+            );
+            const target = datasets.find(
+              (dataset) => dataset.id === join.targetDatasetId,
+            );
+            const sourceName = source?.name ?? "source dataset";
+            const targetName = target?.name ?? "target dataset";
+            return (
+              <li key={join.id}>
+                <p>
+                  <strong>Join {index + 1}</strong>{" "}
+                  <code className="inline-code">{sourceName}</code> to{" "}
+                  <code className="inline-code">{targetName}</code> using{" "}
+                  <code className="inline-code">{join.sourceColumns[0]}</code>
+                  {" = "}
+                  <code className="inline-code">{join.targetColumns[0]}</code>.
+                </p>
+                <p>
+                  Expected match rate:{" "}
+                  {join.estimatedMatchRate === undefined
+                    ? "Not estimated"
+                    : formatPercentage(join.estimatedMatchRate)}
+                </p>
+                <p>{renderInlineCodeText(join.rationale, terms)}</p>
+                {join.risks.length > 0 && (
+                  <p>
+                    Risk: {renderInlineCodeText(join.risks.join(" "), terms)}
+                  </p>
+                )}
+              </li>
+            );
+          })}
+        </ol>
       </div>
     </details>
   );
@@ -533,14 +559,14 @@ function JoinReviewCard({
 
 export function ValidationStep({
   dataset,
-  join,
+  joins,
   quality,
   transformationLog,
   isWorking = false,
   onProceed,
 }: {
   dataset: Dataset;
-  join?: JoinRecommendation;
+  joins?: JoinRecommendation[];
   quality: QualityCheckResult[];
   transformationLog: TransformationStep[];
   isWorking?: boolean;
@@ -555,7 +581,7 @@ export function ValidationStep({
     <section className="workflow-step">
       <div className="section-heading">
         <p className="eyebrow">Step 4</p>
-        <h2>{join ? "Review Joined Dataset" : "Review Prepared Dataset"}</h2>
+        <h2>{joins?.length ? "Review Joined Dataset" : "Review Prepared Dataset"}</h2>
       </div>
       <article className="recommendation-card">
         <p className="eyebrow">Recommended</p>

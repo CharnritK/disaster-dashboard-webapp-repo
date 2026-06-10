@@ -4,7 +4,7 @@ import type { Dataset } from "@/types/dataset";
 import { parseCsv, parseFile, createTabularDataset } from "@/lib/fileParsers";
 import { profileDataset } from "@/lib/profiling";
 import { generateDeterministicJoinRecommendations } from "@/lib/deterministicJoinRecommendations";
-import { applyJoinRecommendation, prepareSingleDataset } from "@/lib/harmonization";
+import { applyJoinRecommendation, applyJoinRecommendations, prepareSingleDataset, selectJoinPlan } from "@/lib/harmonization";
 import { runQualityChecks } from "@/lib/validation";
 import { parseWorkflowContext, sanitizeAIRecommendationResponse } from "@/lib/recommendationSchema";
 import { generateDeterministicDashboardRecommendation, reconcileDashboardRecommendation } from "@/lib/dashboardRecommendations";
@@ -77,6 +77,21 @@ describe("data pipeline", () => {
       "value",
       "population_value"
     ]);
+  });
+
+  it("applies a connected join plan across more than two datasets", () => {
+    const needs = withProfile(createTabularDataset("needs.csv", "csv", "sample", parseCsv("district_code,households\nD01,4\nD02,8\n")));
+    const population = withProfile(createTabularDataset("population.csv", "csv", "sample", parseCsv("district_code,total_population\nD01,100\nD02,200\n")));
+    const services = withProfile(createTabularDataset("services.csv", "csv", "sample", parseCsv("district_code,clinics\nD01,2\nD02,1\n")));
+    const recommendations = generateDeterministicJoinRecommendations([needs, population, services]);
+    const plan = selectJoinPlan([needs, population, services], recommendations);
+    const result = applyJoinRecommendations([needs, population, services], recommendations);
+
+    expect(plan).toHaveLength(2);
+    expect(result.appliedJoinRecommendations).toHaveLength(2);
+    expect(result.dataset.data?.[0].total_population).toBe(100);
+    expect(result.dataset.data?.[0].clinics).toBe(2);
+    expect(result.transformations.filter((step) => step.stepType === "join")).toHaveLength(2);
   });
 
   it("reports join completeness in quality checks", () => {

@@ -9,7 +9,7 @@ import type { WorkflowStep } from "@/lib/config";
 import { loadSampleDatasets, parseFile } from "@/lib/fileParsers";
 import { profileDataset } from "@/lib/profiling";
 import { AIRecommendationRequestError, generateFallbackRecommendations, requestAIRecommendations } from "@/lib/recommendations";
-import { applyJoinRecommendation, prepareSingleDataset } from "@/lib/harmonization";
+import { applyJoinRecommendations, prepareSingleDataset, selectJoinPlan } from "@/lib/harmonization";
 import { reconcileCleaningRecommendationsForDatasetColumns } from "@/lib/cleaningTransforms";
 import { runQualityChecks } from "@/lib/validation";
 import {
@@ -37,7 +37,7 @@ type WorkflowState = {
   datasets: Dataset[];
   profilesReady: boolean;
   aiRecommendations?: AIRecommendationResponse;
-  selectedJoinRecommendation?: JoinRecommendation;
+  selectedJoinRecommendations?: JoinRecommendation[];
   preparedDataset?: Dataset;
   qualityResults: QualityCheckResult[];
   dashboardRecommendation?: DashboardRecommendation;
@@ -62,7 +62,8 @@ export default function DashboardCopilotApp() {
   const dashboardRef = useRef<HTMLDivElement>(null);
 
   const activeDataset = state.preparedDataset ?? state.datasets.find((dataset) => dataset.data?.length) ?? state.datasets[0];
-  const joinRecommendation = state.aiRecommendations?.joinRecommendations?.[0];
+  const joinRecommendations = state.aiRecommendations?.joinRecommendations ?? [];
+  const joinPlan = selectJoinPlan(state.datasets, joinRecommendations);
 
   async function addFiles(files: FileList | null) {
     if (!files?.length) return;
@@ -76,7 +77,7 @@ export default function DashboardCopilotApp() {
         datasets: [...current.datasets, ...parsed],
         profilesReady: false,
         aiRecommendations: undefined,
-        selectedJoinRecommendation: undefined,
+        selectedJoinRecommendations: undefined,
         preparedDataset: undefined,
         qualityResults: [],
         dashboardRecommendation: undefined,
@@ -101,7 +102,7 @@ export default function DashboardCopilotApp() {
         datasets,
         profilesReady: false,
         aiRecommendations: undefined,
-        selectedJoinRecommendation: undefined,
+        selectedJoinRecommendations: undefined,
         preparedDataset: undefined,
         qualityResults: [],
         dashboardRecommendation: undefined,
@@ -125,7 +126,7 @@ export default function DashboardCopilotApp() {
         datasets,
         profilesReady: false,
         aiRecommendations: undefined,
-        selectedJoinRecommendation: undefined,
+        selectedJoinRecommendations: undefined,
         preparedDataset: undefined,
         qualityResults: [],
         dashboardRecommendation: undefined,
@@ -144,7 +145,7 @@ export default function DashboardCopilotApp() {
       datasets: profiled,
       profilesReady: true,
       aiRecommendations: undefined,
-      selectedJoinRecommendation: undefined,
+      selectedJoinRecommendations: undefined,
       preparedDataset: undefined,
       qualityResults: [],
       dashboardRecommendation: undefined,
@@ -189,7 +190,7 @@ export default function DashboardCopilotApp() {
         datasets: profiled,
         profilesReady: true,
         aiRecommendations: recommendations,
-        selectedJoinRecommendation: undefined,
+        selectedJoinRecommendations: undefined,
         preparedDataset: undefined,
         qualityResults: [],
         dashboardRecommendation: undefined,
@@ -204,11 +205,11 @@ export default function DashboardCopilotApp() {
     }
   }
 
-  function acceptRecommendation(approvedJoin?: JoinRecommendation) {
-    const join = approvedJoin ?? joinRecommendation;
+  function acceptRecommendation(approvedJoins?: JoinRecommendation[]) {
+    const joins = approvedJoins ?? joinPlan;
     const cleaningRecommendations = state.aiRecommendations?.cleaningRecommendations ?? [];
-    if (join) {
-      const result = applyJoinRecommendation(state.datasets, join, cleaningRecommendations);
+    if (joins.length > 0) {
+      const result = applyJoinRecommendations(state.datasets, joins, cleaningRecommendations);
       const profiledPrepared = { ...result.dataset, profile: profileDataset(result.dataset) };
       const qualityResults = withAiQualityConcerns(
         runQualityChecks(profiledPrepared),
@@ -216,7 +217,7 @@ export default function DashboardCopilotApp() {
       );
       setState((current) => ({
         ...current,
-        selectedJoinRecommendation: join,
+        selectedJoinRecommendations: result.appliedJoinRecommendations,
         preparedDataset: profiledPrepared,
         qualityResults,
         dashboardRecommendation: undefined,
@@ -241,7 +242,7 @@ export default function DashboardCopilotApp() {
     setState((current) => ({
       ...current,
       preparedDataset: profiledPrepared,
-      selectedJoinRecommendation: undefined,
+      selectedJoinRecommendations: undefined,
       qualityResults,
       dashboardRecommendation: undefined,
       currentStep: "validate",
@@ -430,7 +431,7 @@ export default function DashboardCopilotApp() {
             {state.currentStep === "recommend" && state.aiRecommendations && (
               <RecommendationStep
                 recommendations={state.aiRecommendations}
-                join={joinRecommendation}
+                joins={joinPlan}
                 datasets={state.datasets}
                 cleaningRecommendations={state.aiRecommendations.cleaningRecommendations ?? []}
                 onAccept={acceptRecommendation}
@@ -439,7 +440,7 @@ export default function DashboardCopilotApp() {
             {state.currentStep === "validate" && state.preparedDataset && (
               <ValidationStep
                 dataset={state.preparedDataset}
-                join={state.selectedJoinRecommendation}
+                joins={state.selectedJoinRecommendations}
                 quality={state.qualityResults}
                 transformationLog={state.transformationLog}
                 isWorking={loading}
