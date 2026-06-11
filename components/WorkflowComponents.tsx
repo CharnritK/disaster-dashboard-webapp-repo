@@ -5,8 +5,10 @@ import type { Dataset } from "@/types/dataset";
 import type {
   DecisionBrief,
   DecisionReadinessResult,
+  EvidenceCoverageSummary,
   SuggestedDataCollectionTemplate,
 } from "@/types/decision";
+import type { SampleDatasetKind } from "@/lib/fileParsers";
 import type {
   AIRecommendationResponse,
   CleaningRecommendation,
@@ -24,8 +26,11 @@ import {
 } from "@/lib/config";
 import { runQualityChecks } from "@/lib/validation";
 import {
+  buildEvidenceCoverageSummary,
   buildSuggestedCollectionTemplateRows,
   buildSuggestedDataCollectionTemplate,
+  evidenceCoverageStatusLabel,
+  readinessStatusLabel,
   RESPONSE_PRIORITIZATION_TEMPLATE,
 } from "@/lib/decisionContext";
 import { downloadText, toCsv } from "@/lib/exportCsv";
@@ -285,6 +290,7 @@ function SuggestedCollectionTemplatePreview({
       </div>
       <div className="collection-table-wrapper">
         <table className="collection-template-table">
+          <caption>Suggested data collection fields for this decision template</caption>
           <thead>
             <tr>
               <th>Field</th>
@@ -330,7 +336,7 @@ export function UploadStep({
   datasets: Dataset[];
   onProfile: () => void;
   onFiles: (files: FileList | null) => void;
-  onSamples: (kind: "single" | "multi") => void;
+  onSamples: (kind: SampleDatasetKind) => void;
   onRemoveDataset: (datasetId: string) => void;
 }) {
   return (
@@ -367,6 +373,14 @@ export function UploadStep({
               />
             </label>
             <button onClick={() => onSamples("multi")}>Use sample data</button>
+            <button onClick={() => onSamples("fragmented")}>
+              Use fragmented demo data
+              <span>needs + population + capacity</span>
+            </button>
+            <button onClick={() => onSamples("quality-risk")}>
+              Use risky quality sample
+              <span>invalid values and missing evidence</span>
+            </button>
           </div>
         </div>
       ) : (
@@ -383,6 +397,12 @@ export function UploadStep({
             </label>
             <button onClick={() => onSamples("multi")}>
               Replace with sample data
+            </button>
+            <button onClick={() => onSamples("fragmented")}>
+              Use fragmented demo data
+            </button>
+            <button onClick={() => onSamples("quality-risk")}>
+              Use risky quality sample
             </button>
           </div>
           <div className="dataset-grid">
@@ -415,11 +435,14 @@ export function ProfileStep({
   onRecommend: () => void;
 }) {
   const quality = buildProfileQualityResults(datasets, decisionBrief);
+  const evidenceCoverage = decisionBrief
+    ? buildEvidenceCoverageSummary(datasets, decisionBrief)
+    : undefined;
   const highlightTerms = datasetTextTerms(datasets);
   return (
     <section className="workflow-step">
       <div className="section-heading">
-        <p className="eyebrow">Step 4</p>
+        <p className="eyebrow">Step 3</p>
         <h2>Review Data Profiling</h2>
       </div>
       <div className="dataset-grid">
@@ -427,6 +450,7 @@ export function ProfileStep({
           <ProfileCard key={dataset.id} dataset={dataset} />
         ))}
       </div>
+      <EvidenceCoveragePanel summary={evidenceCoverage} />
       <QualityPanel quality={quality} highlightTerms={highlightTerms} />
       <MetadataPanel datasets={datasets} />
       <button
@@ -436,6 +460,72 @@ export function ProfileStep({
       >
         {isWorking ? "Generating recommendations..." : "Harmonize data"}
       </button>
+    </section>
+  );
+}
+
+function EvidenceCoveragePanel({
+  summary,
+}: {
+  summary?: EvidenceCoverageSummary;
+}) {
+  if (!summary) return null;
+  return (
+    <section
+      className="evidence-coverage-panel"
+      aria-labelledby="evidence-coverage-heading"
+      role="status"
+      aria-live="polite"
+    >
+      <div className="evidence-coverage-header">
+        <div>
+          <p className="eyebrow">Evidence coverage</p>
+          <h3 id="evidence-coverage-heading">Evidence coverage</h3>
+          <p>
+            This checks whether your uploaded files contain the evidence needed
+            for the selected decision.
+          </p>
+        </div>
+        <div className="coverage-summary-chips" aria-label="Evidence coverage summary">
+          <span>{summary.coveredCount} covered</span>
+          <span>{summary.ambiguousCount} need review</span>
+          <span>{summary.missingCount} missing</span>
+        </div>
+      </div>
+      <div className="coverage-item-list">
+        {summary.items.map((item) => (
+          <article className={`coverage-item ${item.status}`} key={item.evidenceNeed}>
+            <div className="coverage-item-heading">
+              <h4>{item.evidenceNeed}</h4>
+              <span>{evidenceCoverageStatusLabel(item.status)}</span>
+            </div>
+            {item.candidates.length > 0 ? (
+              <ul className="coverage-candidates">
+                {item.candidates.map((candidate) => (
+                  <li key={`${candidate.datasetId}-${candidate.columnName}`}>
+                    <span>
+                      <strong>{candidate.datasetName}</strong>{" "}
+                      <code className="inline-code">{candidate.columnName}</code>
+                    </span>
+                    <span>
+                      {candidate.missingPercentage}% missing,{" "}
+                      {Math.round(candidate.confidence * 100)}% confidence
+                    </span>
+                    <span>{candidate.rationale}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="coverage-empty">No matching field was detected.</p>
+            )}
+            <p className="coverage-caveat">{item.caveat}</p>
+            <p className="coverage-next-action">
+              <strong>Next action</strong>
+              <span>{item.nextAction}</span>
+            </p>
+          </article>
+        ))}
+      </div>
     </section>
   );
 }
@@ -597,8 +687,8 @@ export function RecommendationStep({
   return (
     <section className="workflow-step">
       <div className="section-heading">
-        <p className="eyebrow">Step 3</p>
-        <h2>Harmonize Data</h2>
+        <p className="eyebrow">Step 4</p>
+        <h2>Review before combining files</h2>
       </div>
       <div className="recommendation-card">
         <p className="eyebrow">Recommended</p>
@@ -624,8 +714,8 @@ export function RecommendationStep({
       </div>
       {showAdjust && join && source && target && (
         <article className="card reveal-panel">
-          <h3>Join adjustment</h3>
-          <p>Change the join field or join type.</p>
+          <h3>Join/combine adjustment</h3>
+          <p>Change the combine field or join type.</p>
           <div className="control-grid">
             <label>
               Source field
@@ -720,7 +810,7 @@ function JoinReviewCard({
   return (
     <details className="card profile-accordion">
       <summary>
-        <span>{joins.length === 1 ? "Review join recommendation" : "Review join plan"}</span>
+        <span>{joins.length === 1 ? "Review join/combine recommendation" : "Review join/combine plan"}</span>
         <span className="accordion-meta">{planMeta}</span>
       </summary>
       <div className="accordion-content">
@@ -791,7 +881,7 @@ export function ValidationStep({
     <section className="workflow-step">
       <div className="section-heading">
         <p className="eyebrow">Step 5</p>
-        <h2>{joins?.length ? "Review Joined Dataset" : "Review Prepared Dataset"}</h2>
+        <h2>{joins?.length ? "Review Combined Dataset" : "Review Prepared Dataset"}</h2>
       </div>
       <DecisionReadinessPanel readiness={decisionReadiness} />
       <article className="recommendation-card">
@@ -843,6 +933,7 @@ function DecisionReadinessPanel({
     <article className={`decision-readiness ${tone}`}>
       <div>
         <p className="eyebrow">Decision readiness</p>
+        <p className="status-label">{readinessStatusLabel(readiness.status)}</p>
         <h3>{readiness.title}</h3>
         <p>{readiness.summary}</p>
       </div>
@@ -2957,10 +3048,10 @@ export function ExportStep({
             onClick={onLog}
           >
             <span className="export-option-type">JSON</span>
-            <span className="export-option-label">Transformation log</span>
+            <span className="export-option-label">Decision handoff log</span>
             <span className="export-option-meta">
-              Exports the scoped record of joins, cleaning, and preparation
-              steps applied to the data.
+              Includes evidence coverage, join review, quality caveats, and
+              transformation history.
             </span>
             <span className="export-option-detail">
               {transformationCount > 0

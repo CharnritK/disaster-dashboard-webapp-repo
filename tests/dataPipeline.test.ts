@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { readFileSync } from "node:fs";
 import type { Dataset } from "@/types/dataset";
-import { parseCsv, parseFile, createTabularDataset } from "@/lib/fileParsers";
+import { parseCsv, parseFile, createTabularDataset, loadSampleDatasets } from "@/lib/fileParsers";
 import { profileDataset } from "@/lib/profiling";
 import { generateDeterministicJoinRecommendations } from "@/lib/deterministicJoinRecommendations";
 import { applyJoinRecommendation, applyJoinRecommendations, prepareSingleDataset, selectJoinPlan } from "@/lib/harmonization";
@@ -17,11 +17,15 @@ import { buildRecommendationRequestBody, requestStructuredRecommendations } from
 import { aggregateField, aggregateRows, fieldDisplayLabel, inferMetricAggregation, metricDisplayLabel } from "@/lib/chartMetrics";
 import {
   assessDecisionReadiness,
+  buildEvidenceCoverageSummary,
+  evidenceCoverageStatusLabel,
+  readinessStatusLabel,
   buildSuggestedCollectionTemplateRows,
   buildSuggestedDataCollectionTemplate,
   createDefaultDecisionBrief,
   validateDecisionBrief,
 } from "@/lib/decisionContext";
+import { buildDecisionHandoffPacket } from "@/lib/workflowExport";
 import { generateFallbackRecommendations, requestAIRecommendations } from "@/lib/recommendations";
 import { findLocationFields } from "@/lib/locationFields";
 
@@ -304,6 +308,295 @@ describe("data pipeline", () => {
     expect(Object.keys(exampleRow)).toEqual(template.fields.map((field) => field.name));
     expect(exampleRow.response_gap_percent).toBe("42");
     expect(toCsv([exampleRow]).split("\n")[0]).toContain("admin_area");
+  });
+
+  it("maps fragmented sample datasets to response-prioritization evidence", () => {
+    const needs = withProfile(createTabularDataset(
+      "demo_needs_assessment.csv",
+      "csv",
+      "sample",
+      parseCsv("admin_pcode,district_name,people_assessed,need_severity_score,response_gap_percent\nADM001,North,642,78,46\nADM002,Central,792,74,41\n")
+    ));
+    const capacity = withProfile(createTabularDataset(
+      "demo_service_capacity.csv",
+      "csv",
+      "sample",
+      parseCsv("district_id,district_name,health_facility_count,evacuation_center_count\nADM001,North,5,7\nADM002,Central,8,9\n")
+    ));
+    const summary = buildEvidenceCoverageSummary(
+      [needs, capacity],
+      createDefaultDecisionBrief()
+    );
+
+    expect(summary.coveredCount + summary.ambiguousCount).toBe(5);
+    expect(summary.missingCount).toBe(0);
+    expect(summary.items.find((item) => item.evidenceNeed === "Need severity")).toEqual(
+      expect.objectContaining({
+        status: "covered",
+        candidates: expect.arrayContaining([
+          expect.objectContaining({
+            datasetName: "demo_needs_assessment",
+            columnName: "need_severity_score",
+            confidence: expect.any(Number),
+          }),
+        ]),
+      })
+    );
+    expect(summary.items.find((item) => item.evidenceNeed === "Capacity signal")?.candidates).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          datasetName: "demo_service_capacity",
+          columnName: "health_facility_count",
+        }),
+      ])
+    );
+  });
+
+  it("marks missing required evidence with plain next actions", () => {
+    const dataset = withProfile(createTabularDataset(
+      "severity_only.csv",
+      "csv",
+      "sample",
+      parseCsv("district_name,need_severity_score\nNorth,78\nSouth,64\n")
+    ));
+    const summary = buildEvidenceCoverageSummary(
+      [dataset],
+      responsePrioritizationBrief(["Affected population", "Response gap"])
+    );
+
+    expect(summary.missingCount).toBe(2);
+    expect(summary.items).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          evidenceNeed: "Affected population",
+          status: "missing",
+          caveat: expect.stringContaining("affected population"),
+          nextAction: expect.stringContaining("Add or combine"),
+        }),
+        expect.objectContaining({
+          evidenceNeed: "Response gap",
+          status: "missing",
+          nextAction: expect.stringContaining("response gap"),
+        }),
+      ])
+    );
+  });
+
+  it("marks ambiguous evidence when multiple candidates are similarly plausible", () => {
+    const needs = withProfile(createTabularDataset(
+      "needs_one.csv",
+      "csv",
+      "sample",
+      parseCsv("district_code,response_gap_percent\nD01,44\nD02,39\n")
+    ));
+    const services = withProfile(createTabularDataset(
+      "needs_two.csv",
+      "csv",
+      "sample",
+      parseCsv("admin_code,coverage_gap_percent\nD01,42\nD02,40\n")
+    ));
+    const summary = buildEvidenceCoverageSummary(
+      [needs, services],
+      responsePrioritizationBrief(["Response gap"])
+    );
+
+    expect(summary.ambiguousCount).toBe(1);
+    expect(summary.items[0]).toEqual(
+      expect.objectContaining({
+        evidenceNeed: "Response gap",
+        status: "ambiguous",
+        candidates: expect.arrayContaining([
+          expect.objectContaining({ columnName: "response_gap_percent" }),
+          expect.objectContaining({ columnName: "coverage_gap_percent" }),
+        ]),
+        nextAction: expect.stringContaining("Choose"),
+      })
+    );
+  });
+
+  it("builds evidence coverage without AI or recommendation state", () => {
+    const dataset = withProfile(createTabularDataset(
+      "local.csv",
+      "csv",
+      "sample",
+      parseCsv("admin_code,affected_population,response_gap_percent\nD01,100,20\n")
+    ));
+    const summary = buildEvidenceCoverageSummary(
+      [dataset],
+      responsePrioritizationBrief(["Admin geography", "Affected population", "Response gap"])
+    );
+
+    expect(summary.items.map((item) => item.evidenceNeed)).toEqual([
+      "Admin geography",
+      "Affected population",
+      "Response gap",
+    ]);
+    expect(summary.items.every((item) => item.candidates.every((candidate) => candidate.datasetId === dataset.id))).toBe(true);
+  });
+
+  it("labels evidence and readiness statuses for no-code review", () => {
+    expect(evidenceCoverageStatusLabel("covered")).toBe("Covered");
+    expect(evidenceCoverageStatusLabel("ambiguous")).toBe("Needs review");
+    expect(evidenceCoverageStatusLabel("missing")).toBe("Missing");
+    expect(readinessStatusLabel("ready")).toBe("Ready for review");
+    expect(readinessStatusLabel("review_needed")).toBe("Review needed");
+    expect(readinessStatusLabel("decision_unsafe")).toBe("Not safe for action yet");
+  });
+
+  it("loads fragmented and risky quality demo sample data", async () => {
+    const originalFetch = globalThis.fetch;
+    vi.stubGlobal("fetch", async (path: string) => ({
+      text: async () => readFileSync(`public${path}`, "utf8"),
+    }));
+
+    const fragmented = await loadSampleDatasets("fragmented");
+    const risky = await loadSampleDatasets("quality-risk");
+
+    expect(fragmented.map((dataset) => dataset.originalFilename)).toEqual([
+      "demo_needs_assessment.csv",
+      "demo_population_baseline.csv",
+      "demo_service_capacity.csv",
+    ]);
+    expect(risky).toHaveLength(1);
+    expect(risky[0].originalFilename).toBe("demo_quality_risk.csv");
+    expect(risky[0].data?.some((row) => row.response_gap_percent === 125)).toBe(true);
+
+    vi.stubGlobal("fetch", originalFetch);
+  });
+
+  it("fragmented demo data produces multi-source evidence coverage", () => {
+    const needs = withProfile(createTabularDataset(
+      "demo_needs_assessment.csv",
+      "csv",
+      "sample",
+      parseCsv(readFileSync("public/samples/demo_needs_assessment.csv", "utf8"))
+    ));
+    const population = withProfile(createTabularDataset(
+      "demo_population_baseline.csv",
+      "csv",
+      "sample",
+      parseCsv(readFileSync("public/samples/demo_population_baseline.csv", "utf8"))
+    ));
+    const capacity = withProfile(createTabularDataset(
+      "demo_service_capacity.csv",
+      "csv",
+      "sample",
+      parseCsv(readFileSync("public/samples/demo_service_capacity.csv", "utf8"))
+    ));
+    const summary = buildEvidenceCoverageSummary([needs, population, capacity], createDefaultDecisionBrief());
+    const candidateDatasetNames = new Set(
+      summary.items.flatMap((item) => item.candidates.map((candidate) => candidate.datasetName))
+    );
+
+    expect(summary.missingCount).toBe(0);
+    expect(candidateDatasetNames).toEqual(
+      new Set(["demo_needs_assessment", "demo_population_baseline", "demo_service_capacity"])
+    );
+  });
+
+  it("quality-risk sample triggers invalid decision values and decision unsafe readiness", () => {
+    const dataset = withProfile(createTabularDataset(
+      "demo_quality_risk.csv",
+      "csv",
+      "sample",
+      parseCsv(readFileSync("public/samples/demo_quality_risk.csv", "utf8"))
+    ));
+    const quality = runQualityChecks(dataset, responsePrioritizationBrief(["Admin geography", "Need severity", "Affected population", "Response gap"]));
+    const readiness = assessDecisionReadiness(dataset, createDefaultDecisionBrief(), quality).readiness;
+
+    expect(quality).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: "decision-invalid-percent-response_gap_percent" }),
+        expect.objectContaining({ id: "decision-invalid-negative-count-affected_population" }),
+      ])
+    );
+    expect(readiness.status).toBe("decision_unsafe");
+    expect(readinessStatusLabel(readiness.status)).toBe("Not safe for action yet");
+  });
+
+  it("builds a decision handoff packet with evidence coverage and lineage", () => {
+    const dataset = withProfile(createTabularDataset(
+      "demo_needs_assessment.csv",
+      "csv",
+      "sample",
+      parseCsv("admin_pcode,district_name,people_assessed,need_severity_score,response_gap_percent\nADM001,North,642,78,46\n")
+    ));
+    const brief = createDefaultDecisionBrief();
+    const evidenceCoverage = buildEvidenceCoverageSummary([dataset], brief);
+    const decisionReadiness = assessDecisionReadiness(dataset, brief, runQualityChecks(dataset, brief)).readiness;
+    const packet = buildDecisionHandoffPacket({
+      generatedAt: "2026-06-12T00:00:00.000Z",
+      decisionBrief: brief,
+      evidenceCoverage,
+      decisionReadiness,
+      datasets: [dataset],
+      selectedJoinRecommendations: [],
+      qualityResults: [],
+      transformationLog: [],
+      aiMode: "deterministic",
+    });
+
+    expect(packet.decisionContext.question).toBe(brief.decisionQuestion);
+    expect(packet.evidenceCoverage.items.length).toBe(brief.requiredEvidence.length);
+    expect(packet.datasetLineage).toEqual([
+      expect.objectContaining({
+        name: "demo_needs_assessment",
+        sourceType: "sample",
+        rows: 1,
+        fields: expect.arrayContaining(["admin_pcode", "people_assessed"]),
+      }),
+    ]);
+  });
+
+  it("handoff packet records deterministic fallback mode", () => {
+    const packet = buildDecisionHandoffPacket({
+      generatedAt: "2026-06-12T00:00:00.000Z",
+      decisionBrief: createDefaultDecisionBrief(),
+      evidenceCoverage: buildEvidenceCoverageSummary([], createDefaultDecisionBrief()),
+      decisionReadiness: assessDecisionReadiness(
+        createTabularDataset("empty.csv", "csv", "sample", []),
+        createDefaultDecisionBrief(),
+        []
+      ).readiness,
+      datasets: [],
+      selectedJoinRecommendations: [],
+      qualityResults: [],
+      transformationLog: [],
+      aiMode: "fallback",
+    });
+
+    expect(packet.aiAssistance.mode).toBe("fallback");
+    expect(packet.aiAssistance.summary).toContain("deterministic recommendations");
+  });
+
+  it("decision unsafe packet includes review-only language", () => {
+    const brief = createDefaultDecisionBrief();
+    const dataset = withProfile(createTabularDataset(
+      "risk.csv",
+      "csv",
+      "sample",
+      parseCsv("district_code,affected_population,response_gap_percent\nD01,-1,125\n")
+    ));
+    const decisionReadiness = assessDecisionReadiness(dataset, brief, runQualityChecks(dataset, brief)).readiness;
+    const packet = buildDecisionHandoffPacket({
+      generatedAt: "2026-06-12T00:00:00.000Z",
+      decisionBrief: brief,
+      evidenceCoverage: buildEvidenceCoverageSummary([dataset], brief),
+      decisionReadiness,
+      datasets: [dataset],
+      selectedJoinRecommendations: [],
+      qualityResults: runQualityChecks(dataset, brief),
+      transformationLog: [],
+      aiMode: "deterministic",
+    });
+
+    expect(packet.decisionReadiness?.status).toBe("decision_unsafe");
+    expect(packet.reviewNotice).toContain("Dashboard generation is allowed for review, not for automatic action.");
+    expect(packet.limitations).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining("review-only"),
+      ])
+    );
   });
 
   it("flags missing response-prioritization evidence as decision readiness findings", () => {

@@ -1,0 +1,5 @@
+district_id,district_name,health_facility_count,evacuation_center_count,current_staff_capacity,market_functionality_score
+ADM001,North District,5,7,34,58
+ADM002,Central District,8,9,46,63
+ADM003,East District,3,4,20,49
+ADM004,South District,4,6,27,54

@@ -2,6 +2,7 @@ import { MAX_UPLOAD_SIZE_BYTES, MAX_UPLOAD_SIZE_MB, SUPPORTED_FILE_TYPES } from 
 import type { Dataset } from "@/types/dataset";
 
 export type ParseResult = { dataset?: Dataset; error?: string };
+export type SampleDatasetKind = "single" | "multi" | "fragmented" | "quality-risk";
 
 function extensionFor(name: string) {
   return name.split(".").pop()?.toLowerCase() ?? "";
@@ -129,14 +130,22 @@ export function createTabularDataset(
   };
 }
 
-export async function loadSampleDatasets(kind: "single" | "multi"): Promise<Dataset[]> {
-  const needsText = await fetch("/samples/needs_assessment.csv").then((response) => response.text());
-  const needs = createTabularDataset("needs_assessment.csv", "csv", "sample", parseCsv(needsText));
-  if (kind === "single") return [needs];
+export async function loadSampleDatasets(kind: SampleDatasetKind): Promise<Dataset[]> {
+  const filenames: Record<SampleDatasetKind, string[]> = {
+    single: ["needs_assessment.csv"],
+    multi: ["needs_assessment.csv", "population.csv"],
+    fragmented: [
+      "demo_needs_assessment.csv",
+      "demo_population_baseline.csv",
+      "demo_service_capacity.csv",
+    ],
+    "quality-risk": ["demo_quality_risk.csv"],
+  };
 
-  const populationText = await fetch("/samples/population.csv").then((response) => response.text());
-  return [
-    needs,
-    createTabularDataset("population.csv", "csv", "sample", parseCsv(populationText))
-  ];
+  return Promise.all(
+    filenames[kind].map(async (filename) => {
+      const text = await fetch(`/samples/${filename}`).then((response) => response.text());
+      return createTabularDataset(filename, "csv", "sample", parseCsv(text));
+    }),
+  );
 }

@@ -90,7 +90,7 @@ function generateServerFallback(context: WorkflowContext): AIRecommendationRespo
     },
     cleaningRecommendations: cleaningRecommendationsForProfiles(context.profiles),
     qualityConcerns: buildServerQualityConcerns(context),
-    assumptions: ["The server used minimized profile metadata only.", "No full dataset rows were sent to the model."]
+    assumptions: ["The server used minimized column summaries only.", "No full dataset rows were sent to the model."]
   };
 }
 

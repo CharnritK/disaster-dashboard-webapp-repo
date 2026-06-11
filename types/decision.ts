@@ -60,3 +60,30 @@ export type DecisionReadinessResult = {
   requiredEvidenceCovered: string[];
   requiredEvidenceMissing: string[];
 };
+
+export type EvidenceCoverageStatus = "covered" | "ambiguous" | "missing";
+
+export type EvidenceCoverageCandidate = {
+  datasetId: string;
+  datasetName: string;
+  columnName: string;
+  inferredType: string;
+  missingPercentage: number;
+  confidence: number;
+  rationale: string;
+};
+
+export type EvidenceCoverageItem = {
+  evidenceNeed: string;
+  status: EvidenceCoverageStatus;
+  candidates: EvidenceCoverageCandidate[];
+  caveat: string;
+  nextAction: string;
+};
+
+export type EvidenceCoverageSummary = {
+  coveredCount: number;
+  ambiguousCount: number;
+  missingCount: number;
+  items: EvidenceCoverageItem[];
+};

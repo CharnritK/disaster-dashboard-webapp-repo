@@ -86,7 +86,7 @@ export default function AboutPage() {
             <h2>How AI is Used</h2>
             <p>
               When enabled, the server asks the configured LLM for structured
-              recommendations using minimized profile metadata. The app keeps
+              recommendations using minimized column summaries. The app keeps
               deterministic fallbacks available when AI is off, unavailable,
               rate limited, or unable to return valid structured output.
             </p>
@@ -131,7 +131,7 @@ export default function AboutPage() {
               <strong>Export artifacts</strong>
               <span>
                 Download prepared data, dashboard images, PDF reports, and
-                transformation logs.
+                decision handoff logs.
               </span>
             </li>
           </ol>
@@ -146,7 +146,7 @@ export default function AboutPage() {
             <p>
               Uploaded files are held in browser session memory. The browser
               never reads the server LLM API key. When AI recommendations are
-              enabled, the server sends minimized profile metadata and capped
+              enabled, the server sends minimized column summaries and capped
               sample values to the configured provider; full uploaded rows are
               not sent to the recommendation route.
             </p>
