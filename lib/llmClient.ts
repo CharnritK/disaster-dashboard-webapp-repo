@@ -176,6 +176,7 @@ export function buildRecommendationRequestBody(
           context: context.mode,
           recommendationScope,
           profiles: minimizeProfiles(context.profiles),
+          decisionContext: context.decisionContext,
           dashboardFacts: context.dashboardFacts?.slice(0, 14),
           qualitySummary: context.qualitySummary,
           transformationSummary: context.transformationSummary

@@ -1,4 +1,5 @@
 import type { DatasetProfile } from "@/types/dataset";
+import type { DecisionBrief } from "@/types/decision";
 import type {
   AIRecommendationResponse,
   ChartRecommendation,
@@ -33,6 +34,8 @@ export const DEFAULT_WORKFLOW_CONTEXT_LIMITS: WorkflowContextLimits = {
   maxSummaryItems: 8
 };
 
+const MAX_DECISION_EVIDENCE_ITEMS = 5;
+
 export function parseWorkflowContext(
   input: unknown,
   limits: WorkflowContextLimits = DEFAULT_WORKFLOW_CONTEXT_LIMITS
@@ -55,6 +58,7 @@ export function parseWorkflowContext(
   return {
     mode: input.mode as WorkflowContext["mode"],
     profiles: profiles as DatasetProfile[],
+    decisionContext: parseDecisionContext(input.decisionContext, limits),
     dashboardFacts,
     qualitySummary: stringArray(input.qualitySummary, limits.maxStringLength).slice(0, limits.maxSummaryItems),
     transformationSummary: stringArray(input.transformationSummary, limits.maxStringLength).slice(0, limits.maxSummaryItems)
@@ -315,12 +319,37 @@ function parseDatasetProfile(input: unknown, limits: WorkflowContextLimits): Dat
   };
 }
 
+function parseDecisionContext(
+  input: unknown,
+  limits: WorkflowContextLimits,
+): DecisionBrief | undefined {
+  if (!isRecord(input)) return undefined;
+  if (input.useCaseId !== "response_prioritization") return undefined;
+  const requiredEvidence = stringArray(
+    input.requiredEvidence,
+    limits.maxStringLength,
+  )
+    .map(stripHtml)
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .slice(0, MAX_DECISION_EVIDENCE_ITEMS);
+  return {
+    useCaseId: "response_prioritization",
+    decisionQuestion: stringOr(input.decisionQuestion, "", limits.maxStringLength),
+    intendedAction: stringOr(input.intendedAction, "", limits.maxStringLength),
+    decisionMaker: stringOr(input.decisionMaker, "", limits.maxStringLength),
+    geographyScope: stringOr(input.geographyScope, "", limits.maxStringLength),
+    timeframe: stringOr(input.timeframe, "", limits.maxStringLength),
+    requiredEvidence,
+  };
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 function stringOr(value: unknown, fallback: string, maxLength = DEFAULT_STRING_LIMIT) {
-  return typeof value === "string" && value.trim() ? truncateString(value.trim(), maxLength) : fallback;
+  return typeof value === "string" && value.trim() ? truncateString(stripHtml(value.trim()), maxLength) : fallback;
 }
 
 function optionalString(value: unknown, maxLength = DEFAULT_STRING_LIMIT) {
@@ -340,7 +369,7 @@ function optionalPercentage(value: unknown) {
 }
 
 function stringArray(value: unknown, maxLength = DEFAULT_STRING_LIMIT) {
-  return Array.isArray(value) ? value.map((item) => truncateString(String(item), maxLength)) : [];
+  return Array.isArray(value) ? value.map((item) => truncateString(stripHtml(String(item)), maxLength)) : [];
 }
 
 function numberBetween(value: unknown, min: number, max: number, fallback: number) {
@@ -353,6 +382,10 @@ function slugify(value: string) {
 
 function truncateString(value: string, maxLength: number) {
   return value.length > maxLength ? value.slice(0, maxLength) : value;
+}
+
+function stripHtml(value: string) {
+  return value.replace(/<[^>]*>/g, "");
 }
 
 function isColumnType(value: unknown): value is DatasetProfile["columns"][number]["inferredType"] {

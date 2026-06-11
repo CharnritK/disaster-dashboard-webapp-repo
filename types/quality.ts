@@ -7,4 +7,7 @@ export type QualityCheckResult = {
   affectedColumns?: string[];
   affectedRowCount?: number;
   suggestedAction?: string;
+  decisionArea?: string;
+  evidenceNeed?: string;
+  caveat?: string;
 };

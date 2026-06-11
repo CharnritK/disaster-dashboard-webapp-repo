@@ -312,13 +312,14 @@ function buildQualityFacts(qualityResults: QualityCheckResult[]): DashboardInsig
     .slice(0, 2)
     .map((issue) => {
       const action = issue.suggestedAction ?? "Review this quality check before publishing.";
+      const evidence = issue.caveat ?? action;
       return {
         id: `fact-quality-${issue.id}`,
         insightType: "quality" as const,
         title: issue.checkType,
         description: issue.description,
         severity: issue.severity,
-        evidence: [action],
+        evidence: [evidence],
         recommendedAction: action,
         confidence: 0.9,
       };

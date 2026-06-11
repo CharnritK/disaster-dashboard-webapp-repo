@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import type { Dataset } from "@/types/dataset";
+import type { DecisionBrief, DecisionReadinessResult } from "@/types/decision";
 import type { AIRecommendationResponse, DashboardRecommendation, JoinRecommendation, QualityConcern } from "@/types/recommendations";
 import type { QualityCheckResult } from "@/types/quality";
 import type { TransformationStep } from "@/types/transformations";
@@ -12,6 +13,7 @@ import { AIRecommendationRequestError, generateFallbackRecommendations, requestA
 import { applyJoinRecommendations, prepareSingleDataset, selectJoinPlan } from "@/lib/harmonization";
 import { reconcileCleaningRecommendationsForDatasetColumns } from "@/lib/cleaningTransforms";
 import { runQualityChecks } from "@/lib/validation";
+import { assessDecisionReadiness, createDefaultDecisionBrief, validateDecisionBrief } from "@/lib/decisionContext";
 import {
   generateDeterministicDashboardRecommendation,
   reconcileDashboardRecommendation
@@ -26,6 +28,7 @@ import {
   ExportStep,
   LandingHero,
   Notice,
+  DecisionBriefStep,
   ProfileStep,
   RecommendationStep,
   StepIndicator,
@@ -34,6 +37,8 @@ import {
 } from "@/components/WorkflowComponents";
 
 type WorkflowState = {
+  decisionBrief: DecisionBrief;
+  decisionReadiness?: DecisionReadinessResult;
   datasets: Dataset[];
   profilesReady: boolean;
   aiRecommendations?: AIRecommendationResponse;
@@ -47,11 +52,12 @@ type WorkflowState = {
 };
 
 const initialState: WorkflowState = {
+  decisionBrief: createDefaultDecisionBrief(),
   datasets: [],
   profilesReady: false,
   qualityResults: [],
   transformationLog: [],
-  currentStep: "upload"
+  currentStep: "brief"
 };
 
 export default function DashboardCopilotApp() {
@@ -64,6 +70,7 @@ export default function DashboardCopilotApp() {
   const activeDataset = state.preparedDataset ?? state.datasets.find((dataset) => dataset.data?.length) ?? state.datasets[0];
   const joinRecommendations = state.aiRecommendations?.joinRecommendations ?? [];
   const joinPlan = selectJoinPlan(state.datasets, joinRecommendations);
+  const missingDecisionFields = validateDecisionBrief(state.decisionBrief);
 
   async function addFiles(files: FileList | null) {
     if (!files?.length) return;
@@ -79,6 +86,7 @@ export default function DashboardCopilotApp() {
         aiRecommendations: undefined,
         selectedJoinRecommendations: undefined,
         preparedDataset: undefined,
+        decisionReadiness: undefined,
         qualityResults: [],
         dashboardRecommendation: undefined,
         transformationLog: [],
@@ -104,6 +112,7 @@ export default function DashboardCopilotApp() {
         aiRecommendations: undefined,
         selectedJoinRecommendations: undefined,
         preparedDataset: undefined,
+        decisionReadiness: undefined,
         qualityResults: [],
         dashboardRecommendation: undefined,
         transformationLog: [],
@@ -128,6 +137,7 @@ export default function DashboardCopilotApp() {
         aiRecommendations: undefined,
         selectedJoinRecommendations: undefined,
         preparedDataset: undefined,
+        decisionReadiness: undefined,
         qualityResults: [],
         dashboardRecommendation: undefined,
         transformationLog: [],
@@ -147,6 +157,7 @@ export default function DashboardCopilotApp() {
       aiRecommendations: undefined,
       selectedJoinRecommendations: undefined,
       preparedDataset: undefined,
+      decisionReadiness: undefined,
       qualityResults: [],
       dashboardRecommendation: undefined,
       transformationLog: [],
@@ -167,7 +178,8 @@ export default function DashboardCopilotApp() {
       let warning: string | undefined;
       const context = {
         mode: profiled.filter((dataset) => dataset.data?.length).length > 1 ? "multi" as const : "single" as const,
-        profiles: profiled.map((dataset) => dataset.profile!)
+        profiles: profiled.map((dataset) => dataset.profile!),
+        decisionContext: state.decisionBrief
       };
       if (llmEnabled) {
         try {
@@ -192,6 +204,7 @@ export default function DashboardCopilotApp() {
         aiRecommendations: recommendations,
         selectedJoinRecommendations: undefined,
         preparedDataset: undefined,
+        decisionReadiness: undefined,
         qualityResults: [],
         dashboardRecommendation: undefined,
         transformationLog: [],
@@ -211,14 +224,20 @@ export default function DashboardCopilotApp() {
     if (joins.length > 0) {
       const result = applyJoinRecommendations(state.datasets, joins, cleaningRecommendations);
       const profiledPrepared = { ...result.dataset, profile: profileDataset(result.dataset) };
+      const readinessResult = assessDecisionReadiness(
+        profiledPrepared,
+        state.decisionBrief,
+        runQualityChecks(profiledPrepared)
+      );
       const qualityResults = withAiQualityConcerns(
-        runQualityChecks(profiledPrepared),
+        readinessResult.qualityResults,
         llmQualityConcerns(state.aiRecommendations)
       );
       setState((current) => ({
         ...current,
         selectedJoinRecommendations: result.appliedJoinRecommendations,
         preparedDataset: profiledPrepared,
+        decisionReadiness: readinessResult.readiness,
         qualityResults,
         dashboardRecommendation: undefined,
         currentStep: "validate",
@@ -235,14 +254,20 @@ export default function DashboardCopilotApp() {
     const cleaningRecommendations = state.aiRecommendations?.cleaningRecommendations ?? [];
     const result = prepareSingleDataset(datasetToPrepare, cleaningRecommendations);
     const profiledPrepared = { ...result.dataset, profile: profileDataset(result.dataset) };
+    const readinessResult = assessDecisionReadiness(
+      profiledPrepared,
+      state.decisionBrief,
+      runQualityChecks(profiledPrepared)
+    );
     const qualityResults = withAiQualityConcerns(
-      runQualityChecks(profiledPrepared),
+      readinessResult.qualityResults,
       llmQualityConcerns(state.aiRecommendations)
     );
     setState((current) => ({
       ...current,
       preparedDataset: profiledPrepared,
       selectedJoinRecommendations: undefined,
+      decisionReadiness: readinessResult.readiness,
       qualityResults,
       dashboardRecommendation: undefined,
       currentStep: "validate",
@@ -283,6 +308,7 @@ export default function DashboardCopilotApp() {
           const ai = await requestAIRecommendations(
             {
               mode: "single",
+              decisionContext: state.decisionBrief,
               profiles: [preparedDataset.profile!],
               dashboardFacts,
               qualitySummary: state.qualityResults.map((issue) => `${issue.severity}: ${issue.description}`),
@@ -344,7 +370,11 @@ export default function DashboardCopilotApp() {
   }
 
   function exportLog() {
-    downloadText("dashboard-copilot-transformation-log.json", JSON.stringify(state.transformationLog, null, 2), "application/json");
+    downloadText("dashboard-copilot-transformation-log.json", JSON.stringify({
+      decisionContext: state.decisionBrief,
+      decisionReadiness: state.decisionReadiness,
+      transformations: state.transformationLog
+    }, null, 2), "application/json");
   }
 
   async function exportReport() {
@@ -360,6 +390,7 @@ export default function DashboardCopilotApp() {
           `Generated: ${new Date().toLocaleString()}`
         ],
         qualityResults: state.qualityResults,
+        decisionReadiness: state.decisionReadiness,
         transformationLog: state.transformationLog
       });
     } catch {
@@ -382,7 +413,8 @@ export default function DashboardCopilotApp() {
   }
 
   function canNavigateToStep(step: WorkflowStep) {
-    if (step === "upload") return true;
+    if (step === "brief") return true;
+    if (step === "upload") return missingDecisionFields.length === 0;
     if (step === "profile") return state.profilesReady;
     if (step === "recommend") return Boolean(state.aiRecommendations);
     if (step === "validate") return Boolean(state.preparedDataset);
@@ -408,6 +440,27 @@ export default function DashboardCopilotApp() {
     }));
   }
 
+  function updateDecisionBrief(nextBrief: DecisionBrief) {
+    setState((current) => ({
+      ...current,
+      decisionBrief: nextBrief,
+      decisionReadiness: undefined,
+      aiRecommendations: undefined,
+      selectedJoinRecommendations: undefined,
+      preparedDataset: undefined,
+      qualityResults: [],
+      dashboardRecommendation: undefined,
+      transformationLog: [],
+      currentStep: "brief",
+      warning: undefined
+    }));
+  }
+
+  function proceedFromDecisionBrief() {
+    if (missingDecisionFields.length > 0) return;
+    setState((current) => ({ ...current, currentStep: "upload" }));
+  }
+
   return (
     <main>
       <LandingHero
@@ -422,11 +475,19 @@ export default function DashboardCopilotApp() {
 
         <section className="workflow-grid">
           <div className="main-panel">
+            {state.currentStep === "brief" && (
+              <DecisionBriefStep
+                brief={state.decisionBrief}
+                missingFields={missingDecisionFields}
+                onChange={updateDecisionBrief}
+                onContinue={proceedFromDecisionBrief}
+              />
+            )}
             {state.currentStep === "upload" && (
               <UploadStep datasets={state.datasets} onProfile={profileDatasets} onFiles={addFiles} onSamples={useSamples} onRemoveDataset={removeDataset} />
             )}
             {state.currentStep === "profile" && (
-              <ProfileStep datasets={state.datasets} isWorking={loading} onRecommend={requestRecommendations} />
+              <ProfileStep datasets={state.datasets} decisionBrief={state.decisionBrief} isWorking={loading} onRecommend={requestRecommendations} />
             )}
             {state.currentStep === "recommend" && state.aiRecommendations && (
               <RecommendationStep
@@ -442,6 +503,7 @@ export default function DashboardCopilotApp() {
                 dataset={state.preparedDataset}
                 joins={state.selectedJoinRecommendations}
                 quality={state.qualityResults}
+                decisionReadiness={state.decisionReadiness}
                 transformationLog={state.transformationLog}
                 isWorking={loading}
                 onProceed={generateDashboardFromValidation}
@@ -451,6 +513,7 @@ export default function DashboardCopilotApp() {
               <DashboardStep
                 refNode={dashboardRef}
                 dataset={state.preparedDataset}
+                decisionReadiness={state.decisionReadiness}
                 recommendation={state.dashboardRecommendation}
                 onExport={() => navigateToStep("export")}
               />
@@ -464,6 +527,7 @@ export default function DashboardCopilotApp() {
                   rowCount={state.preparedDataset.rowCount ?? state.preparedDataset.data?.length ?? 0}
                   chartCount={state.dashboardRecommendation.charts.length}
                   qualityIssueCount={state.qualityResults.filter((issue) => issue.status !== "pass").length}
+                  decisionReadiness={state.decisionReadiness}
                   transformationCount={state.transformationLog.length}
                   onCsv={exportCsv}
                   onReport={exportReport}
@@ -474,6 +538,7 @@ export default function DashboardCopilotApp() {
                   <DashboardPreview
                     refNode={dashboardRef}
                     dataset={state.preparedDataset}
+                    decisionReadiness={state.decisionReadiness}
                     recommendation={state.dashboardRecommendation}
                     expandInsights
                     showInsightLinks={false}

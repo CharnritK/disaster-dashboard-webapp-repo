@@ -39,14 +39,15 @@ export function generateDeterministicDashboardRecommendation(
     metricFields,
     hasMissingValues: missingColumns.length > 0
   });
+  const caveatedCharts = applyChartCaveats(charts, context.qualityResults);
 
   return {
     summaryMetrics: uniqueValues(["Total records", ...metricFields.slice(0, MAX_SUMMARY_METRICS - 1)]),
     groupByFields,
     demographicFields: (profile?.potentialDemographicFields ?? []).filter((field) => groupByFields.includes(field)).slice(0, MAX_FIELDS),
     metricFields,
-    charts,
-    insights: buildDeterministicInsights(dataset, charts, context)
+    charts: caveatedCharts,
+    insights: buildDeterministicInsights(dataset, caveatedCharts, context)
   };
 }
 
@@ -291,6 +292,38 @@ function buildDeterministicInsights(
       context.transformationLog
     );
   return factsToDashboardInsights(facts, linkFactsToCharts(facts, charts));
+}
+
+function applyChartCaveats(
+  charts: ChartRecommendation[],
+  qualityResults: QualityCheckResult[] = []
+) {
+  const caveats = qualityResults
+    .filter((issue) => issue.caveat && issue.affectedColumns?.length)
+    .flatMap((issue) =>
+      (issue.affectedColumns ?? []).map((column) => ({
+        column,
+        caveat: issue.caveat!,
+      }))
+    );
+  if (caveats.length === 0) return charts;
+  return charts.map((chart) => {
+    const chartFields = [
+      chart.groupByField,
+      chart.xField,
+      chart.metricField,
+      chart.yField,
+    ].filter((field): field is string => Boolean(field));
+    const matchedCaveats = caveats
+      .filter((item) => chartFields.includes(item.column))
+      .map((item) => item.caveat);
+    if (matchedCaveats.length === 0) return chart;
+    const uniqueCaveats = Array.from(new Set(matchedCaveats));
+    return {
+      ...chart,
+      rationale: `${chart.rationale} Caveat: ${uniqueCaveats.join(" ")}`,
+    };
+  });
 }
 
 function linkFactsToCharts(facts: DashboardInsightFact[], charts: ChartRecommendation[]) {

@@ -3,6 +3,11 @@
 import { useId, useState } from "react";
 import type { Dataset } from "@/types/dataset";
 import type {
+  DecisionBrief,
+  DecisionReadinessResult,
+  SuggestedDataCollectionTemplate,
+} from "@/types/decision";
+import type {
   AIRecommendationResponse,
   CleaningRecommendation,
   DashboardRecommendation,
@@ -19,6 +24,12 @@ import {
 } from "@/lib/config";
 import { runQualityChecks } from "@/lib/validation";
 import {
+  buildSuggestedCollectionTemplateRows,
+  buildSuggestedDataCollectionTemplate,
+  RESPONSE_PRIORITIZATION_TEMPLATE,
+} from "@/lib/decisionContext";
+import { downloadText, toCsv } from "@/lib/exportCsv";
+import {
   aggregateField,
   aggregateRows,
   fieldDisplayLabel,
@@ -30,6 +41,7 @@ import {
 import { cleaningTransformLabel } from "@/lib/cleaningTransforms";
 
 const STEP_LABELS: Record<WorkflowStep, string> = {
+  brief: "Template",
   upload: "Upload",
   profile: "Profile",
   recommend: "Harmonize",
@@ -114,6 +126,199 @@ export function LoadingStatus() {
   );
 }
 
+export function DecisionBriefStep({
+  brief,
+  missingFields,
+  onChange,
+  onContinue,
+}: {
+  brief: DecisionBrief;
+  missingFields: string[];
+  onChange: (brief: DecisionBrief) => void;
+  onContinue: () => void;
+}) {
+  const updateField = <K extends keyof DecisionBrief>(field: K, value: DecisionBrief[K]) => {
+    onChange({ ...brief, [field]: value });
+  };
+  const collectionTemplate = buildSuggestedDataCollectionTemplate(brief);
+  return (
+    <section className="workflow-step">
+      <div className="section-heading">
+        <p className="eyebrow">Step 1</p>
+        <h2>Select Decision Template</h2>
+      </div>
+      <article className="decision-brief-panel">
+        <div className="template-selector">
+          <label>
+            Template
+            <select
+              value={brief.useCaseId}
+              onChange={(event) =>
+                updateField("useCaseId", event.target.value as DecisionBrief["useCaseId"])
+              }
+            >
+              <option value={RESPONSE_PRIORITIZATION_TEMPLATE.id}>
+                {RESPONSE_PRIORITIZATION_TEMPLATE.title}
+              </option>
+            </select>
+          </label>
+          <div>
+            <h3>{RESPONSE_PRIORITIZATION_TEMPLATE.title}</h3>
+            <p>{RESPONSE_PRIORITIZATION_TEMPLATE.description}</p>
+            <p className="helper-text">
+              Defaults are ready to run. Adjust the brief only where your decision differs.
+            </p>
+          </div>
+        </div>
+        <div className="brief-form-grid">
+          <label>
+            Decision question
+            <textarea
+              value={brief.decisionQuestion}
+              onChange={(event) => updateField("decisionQuestion", event.target.value)}
+              rows={3}
+            />
+          </label>
+          <label>
+            Intended action
+            <textarea
+              value={brief.intendedAction}
+              onChange={(event) => updateField("intendedAction", event.target.value)}
+              rows={3}
+            />
+          </label>
+          <label>
+            Decision-maker
+            <input
+              value={brief.decisionMaker}
+              onChange={(event) => updateField("decisionMaker", event.target.value)}
+            />
+          </label>
+          <label>
+            Geography scope
+            <input
+              value={brief.geographyScope}
+              onChange={(event) => updateField("geographyScope", event.target.value)}
+            />
+          </label>
+          <label>
+            Timeframe
+            <input
+              value={brief.timeframe}
+              onChange={(event) => updateField("timeframe", event.target.value)}
+            />
+          </label>
+        </div>
+        <fieldset className="evidence-fieldset">
+          <legend>Required evidence</legend>
+          <div className="evidence-choice-grid">
+            {RESPONSE_PRIORITIZATION_TEMPLATE.requiredEvidence.map((item) => (
+              <label key={item} className="checkbox-row">
+                <input
+                  type="checkbox"
+                  checked={brief.requiredEvidence.includes(item)}
+                  onChange={(event) => {
+                    const next = event.target.checked
+                      ? [...brief.requiredEvidence, item]
+                      : brief.requiredEvidence.filter((value) => value !== item);
+                    updateField("requiredEvidence", Array.from(new Set(next)));
+                  }}
+                />
+                <span>{item}</span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
+        <SuggestedCollectionTemplatePreview template={collectionTemplate} />
+        {missingFields.length > 0 ? (
+          <div className="quality medium">
+            <strong>Review brief before loading data</strong>
+            <p>Missing: {missingFields.join(", ")}.</p>
+          </div>
+        ) : null}
+        <div className="action-row">
+          <button
+            className="primary-button"
+            disabled={missingFields.length > 0}
+            onClick={onContinue}
+          >
+            Use template and continue
+          </button>
+        </div>
+      </article>
+    </section>
+  );
+}
+
+function SuggestedCollectionTemplatePreview({
+  template,
+}: {
+  template: SuggestedDataCollectionTemplate;
+}) {
+  const requiredCount = template.fields.filter((field) => field.required).length;
+  const downloadTemplate = () => {
+    downloadText(
+      "response-prioritization-collection-template.csv",
+      toCsv(buildSuggestedCollectionTemplateRows(template)),
+      "text/csv;charset=utf-8",
+    );
+  };
+  return (
+    <section className="collection-template-section">
+      <div className="collection-template-heading">
+        <div>
+          <p className="eyebrow">Suggested data collection template</p>
+          <h3>{template.title}</h3>
+        </div>
+        <div className="collection-template-actions">
+          <span className="template-count">{requiredCount} required</span>
+          <button type="button" onClick={downloadTemplate}>
+            Download CSV template
+          </button>
+        </div>
+      </div>
+      <div className="collection-template-meta">
+        <span>{template.geographyScope}</span>
+        <span>{template.timeframe}</span>
+        <span>{template.decisionMaker}</span>
+      </div>
+      <div className="collection-table-wrapper">
+        <table className="collection-template-table">
+          <thead>
+            <tr>
+              <th>Field</th>
+              <th>Evidence</th>
+              <th>Type</th>
+              <th>Status</th>
+              <th>Example</th>
+              <th>Caveat</th>
+            </tr>
+          </thead>
+          <tbody>
+            {template.fields.map((field) => (
+              <tr key={field.name}>
+                <td>
+                  <strong>{field.name}</strong>
+                  <span>{field.label}</span>
+                </td>
+                <td>{field.evidenceNeed}</td>
+                <td>{field.type}</td>
+                <td>
+                  <span className={field.required ? "field-pill required" : "field-pill"}>
+                    {field.required ? "Required" : "Optional"}
+                  </span>
+                </td>
+                <td>{field.example}</td>
+                <td>{field.caveat ?? field.description}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
 export function UploadStep({
   datasets,
   onProfile,
@@ -130,7 +335,7 @@ export function UploadStep({
   return (
     <section className="workflow-step">
       <div className="section-heading">
-        <p className="eyebrow">Step 1</p>
+        <p className="eyebrow">Step 2</p>
         <h2>Upload Data</h2>
       </div>
       <div className="sensitive-data-note" role="note">
@@ -199,19 +404,21 @@ export function UploadStep({
 
 export function ProfileStep({
   datasets,
+  decisionBrief,
   isWorking = false,
   onRecommend,
 }: {
   datasets: Dataset[];
+  decisionBrief?: DecisionBrief;
   isWorking?: boolean;
   onRecommend: () => void;
 }) {
-  const quality = buildProfileQualityResults(datasets);
+  const quality = buildProfileQualityResults(datasets, decisionBrief);
   const highlightTerms = datasetTextTerms(datasets);
   return (
     <section className="workflow-step">
       <div className="section-heading">
-        <p className="eyebrow">Step 2</p>
+        <p className="eyebrow">Step 4</p>
         <h2>Review Data Profiling</h2>
       </div>
       <div className="dataset-grid">
@@ -559,6 +766,7 @@ function JoinReviewCard({
 
 export function ValidationStep({
   dataset,
+  decisionReadiness,
   joins,
   quality,
   transformationLog,
@@ -566,6 +774,7 @@ export function ValidationStep({
   onProceed,
 }: {
   dataset: Dataset;
+  decisionReadiness?: DecisionReadinessResult;
   joins?: JoinRecommendation[];
   quality: QualityCheckResult[];
   transformationLog: TransformationStep[];
@@ -580,9 +789,10 @@ export function ValidationStep({
   return (
     <section className="workflow-step">
       <div className="section-heading">
-        <p className="eyebrow">Step 4</p>
+        <p className="eyebrow">Step 5</p>
         <h2>{joins?.length ? "Review Joined Dataset" : "Review Prepared Dataset"}</h2>
       </div>
+      <DecisionReadinessPanel readiness={decisionReadiness} />
       <article className="recommendation-card">
         <p className="eyebrow">Recommended</p>
         <h2>
@@ -611,6 +821,54 @@ export function ValidationStep({
         log={transformationLog}
       />
     </section>
+  );
+}
+
+function DecisionReadinessPanel({
+  readiness,
+  compact = false,
+}: {
+  readiness?: DecisionReadinessResult;
+  compact?: boolean;
+}) {
+  if (!readiness) return null;
+  const tone =
+    readiness.status === "decision_unsafe"
+      ? "high"
+      : readiness.status === "review_needed"
+        ? "medium"
+        : "low";
+  return (
+    <article className={`decision-readiness ${tone}`}>
+      <div>
+        <p className="eyebrow">Decision readiness</p>
+        <h3>{readiness.title}</h3>
+        <p>{readiness.summary}</p>
+      </div>
+      {!compact ? (
+        <div className="readiness-grid">
+          <div>
+            <span>Covered evidence</span>
+            <strong>{readiness.requiredEvidenceCovered.length}</strong>
+          </div>
+          <div>
+            <span>Missing evidence</span>
+            <strong>{readiness.requiredEvidenceMissing.length}</strong>
+          </div>
+          <div>
+            <span>Blockers</span>
+            <strong>{readiness.blockerCount}</strong>
+          </div>
+        </div>
+      ) : null}
+      {readiness.caveats.length > 0 ? (
+        <ul className="caveat-list">
+          {readiness.caveats.slice(0, compact ? 2 : 4).map((caveat) => (
+            <li key={caveat}>{caveat}</li>
+          ))}
+        </ul>
+      ) : null}
+    </article>
   );
 }
 
@@ -662,11 +920,13 @@ function CleaningRecommendationsPanel({
 export function DashboardStep({
   refNode,
   dataset,
+  decisionReadiness,
   recommendation,
   onExport,
 }: {
   refNode: React.RefObject<HTMLDivElement | null>;
   dataset: Dataset;
+  decisionReadiness?: DecisionReadinessResult;
   recommendation: DashboardRecommendation;
   onExport: () => void;
 }) {
@@ -679,6 +939,7 @@ export function DashboardStep({
       <DashboardPreview
         refNode={refNode}
         dataset={dataset}
+        decisionReadiness={decisionReadiness}
         recommendation={recommendation}
       />
       <button
@@ -695,12 +956,14 @@ export function DashboardStep({
 export function DashboardPreview({
   refNode,
   dataset,
+  decisionReadiness,
   recommendation,
   expandInsights = false,
   showInsightLinks = true,
 }: {
   refNode: React.RefObject<HTMLDivElement | null>;
   dataset: Dataset;
+  decisionReadiness?: DecisionReadinessResult;
   recommendation: DashboardRecommendation;
   expandInsights?: boolean;
   showInsightLinks?: boolean;
@@ -718,6 +981,7 @@ export function DashboardPreview({
 
   return (
     <div ref={refNode} className="dashboard">
+      <DecisionReadinessPanel readiness={decisionReadiness} compact />
       <SummaryMetrics
         dataset={dataset}
         metrics={recommendation.summaryMetrics}
@@ -2072,10 +2336,10 @@ function MetadataPanel({ datasets }: { datasets: Dataset[] }) {
   );
 }
 
-function buildProfileQualityResults(datasets: Dataset[]) {
+function buildProfileQualityResults(datasets: Dataset[], decisionBrief?: DecisionBrief) {
   return datasets
     .flatMap((dataset) =>
-      runQualityChecks(dataset).map((issue) => ({
+      runQualityChecks(dataset, decisionBrief).map((issue) => ({
         ...issue,
         id: `${dataset.id}-${issue.id}`,
         description: `${dataset.name}: ${issue.description}`,
@@ -2334,6 +2598,7 @@ export function ExportStep({
   rowCount,
   chartCount,
   qualityIssueCount,
+  decisionReadiness,
   transformationCount,
   onCsv,
   onReport,
@@ -2346,24 +2611,40 @@ export function ExportStep({
   rowCount: number;
   chartCount: number;
   qualityIssueCount: number;
+  decisionReadiness?: DecisionReadinessResult;
   transformationCount: number;
   onCsv: () => void;
   onReport: () => void;
   onPng: () => void;
   onLog: () => void;
 }) {
+  const [acknowledged, setAcknowledged] = useState(false);
+  const needsAcknowledgement =
+    decisionReadiness !== undefined && decisionReadiness.status !== "ready";
+  const exportReady = !needsAcknowledgement || acknowledged;
   return (
     <section className="workflow-step export-page">
       <div className="section-heading">
-        <p className="eyebrow">Step 6</p>
+        <p className="eyebrow">Step 7</p>
         <h2>Export Dashboard Assets</h2>
       </div>
+      <DecisionReadinessPanel readiness={decisionReadiness} />
+      {needsAcknowledgement ? (
+        <label className="export-acknowledgement">
+          <input
+            type="checkbox"
+            checked={acknowledged}
+            onChange={(event) => setAcknowledged(event.target.checked)}
+          />
+          <span>I reviewed the decision-readiness caveats before exporting.</span>
+        </label>
+      ) : null}
       <article className="card export-options-card">
         <div className="export-options-header">
           <p className="eyebrow">Available exports</p>
         </div>
         <div className="export-grid">
-          <button className="export-option" disabled={!ready} onClick={onCsv}>
+          <button className="export-option" disabled={!ready || !exportReady} onClick={onCsv}>
             <span className="export-option-type">CSV</span>
             <span className="export-option-label">Prepared dataset</span>
             <span className="export-option-meta">
@@ -2376,7 +2657,7 @@ export function ExportStep({
           </button>
           <button
             className="export-option"
-            disabled={!logReady}
+            disabled={!logReady || !exportReady}
             onClick={onLog}
           >
             <span className="export-option-type">JSON</span>
@@ -2393,7 +2674,7 @@ export function ExportStep({
           </button>
           <button
             className="export-option"
-            disabled={!dashboardReady}
+            disabled={!dashboardReady || !exportReady}
             onClick={onPng}
           >
             <span className="export-option-type">PNG</span>
@@ -2408,7 +2689,7 @@ export function ExportStep({
           </button>
           <button
             className="export-option"
-            disabled={!dashboardReady}
+            disabled={!dashboardReady || !exportReady}
             onClick={onReport}
           >
             <span className="export-option-type">PDF</span>

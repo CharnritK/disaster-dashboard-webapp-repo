@@ -1,4 +1,5 @@
 import type { jsPDF } from "jspdf";
+import type { DecisionReadinessResult } from "@/types/decision";
 import type { QualityCheckResult } from "@/types/quality";
 import type { TransformationStep } from "@/types/transformations";
 import { captureElementAsPngDataUrl } from "./exportCapture";
@@ -7,6 +8,7 @@ export type DashboardPdfOptions = {
   filename: string;
   title: string;
   metadata: string[];
+  decisionReadiness?: DecisionReadinessResult;
   qualityResults: QualityCheckResult[];
   transformationLog: TransformationStep[];
 };
@@ -103,6 +105,35 @@ export async function exportElementAsPdf(
     index += 1;
   }
 
+  if (options.decisionReadiness) {
+    cursor = addPageIfNeeded(pdf, cursor, 48, pageHeight, margin);
+    cursor = writeBlockHeading(
+      pdf,
+      "Decision Readiness",
+      margin,
+      cursor,
+      pageHeight,
+    );
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(10);
+    const readinessLines = [
+      `${options.decisionReadiness.status.replaceAll("_", " ").toUpperCase()}: ${options.decisionReadiness.summary}`,
+      ...options.decisionReadiness.caveats.map((caveat) => `Caveat: ${caveat}`)
+    ];
+    for (const line of readinessLines.slice(0, 8)) {
+      cursor = writeWrappedLine(
+        pdf,
+        line,
+        margin,
+        cursor,
+        contentWidth,
+        pageHeight,
+        margin,
+      );
+    }
+    cursor += 10;
+  }
+
   cursor = addPageIfNeeded(pdf, cursor, 48, pageHeight, margin);
   cursor = writeBlockHeading(
     pdf,
@@ -113,14 +144,7 @@ export async function exportElementAsPdf(
   );
   pdf.setFont("helvetica", "normal");
   pdf.setFontSize(10);
-  const actionableQuality = options.qualityResults.filter(
-    (result) => result.status !== "pass",
-  );
-  const qualityLines = actionableQuality.length
-    ? actionableQuality.map(
-        (result) => `${result.status.toUpperCase()}: ${result.description}`,
-      )
-    : ["No quality checks require attention."];
+  const qualityLines = qualityLinesForPdf(options.qualityResults);
   for (const line of qualityLines.slice(0, 12)) {
     cursor = writeWrappedLine(
       pdf,
@@ -165,6 +189,22 @@ export async function exportElementAsPdf(
   }
 
   pdf.save(options.filename);
+}
+
+export function qualityLinesForPdf(qualityResults: QualityCheckResult[]) {
+  const actionableQuality = qualityResults.filter(
+    (result) => result.status !== "pass",
+  );
+  return actionableQuality.length
+    ? actionableQuality.map((result) =>
+        [
+          `${result.status.toUpperCase()}: ${result.description}`,
+          result.caveat ? `Caveat: ${result.caveat}` : undefined,
+        ]
+          .filter(Boolean)
+          .join(" "),
+      )
+    : ["No quality checks require attention."];
 }
 
 function dashboardPdfBlocks(element: HTMLElement): PdfBlock[] {

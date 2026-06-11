@@ -11,8 +11,16 @@ import { generateDeterministicDashboardRecommendation, reconcileDashboardRecomme
 import { computeDashboardInsightFacts } from "@/lib/dashboardInsights";
 import { checkRateLimit } from "@/lib/apiSecurity";
 import { toCsv } from "@/lib/exportCsv";
+import { qualityLinesForPdf } from "@/lib/exportPdf";
 import { buildRecommendationRequestBody, requestStructuredRecommendations } from "@/lib/llmClient";
 import { aggregateField, aggregateRows, fieldDisplayLabel, inferMetricAggregation, metricDisplayLabel } from "@/lib/chartMetrics";
+import {
+  assessDecisionReadiness,
+  buildSuggestedCollectionTemplateRows,
+  buildSuggestedDataCollectionTemplate,
+  createDefaultDecisionBrief,
+  validateDecisionBrief,
+} from "@/lib/decisionContext";
 import { generateFallbackRecommendations, requestAIRecommendations } from "@/lib/recommendations";
 
 describe("data pipeline", () => {
@@ -168,6 +176,277 @@ describe("data pipeline", () => {
     expect(sanitized.dashboardRecommendations?.insights?.[0].evidence).toEqual(["North: 4"]);
     expect(sanitized.dashboardRecommendations?.insights?.[0].confidence).toBe(1);
     expect(sanitized.assumptions).toEqual(["profile-only"]);
+  });
+
+  it("sanitizes minimized decision context in recommendation requests", () => {
+    const parsed = parseWorkflowContext({
+      mode: "single",
+      decisionContext: {
+        useCaseId: "response_prioritization",
+        decisionQuestion: `${"Which districts should receive immediate water support? ".repeat(12)}<script>alert(1)</script>`,
+        intendedAction: "Prioritize response teams for the next distribution cycle.",
+        decisionMaker: "Emergency operations lead",
+        geographyScope: "Districts D01-D07",
+        timeframe: "Next 72 hours",
+        requiredEvidence: [
+          "Admin geography",
+          "Need severity",
+          "Affected population",
+          "Response gap",
+          "Capacity signal",
+          "Extra evidence that should be trimmed from the minimized payload"
+        ]
+      },
+      profiles: [
+        profileDataset(createTabularDataset("needs.csv", "csv", "sample", parseCsv("district_code,needs_score\nD01,78\n")))
+      ]
+    });
+
+    expect(parsed).not.toHaveProperty("error");
+    if ("error" in parsed) throw new Error(parsed.error);
+
+    const context = parsed as typeof parsed & {
+      decisionContext?: {
+        useCaseId: string;
+        decisionQuestion: string;
+        requiredEvidence: string[];
+      };
+    };
+
+    expect(context.decisionContext?.useCaseId).toBe("response_prioritization");
+    expect(context.decisionContext?.decisionQuestion).not.toContain("<script>");
+    expect(context.decisionContext?.decisionQuestion.length).toBeLessThanOrEqual(240);
+    expect(context.decisionContext?.requiredEvidence).toEqual([
+      "Admin geography",
+      "Need severity",
+      "Affected population",
+      "Response gap",
+      "Capacity signal"
+    ]);
+  });
+
+  it("pre-fills the response-prioritization decision brief from the selected template", () => {
+    const brief = createDefaultDecisionBrief();
+
+    expect(validateDecisionBrief(brief)).toEqual([]);
+    expect(brief.useCaseId).toBe("response_prioritization");
+    expect(brief.decisionQuestion).toContain("districts");
+    expect(brief.intendedAction).toContain("Prioritize");
+    expect(brief.decisionMaker).toContain("Emergency operations");
+    expect(brief.geographyScope).toContain("districts");
+    expect(brief.timeframe).toContain("72 hours");
+    expect(brief.requiredEvidence).toEqual([
+      "Admin geography",
+      "Need severity",
+      "Affected population",
+      "Response gap",
+      "Capacity signal",
+    ]);
+  });
+
+  it("populates a suggested data collection template from the decision brief", () => {
+    const brief = createDefaultDecisionBrief();
+    const template = buildSuggestedDataCollectionTemplate(brief);
+
+    expect(template.title).toBe("Suggested response-prioritization data collection template");
+    expect(template.decisionQuestion).toBe(brief.decisionQuestion);
+    expect(template.geographyScope).toBe(brief.geographyScope);
+    expect(template.timeframe).toBe(brief.timeframe);
+    expect(template.fields.map((field) => field.name)).toEqual([
+      "admin_area",
+      "admin_code",
+      "observation_date",
+      "severity_score",
+      "affected_population",
+      "population_denominator",
+      "response_gap_percent",
+      "current_capacity",
+      "data_source",
+      "notes",
+    ]);
+    expect(template.fields.find((field) => field.name === "response_gap_percent")).toEqual(
+      expect.objectContaining({
+        evidenceNeed: "Response gap",
+        type: "percent",
+        required: true,
+        caveat: expect.stringContaining("0-100"),
+      })
+    );
+  });
+
+  it("updates suggested collection fields when required evidence changes", () => {
+    const brief = {
+      ...createDefaultDecisionBrief(),
+      requiredEvidence: ["Admin geography", "Response gap"],
+    };
+    const template = buildSuggestedDataCollectionTemplate(brief);
+    const fieldNames = template.fields.map((field) => field.name);
+
+    expect(fieldNames).toEqual([
+      "admin_area",
+      "admin_code",
+      "observation_date",
+      "response_gap_percent",
+      "data_source",
+      "notes",
+    ]);
+    expect(fieldNames).not.toContain("severity_score");
+    expect(fieldNames).not.toContain("affected_population");
+    expect(fieldNames).not.toContain("current_capacity");
+  });
+
+  it("builds CSV-ready rows from the suggested collection template", () => {
+    const template = buildSuggestedDataCollectionTemplate(createDefaultDecisionBrief());
+    const [exampleRow] = buildSuggestedCollectionTemplateRows(template);
+
+    expect(Object.keys(exampleRow)).toEqual(template.fields.map((field) => field.name));
+    expect(exampleRow.response_gap_percent).toBe("42");
+    expect(toCsv([exampleRow]).split("\n")[0]).toContain("admin_area");
+  });
+
+  it("flags missing response-prioritization evidence as decision readiness findings", () => {
+    const dataset = withProfile(createTabularDataset(
+      "needs.csv",
+      "csv",
+      "sample",
+      parseCsv("district_code,needs_score\nD01,78\nD02,64\n")
+    ));
+    const quality = (runQualityChecks as unknown as (...args: unknown[]) => ReturnType<typeof runQualityChecks>)(
+      dataset,
+      {
+        useCaseId: "response_prioritization",
+        decisionQuestion: "Which districts should receive first response?",
+        intendedAction: "Prioritize response teams.",
+        decisionMaker: "Emergency operations lead",
+        geographyScope: "Districts",
+        timeframe: "Next 72 hours",
+        requiredEvidence: ["Affected population", "Response gap"]
+      }
+    );
+
+    expect(quality).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: "decision-missing-affected-population",
+          status: "fail",
+          decisionArea: "Response prioritization",
+          evidenceNeed: "Affected population"
+        }),
+        expect.objectContaining({
+          id: "decision-missing-response-gap",
+          decisionArea: "Response prioritization",
+          evidenceNeed: "Response gap"
+        })
+      ])
+    );
+  });
+
+  it("carries decision caveats into dashboard chart recommendations", () => {
+    const dataset = withProfile(createTabularDataset(
+      "needs.csv",
+      "csv",
+      "sample",
+      parseCsv("district_name,needs_score,response_gap_percent\nNorth,78,46\nSouth,64,37\n")
+    ));
+    const recommendation = generateDeterministicDashboardRecommendation(dataset, {
+      qualityResults: [
+        {
+          id: "decision-missing-affected-population",
+          checkType: "Decision evidence missing",
+          status: "fail",
+          severity: "high",
+          description: "Affected population evidence is missing.",
+          affectedColumns: ["needs_score"],
+          decisionArea: "Response prioritization",
+          evidenceNeed: "Affected population",
+          caveat: "Do not rank districts by need without an affected population denominator."
+        }
+      ]
+    });
+    const chart = recommendation.charts.find((item) => item.metricField === "needs_score");
+
+    expect(chart?.rationale).toContain("Do not rank districts by need without an affected population denominator.");
+    expect(recommendation.insights).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          insightType: "quality",
+          evidence: expect.arrayContaining([
+            "Do not rank districts by need without an affected population denominator."
+          ])
+        })
+      ])
+    );
+  });
+
+  it("validates required decision brief fields before data workflow progression", () => {
+    const missing = validateDecisionBrief({
+      useCaseId: "response_prioritization",
+      decisionQuestion: "Which districts should receive first response?",
+      intendedAction: "",
+      decisionMaker: "Emergency operations lead",
+      geographyScope: "",
+      timeframe: "Next 72 hours",
+      requiredEvidence: []
+    });
+
+    expect(missing).toEqual(["intended action", "geography scope", "required evidence"]);
+  });
+
+  it("marks weak join completeness as decision-unsafe with a caveat", () => {
+    const needs = withProfile(createTabularDataset("needs.csv", "csv", "sample", parseCsv("district_code,needs_score\nD01,78\nD99,64\n")));
+    const population = withProfile(createTabularDataset("population.csv", "csv", "sample", parseCsv("district_code,total_population\nD01,100\nD02,200\n")));
+    const [join] = generateDeterministicJoinRecommendations([needs, population]);
+    const joined = withProfile(applyJoinRecommendation([needs, population], join).dataset);
+    const decisionBrief = responsePrioritizationBrief(["Affected population", "Response gap"]);
+    const quality = runQualityChecks(joined, decisionBrief);
+    const readiness = assessDecisionReadiness(joined, decisionBrief, quality).readiness;
+    const joinCompleteness = quality.find((issue) => issue.id === "join-completeness");
+
+    expect(readiness.status).toBe("decision_unsafe");
+    expect(joinCompleteness?.caveat).toBe("Do not use joined rankings for response prioritization until unmatched records are reviewed.");
+  });
+
+  it("flags invalid response-prioritization values before recommendations", () => {
+    const dataset = withProfile(createTabularDataset(
+      "needs.csv",
+      "csv",
+      "sample",
+      parseCsv("district_code,households_assessed,response_gap_percent\nD01,-5,125\nD02,20,40\n")
+    ));
+    const quality = runQualityChecks(dataset, responsePrioritizationBrief(["Affected population", "Response gap"]));
+
+    expect(quality).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: "decision-invalid-negative-count-households_assessed",
+          status: "fail",
+          evidenceNeed: "Affected population"
+        }),
+        expect.objectContaining({
+          id: "decision-invalid-percent-response_gap_percent",
+          status: "fail",
+          evidenceNeed: "Response gap"
+        })
+      ])
+    );
+  });
+
+  it("formats PDF quality lines with decision readiness caveats", () => {
+    const lines = qualityLinesForPdf([
+      {
+        id: "decision-invalid-percent-response_gap_percent",
+        checkType: "Invalid decision values",
+        status: "fail",
+        severity: "high",
+        description: "Values in response_gap_percent are outside 0-100.",
+        evidenceNeed: "Response gap",
+        caveat: "Do not use response-gap charts for action until invalid percentages are corrected."
+      }
+    ]);
+
+    expect(lines[0]).toBe(
+      "FAIL: Values in response_gap_percent are outside 0-100. Caveat: Do not use response-gap charts for action until invalid percentages are corrected."
+    );
   });
 
   it("applies typed safe cleaning transforms during harmonization", () => {
@@ -658,4 +937,16 @@ describe("data pipeline", () => {
 
 function withProfile(dataset: Dataset): Dataset {
   return { ...dataset, profile: profileDataset(dataset) };
+}
+
+function responsePrioritizationBrief(requiredEvidence: string[]) {
+  return {
+    useCaseId: "response_prioritization" as const,
+    decisionQuestion: "Which districts should receive first response?",
+    intendedAction: "Prioritize response teams.",
+    decisionMaker: "Emergency operations lead",
+    geographyScope: "Districts",
+    timeframe: "Next 72 hours",
+    requiredEvidence
+  };
 }

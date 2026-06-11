@@ -1,4 +1,5 @@
 import type { DatasetProfile } from "./dataset";
+import type { DecisionBrief } from "./decision";
 
 export type DashboardSection =
   | "overview"
@@ -149,6 +150,7 @@ export type AIRecommendationResponse = {
 export type WorkflowContext = {
   mode: "single" | "multi";
   profiles: DatasetProfile[];
+  decisionContext?: DecisionBrief;
   dashboardFacts?: DashboardInsightFact[];
   qualitySummary?: string[];
   transformationSummary?: string[];

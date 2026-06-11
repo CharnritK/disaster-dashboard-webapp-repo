@@ -7,6 +7,7 @@ export type SupportedFileType = (typeof SUPPORTED_FILE_TYPES)[number];
 export const MAX_UPLOAD_SIZE_BYTES = MAX_UPLOAD_SIZE_MB * 1024 * 1024;
 
 export const WORKFLOW_STEPS = [
+  "brief",
   "upload",
   "profile",
   "recommend",
