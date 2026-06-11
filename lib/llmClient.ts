@@ -131,8 +131,8 @@ function buildSystemPrompt(recommendationScope: RecommendationScope) {
     "Focus output on dashboardRecommendations and qualityConcerns.",
     "Return joinRecommendations and cleaningRecommendations as empty arrays.",
     "For dashboardRecommendations, recommend 6-10 useful visualizations tailored to the provided profile. Avoid generic fixed dashboard templates.",
-    "Vary chart types when supported by fields: bar for categorical comparisons, pie for small part-to-whole breakdowns, line for date/time trends, scatter for relationships between two numeric fields, missingness for column completeness, table for ranked detail review, and summary for KPI or narrative signal cards.",
-    "Charts must use available fields and chartType values: bar, line, pie, scatter, missingness, table, summary. Do not recommend map charts for now.",
+    "Vary chart types when supported by fields: map for uploaded latitude/longitude coordinate coverage, area for administrative area intensity views, bar for categorical comparisons, pie for small part-to-whole breakdowns, line for date/time trends, scatter for relationships between two numeric fields, missingness for column completeness, table for ranked detail review, and summary for KPI or narrative signal cards.",
+    "Charts must use available fields and chartType values: map, area, bar, line, pie, scatter, missingness, table, summary. Map and area charts must use only uploaded fields; do not recommend geocoding, basemap tiles, remote map services, routing, or boundary choropleths unless local verified geometry is available.",
     "Every chart must include aggregation: use average for rates, percentages, ratios, scores, indices, and averages; sum for counts, totals, and amounts; count for record-volume charts and pie share charts without a numeric metric.",
     "When dashboardFacts are provided, base insights on those facts. Prefer selecting, ranking, and wording those facts over creating new claims."
   ].join(" ");
@@ -305,7 +305,7 @@ const recommendationResponseFormat = {
               ],
               properties: {
                 id: { type: "string" },
-                chartType: { type: "string", enum: ["bar", "line", "pie", "scatter", "missingness", "table", "summary"] },
+                chartType: { type: "string", enum: ["map", "area", "bar", "line", "pie", "scatter", "missingness", "table", "summary"] },
                 title: { type: "string" },
                 xField: { type: ["string", "null"] },
                 yField: { type: ["string", "null"] },
@@ -313,7 +313,7 @@ const recommendationResponseFormat = {
                 metricField: { type: ["string", "null"] },
                 aggregation: { type: "string", enum: ["sum", "average", "count"] },
                 rationale: { type: "string" },
-                section: { type: "string", enum: ["overview", "comparisons", "quality", "details"] },
+                section: { type: "string", enum: ["overview", "location", "comparisons", "quality", "details"] },
                 priority: { type: "number" },
                 supportedInsightIds: { type: "array", items: { type: "string" } }
               }

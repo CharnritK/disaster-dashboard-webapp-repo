@@ -6,10 +6,11 @@ import { profileDataset } from "@/lib/profiling";
 import { generateDeterministicJoinRecommendations } from "@/lib/deterministicJoinRecommendations";
 import { applyJoinRecommendation, applyJoinRecommendations, prepareSingleDataset, selectJoinPlan } from "@/lib/harmonization";
 import { runQualityChecks } from "@/lib/validation";
-import { parseWorkflowContext, sanitizeAIRecommendationResponse } from "@/lib/recommendationSchema";
+import { minimizeProfiles, parseWorkflowContext, sanitizeAIRecommendationResponse } from "@/lib/recommendationSchema";
 import { generateDeterministicDashboardRecommendation, reconcileDashboardRecommendation } from "@/lib/dashboardRecommendations";
 import { computeDashboardInsightFacts } from "@/lib/dashboardInsights";
 import { checkRateLimit } from "@/lib/apiSecurity";
+import { positiveNumberFromConfig } from "@/lib/config";
 import { toCsv } from "@/lib/exportCsv";
 import { qualityLinesForPdf } from "@/lib/exportPdf";
 import { buildRecommendationRequestBody, requestStructuredRecommendations } from "@/lib/llmClient";
@@ -22,6 +23,7 @@ import {
   validateDecisionBrief,
 } from "@/lib/decisionContext";
 import { generateFallbackRecommendations, requestAIRecommendations } from "@/lib/recommendations";
+import { findLocationFields } from "@/lib/locationFields";
 
 describe("data pipeline", () => {
   it("parses and profiles tabular CSV data", () => {
@@ -559,7 +561,7 @@ describe("data pipeline", () => {
     ).toEqual(["sum", "average", "count"]);
     const chartProperties =
       body.response_format.json_schema.schema.properties.dashboardRecommendations.properties.charts.items.properties;
-    expect(chartProperties.chartType.enum).toEqual(["bar", "line", "pie", "scatter", "missingness", "table", "summary"]);
+    expect(chartProperties.chartType.enum).toEqual(["map", "area", "bar", "line", "pie", "scatter", "missingness", "table", "summary"]);
     expect(chartProperties.xField.type).toEqual(["string", "null"]);
     expect(chartProperties.metricField.type).toEqual(["string", "null"]);
     expect(
@@ -713,12 +715,22 @@ describe("data pipeline", () => {
       {
         name: "North",
         risky: "=HYPERLINK(\"https://example.com\")",
-        alsoRisky: "  +SUM(1,2)"
+        alsoRisky: "  +SUM(1,2)",
+        "@riskyHeader": "safe"
       }
     ]);
 
     expect(csv).toContain("'=HYPERLINK");
     expect(csv).toContain("\"'  +SUM(1,2)\"");
+    expect(csv.split("\n")[0]).toContain("'@riskyHeader");
+  });
+
+  it("falls back on invalid numeric setup config", () => {
+    expect(positiveNumberFromConfig(undefined, 1, 0.1)).toBe(1);
+    expect(positiveNumberFromConfig("", 1, 0.1)).toBe(1);
+    expect(positiveNumberFromConfig("not-a-number", 1, 0.1)).toBe(1);
+    expect(positiveNumberFromConfig("-5", 1, 0.1)).toBe(0.1);
+    expect(positiveNumberFromConfig("2.5", 1, 0.1)).toBe(2.5);
   });
 
   it("aggregates dashboard metrics by field semantics", () => {
@@ -855,6 +867,53 @@ describe("data pipeline", () => {
     expect(chartTypes.has("table")).toBe(true);
     expect(recommendation.insights?.length).toBeGreaterThanOrEqual(2);
     expect(recommendation.insights?.some((insight) => insight.evidence?.length)).toBe(true);
+  });
+
+  it("detects coordinate fields and recommends local location views", () => {
+    const dataset = withProfile(createTabularDataset(
+      "needs.csv",
+      "csv",
+      "sample",
+      parseCsv([
+        "district_name,admin_region,households_assessed,latitude,longitude",
+        "North,Coastal,120,18.42,-72.32",
+        "North,Coastal,96,18.43,-72.31",
+        "South,Central,80,18.52,-72.2",
+        "South,Central,75,,-72.18"
+      ].join("\n"))
+    ));
+    const location = findLocationFields(dataset);
+    const recommendation = generateDeterministicDashboardRecommendation(dataset);
+    const mapChart = recommendation.charts.find((chart) => chart.chartType === "map");
+    const areaChart = recommendation.charts.find((chart) => chart.chartType === "area");
+    const facts = computeDashboardInsightFacts(dataset, runQualityChecks(dataset));
+
+    expect(location.latitudeField).toBe("latitude");
+    expect(location.longitudeField).toBe("longitude");
+    expect(location.validCoordinateRowCount).toBe(3);
+    expect(mapChart?.xField).toBe("longitude");
+    expect(mapChart?.yField).toBe("latitude");
+    expect(areaChart?.groupByField).toBe("district_name");
+    expect(recommendation.metricFields).not.toContain("latitude");
+    expect(recommendation.metricFields).not.toContain("longitude");
+    expect(facts.some((fact) => fact.id === "fact-location-coverage")).toBe(true);
+  });
+
+  it("redacts coordinate sample values from minimized recommendation profiles", () => {
+    const dataset = withProfile(createTabularDataset(
+      "needs.csv",
+      "csv",
+      "sample",
+      parseCsv("district_name,latitude,longitude,needs_score\nNorth,18.42,-72.32,78\nSouth,18.52,-72.2,66\n")
+    ));
+    const [profile] = minimizeProfiles([dataset.profile!]);
+    const latitude = profile.columns.find((column) => column.columnName === "latitude");
+    const longitude = profile.columns.find((column) => column.columnName === "longitude");
+    const needsScore = profile.columns.find((column) => column.columnName === "needs_score");
+
+    expect(latitude?.sampleValues).toEqual([]);
+    expect(longitude?.sampleValues).toEqual([]);
+    expect(needsScore?.sampleValues).toEqual(["78", "66"]);
   });
 
   it("computes dashboard insight facts from prepared data", () => {

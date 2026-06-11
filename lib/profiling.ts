@@ -1,6 +1,7 @@
 import type { ColumnProfile, Dataset, DatasetProfile } from "@/types/dataset";
+import { isCoordinateField } from "./locationFields";
 
-const geoTerms = ["district", "admin", "region", "province", "county", "lat", "latitude", "lon", "lng", "longitude", "code"];
+const geoTerms = ["district", "admin", "area", "region", "province", "county", "country", "state", "city", "municipality", "commune", "ward", "site", "location", "lat", "latitude", "lon", "lng", "longitude", "code"];
 const demographicTerms = ["age", "gender", "sex", "disability", "household", "hh"];
 const metricTerms = ["count", "total", "number", "population", "score", "rate", "percent", "index", "access", "insecurity"];
 const joinTerms = ["id", "code", "key", "district", "admin", "iso", "pcode"];
@@ -43,7 +44,7 @@ function profileColumn(columnName: string, values: unknown[], rowCount: number):
     uniqueCount,
     sampleValues: Array.from(new Set(present.map((value) => String(value)))).slice(0, 5),
     isPotentialJoinField: hasTerm(joinTerms) || uniqueCount / Math.max(rowCount, 1) > 0.8,
-    isPotentialGeographicField: hasTerm(geoTerms),
+    isPotentialGeographicField: isCoordinateField(columnName) || hasTerm(geoTerms),
     isPotentialDemographicField: hasTerm(demographicTerms),
     isPotentialMetricField: inferredType === "number" || hasTerm(metricTerms)
   };

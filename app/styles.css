@@ -1785,18 +1785,28 @@ tr:last-child td {
   gap: 8px;
 }
 
+.map-chart {
+  display: grid;
+  gap: 8px;
+}
+
 .line-plot {
   position: relative;
 }
 
 .line-chart svg,
-.scatter-chart svg {
+.scatter-chart svg,
+.map-chart svg {
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: 8px;
   height: 270px;
   overflow: visible;
   width: 100%;
+}
+
+.map-chart svg {
+  height: 300px;
 }
 
 .line-chart-area {
@@ -1835,6 +1845,16 @@ tr:last-child td {
   outline: none;
 }
 
+.map-frame {
+  fill: rgba(255, 255, 255, 0.42);
+  stroke: rgba(23, 23, 23, 0.28);
+  stroke-width: 1.2;
+}
+
+.map-point {
+  outline: none;
+}
+
 .line-point circle {
   fill: #005ab5;
   stroke: white;
@@ -1864,6 +1884,62 @@ tr:last-child td {
   fill: #d55e00;
   fill-opacity: 0.96;
   stroke-width: 3;
+}
+
+.map-point circle {
+  transition:
+    fill 160ms var(--ease),
+    fill-opacity 160ms var(--ease),
+    r 160ms var(--ease),
+    stroke-width 160ms var(--ease);
+}
+
+.map-point:hover circle,
+.map-point:focus-visible circle {
+  fill: #d55e00;
+  fill-opacity: 0.94;
+  stroke-width: 3;
+}
+
+.area-intensity-chart {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+}
+
+.area-tile {
+  border: 1px solid #bdd1ff;
+  border-radius: 8px;
+  display: grid;
+  gap: 6px;
+  min-height: 104px;
+  padding: 12px;
+}
+
+.area-tile span {
+  font-size: 0.78rem;
+  font-weight: 760;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.area-tile strong {
+  font-size: 1.45rem;
+  font-weight: 780;
+  line-height: 1;
+}
+
+.area-tile small {
+  color: currentColor;
+  font-size: 0.74rem;
+  opacity: 0.78;
+}
+
+.chart-note {
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.45;
+  margin: 0;
 }
 
 .missingness-chart {

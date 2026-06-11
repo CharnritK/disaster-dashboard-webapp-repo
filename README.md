@@ -4,8 +4,11 @@ Recommendation-first prototype for turning humanitarian and disaster response da
 
 ## Run Locally
 
+Use Node.js `26.1.0` as pinned in `.tool-versions`, then install from the
+lockfile:
+
 ```bash
-npm install
+npm ci
 npm run dev
 ```
 

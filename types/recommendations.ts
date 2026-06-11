@@ -3,6 +3,7 @@ import type { DecisionBrief } from "./decision";
 
 export type DashboardSection =
   | "overview"
+  | "location"
   | "comparisons"
   | "quality"
   | "details";
@@ -47,7 +48,9 @@ export type ChartRecommendation = {
   id: string;
   chartType:
     | "bar"
+    | "area"
     | "line"
+    | "map"
     | "pie"
     | "table"
     | "summary"

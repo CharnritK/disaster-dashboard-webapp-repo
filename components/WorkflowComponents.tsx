@@ -39,6 +39,7 @@ import {
   type GroupedMetricValue,
 } from "@/lib/chartMetrics";
 import { cleaningTransformLabel } from "@/lib/cleaningTransforms";
+import { isValidLatitude, isValidLongitude } from "@/lib/locationFields";
 
 const STEP_LABELS: Record<WorkflowStep, string> = {
   brief: "Template",
@@ -1119,6 +1120,12 @@ function groupChartsBySection(charts: DashboardRecommendation["charts"]) {
         "Headline signals and summary views for the prepared dataset.",
     },
     {
+      id: "location",
+      title: "Location",
+      description:
+        "Local coordinate and administrative-area views from uploaded fields.",
+    },
+    {
       id: "comparisons",
       title: "Key Comparisons",
       description:
@@ -1156,6 +1163,7 @@ function defaultChartSection(
   chartType: DashboardRecommendation["charts"][number]["chartType"],
 ) {
   if (chartType === "summary") return "overview";
+  if (chartType === "map" || chartType === "area") return "location";
   if (chartType === "table") return "details";
   return "comparisons";
 }
@@ -1258,6 +1266,23 @@ function ChartPanel({
         />
       ) : chart.chartType === "line" ? (
         <LineChart
+          grouped={grouped}
+          groupLabel={groupLabel}
+          metricLabel={metricLabel}
+          title={chart.title}
+        />
+      ) : chart.chartType === "map" ? (
+        <MapChart
+          dataset={dataset}
+          latitudeField={chart.yField}
+          longitudeField={chart.xField}
+          labelField={chart.groupByField}
+          metricField={metricField}
+          metricLabel={metricLabel}
+          title={chart.title}
+        />
+      ) : chart.chartType === "area" ? (
+        <AreaIntensityChart
           grouped={grouped}
           groupLabel={groupLabel}
           metricLabel={metricLabel}
@@ -1900,6 +1925,277 @@ function ScatterChart({
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+function MapChart({
+  dataset,
+  latitudeField,
+  longitudeField,
+  labelField,
+  metricField,
+  metricLabel,
+  title,
+}: {
+  dataset: Dataset;
+  latitudeField?: string;
+  longitudeField?: string;
+  labelField?: string;
+  metricField?: string;
+  metricLabel: string;
+  title: string;
+}) {
+  const chartId = useId();
+  const [activeIndex, setActiveIndex] = useState<number>();
+  if (!latitudeField || !longitudeField) {
+    return (
+      <div className="mini-empty">
+        Latitude and longitude fields are needed for a location map.
+      </div>
+    );
+  }
+
+  type MapPoint = {
+    label: string;
+    latitude: number;
+    longitude: number;
+    metricValue: number | undefined;
+  };
+  const points = (dataset.data ?? [])
+    .map((row, index) => {
+      if (
+        !isValidLatitude(row[latitudeField]) ||
+        !isValidLongitude(row[longitudeField])
+      ) {
+        return null;
+      }
+      const latitude = finiteChartNumber(row[latitudeField]);
+      const longitude = finiteChartNumber(row[longitudeField]);
+      if (latitude === undefined || longitude === undefined) return null;
+      return {
+        label: labelField
+          ? String(row[labelField] ?? "Missing")
+          : `Record ${index + 1}`,
+        latitude,
+        longitude,
+        metricValue: metricField ? finiteChartNumber(row[metricField]) : undefined,
+      };
+    })
+    .filter((point): point is MapPoint => point !== null)
+    .slice(0, 160);
+  if (points.length < 2) {
+    return (
+      <div className="mini-empty">
+        At least two usable coordinate pairs are needed for a location map.
+      </div>
+    );
+  }
+
+  const width = 560;
+  const height = 300;
+  const padding = { top: 26, right: 32, bottom: 46, left: 58 };
+  const plotWidth = width - padding.left - padding.right;
+  const plotHeight = height - padding.top - padding.bottom;
+  const latMin = Math.min(...points.map((point) => point.latitude));
+  const latMax = Math.max(...points.map((point) => point.latitude));
+  const lonMin = Math.min(...points.map((point) => point.longitude));
+  const lonMax = Math.max(...points.map((point) => point.longitude));
+  const latRange = latMax - latMin;
+  const lonRange = lonMax - lonMin;
+  const metricValues = points
+    .map((point) => point.metricValue)
+    .filter((value): value is number => value !== undefined && value > 0);
+  const metricMax = Math.max(...metricValues, 1);
+  const coords = points.map((point) => {
+    const cx =
+      lonRange === 0
+        ? padding.left + plotWidth / 2
+        : padding.left + ((point.longitude - lonMin) / lonRange) * plotWidth;
+    const cy =
+      latRange === 0
+        ? padding.top + plotHeight / 2
+        : padding.top + ((latMax - point.latitude) / latRange) * plotHeight;
+    const radius =
+      point.metricValue === undefined
+        ? 5
+        : Math.max(5, Math.min(13, 5 + (point.metricValue / metricMax) * 8));
+    return { ...point, cx, cy, radius };
+  });
+  const activePoint =
+    activeIndex === undefined ? undefined : coords[activeIndex];
+
+  return (
+    <div className="map-chart">
+      <div className="line-plot">
+        <svg
+          aria-describedby={`${chartId}-description`}
+          aria-labelledby={`${chartId}-title`}
+          fill="none"
+          role="img"
+          viewBox={`0 0 ${width} ${height}`}
+        >
+          <title id={`${chartId}-title`}>{title}</title>
+          <desc id={`${chartId}-description`}>
+            Local coordinate plot showing {formatCount(points.length, "record")}{" "}
+            with usable latitude and longitude values. This view does not use
+            geocoding, basemap tiles, or boundary geometry.
+          </desc>
+          {[0, 0.25, 0.5, 0.75, 1].map((ratio) => {
+            const x = padding.left + ratio * plotWidth;
+            const y = padding.top + ratio * plotHeight;
+            return (
+              <g key={ratio}>
+                <line
+                  className="chart-grid-line"
+                  x1={x}
+                  x2={x}
+                  y1={padding.top}
+                  y2={height - padding.bottom}
+                />
+                <line
+                  className="chart-grid-line"
+                  x1={padding.left}
+                  x2={width - padding.right}
+                  y1={y}
+                  y2={y}
+                />
+              </g>
+            );
+          })}
+          <rect
+            className="map-frame"
+            height={plotHeight}
+            width={plotWidth}
+            x={padding.left}
+            y={padding.top}
+          />
+          {coords.map((point, index) => (
+            <g
+              aria-label={`${point.label}: latitude ${formatNumber(point.latitude)}, longitude ${formatNumber(point.longitude)}${point.metricValue === undefined ? "" : `, ${metricLabel} ${formatNumber(point.metricValue)}`}.`}
+              className="map-point"
+              key={`${point.latitude}-${point.longitude}-${index}`}
+              onBlur={() => setActiveIndex(undefined)}
+              onFocus={() => setActiveIndex(index)}
+              onMouseEnter={() => setActiveIndex(index)}
+              onMouseLeave={() => setActiveIndex(undefined)}
+              tabIndex={0}
+            >
+              <circle
+                cx={point.cx}
+                cy={point.cy}
+                fill={activeIndex === index ? "#d55e00" : "#005ab5"}
+                fillOpacity={activeIndex === index ? "0.94" : "0.64"}
+                r={activeIndex === index ? point.radius + 2 : point.radius}
+                stroke="#ffffff"
+                strokeWidth={activeIndex === index ? 3 : 2}
+              />
+              <title>
+                {point.label}: {formatNumber(point.latitude)},{" "}
+                {formatNumber(point.longitude)}
+                {point.metricValue === undefined
+                  ? ""
+                  : `; ${metricLabel}: ${formatNumber(point.metricValue)}`}
+              </title>
+            </g>
+          ))}
+          <text
+            className="chart-axis-label"
+            textAnchor="middle"
+            x={padding.left + plotWidth / 2}
+            y={height - 12}
+          >
+            Longitude {formatNumber(lonMin)} to {formatNumber(lonMax)}
+          </text>
+          <text
+            className="chart-axis-label"
+            textAnchor="middle"
+            transform={`translate(16 ${padding.top + plotHeight / 2}) rotate(-90)`}
+          >
+            Latitude {formatNumber(latMin)} to {formatNumber(latMax)}
+          </text>
+        </svg>
+        {activePoint && (
+          <div
+            className="chart-tooltip line-tooltip"
+            style={{
+              left: `${(activePoint.cx / width) * 100}%`,
+              top: `${(activePoint.cy / height) * 100}%`,
+            }}
+          >
+            <strong>{activePoint.label}</strong>
+            <span>Lat: {formatNumber(activePoint.latitude)}</span>
+            <span>Lon: {formatNumber(activePoint.longitude)}</span>
+            {activePoint.metricValue !== undefined && (
+              <span>
+                {metricLabel}: {formatNumber(activePoint.metricValue)}
+              </span>
+            )}
+          </div>
+        )}
+      </div>
+      <p className="chart-note">
+        Local coordinate view only. It does not verify boundaries, routes, or
+        administrative coverage.
+      </p>
+    </div>
+  );
+}
+
+function AreaIntensityChart({
+  grouped,
+  groupLabel,
+  metricLabel,
+  title,
+}: {
+  grouped: GroupedMetricValue[];
+  groupLabel: string;
+  metricLabel: string;
+  title: string;
+}) {
+  const visible = grouped.slice(0, 12);
+  const max = Math.max(...visible.map((item) => item.value), 1);
+  if (visible.length === 0) {
+    return (
+      <div className="mini-empty">
+        No administrative area values were found for this view.
+      </div>
+    );
+  }
+  return (
+    <div
+      aria-label={`${title}. ${metricLabel} across ${groupLabel}.`}
+      className="area-intensity-chart"
+      role="list"
+    >
+      {visible.map((item) => {
+        const intensity = Math.max(0.14, Math.min(0.82, item.value / max));
+        const description = chartValueDescription(item, metricLabel);
+        return (
+          <div
+            aria-label={description}
+            className="area-tile chart-mark"
+            data-tooltip={description}
+            key={item.label}
+            role="listitem"
+            style={{
+              backgroundColor: `rgba(0, 90, 181, ${intensity})`,
+              borderColor:
+                intensity > 0.45 ? "rgba(0, 67, 135, 0.62)" : "#bdd1ff",
+              color: intensity > 0.45 ? "white" : "#171717",
+            }}
+            tabIndex={0}
+          >
+            <span title={item.label}>{item.label}</span>
+            <strong>{formatNumber(item.value)}</strong>
+            <small>{formatCount(item.count, "record")}</small>
+          </div>
+        );
+      })}
+      <p className="chart-note">
+        Area intensity uses uploaded area labels only. Add verified local
+        boundary geometry before treating this as a choropleth map.
+      </p>
     </div>
   );
 }

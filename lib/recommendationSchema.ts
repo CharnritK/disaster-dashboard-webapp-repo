@@ -12,6 +12,7 @@ import type {
   WorkflowContext
 } from "@/types/recommendations";
 import { isCleaningTransformType } from "./cleaningTransforms";
+import { isCoordinateField } from "./locationFields";
 
 const allowedModes = new Set(["single", "multi"]);
 const DEFAULT_STRING_LIMIT = 500;
@@ -272,7 +273,9 @@ export function minimizeProfiles(profiles: DatasetProfile[]) {
       inferredType: column.inferredType,
       missingPercentage: column.missingPercentage,
       uniqueCount: column.uniqueCount,
-      sampleValues: column.sampleValues.slice(0, 3)
+      sampleValues: isCoordinateField(column.columnName)
+        ? []
+        : column.sampleValues.slice(0, 3)
     })),
   }));
 }
@@ -397,7 +400,7 @@ function isSeverity(value: unknown): value is "info" | "low" | "medium" | "high"
 }
 
 function isDashboardSection(value: unknown): value is ChartRecommendation["section"] {
-  return value === "overview" || value === "comparisons" || value === "quality" || value === "details";
+  return value === "overview" || value === "location" || value === "comparisons" || value === "quality" || value === "details";
 }
 
 function isMetricAggregation(value: unknown): value is ChartRecommendation["aggregation"] {
@@ -419,7 +422,9 @@ function isInsightType(value: unknown): value is DashboardInsightType {
 function isChartType(value: unknown): value is ChartRecommendation["chartType"] {
   return (
     value === "bar" ||
+    value === "area" ||
     value === "line" ||
+    value === "map" ||
     value === "pie" ||
     value === "table" ||
     value === "summary" ||

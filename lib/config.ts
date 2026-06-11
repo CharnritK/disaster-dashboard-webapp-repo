@@ -1,4 +1,18 @@
-export const MAX_UPLOAD_SIZE_MB = Number(process.env.MAX_UPLOAD_SIZE_MB ?? 1);
+export function positiveNumberFromConfig(
+  value: string | undefined,
+  fallback: number,
+  min = 0,
+) {
+  if (!value?.trim()) return fallback;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? Math.max(min, parsed) : fallback;
+}
+
+export const MAX_UPLOAD_SIZE_MB = positiveNumberFromConfig(
+  process.env.MAX_UPLOAD_SIZE_MB,
+  1,
+  0.1,
+);
 
 export const SUPPORTED_FILE_TYPES = ["csv", "xlsx"] as const;
 
