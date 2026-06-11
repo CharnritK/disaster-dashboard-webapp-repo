@@ -1503,6 +1503,52 @@ textarea {
   margin: 0;
 }
 
+.agent-context-checklist {
+  align-items: start;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(0, 1.3fr) minmax(240px, 0.7fr);
+  padding: 16px;
+}
+
+.agent-context-checklist h3 {
+  font-size: 1rem;
+  line-height: 1.25;
+  margin: 0 0 6px;
+}
+
+.agent-context-checklist p {
+  color: var(--muted);
+  margin: 0;
+}
+
+.agent-context-checklist ul {
+  display: grid;
+  gap: 6px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.agent-context-checklist li {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 0.84rem;
+  font-weight: 680;
+  padding: 7px 9px;
+}
+
+.dataset-card {
+  align-content: start;
+  display: grid;
+  gap: 14px;
+}
+
 .dataset-card-header {
   align-items: flex-start;
   display: flex;
@@ -1527,6 +1573,99 @@ textarea {
   font-size: 0.8rem;
   min-height: 32px;
   padding: 6px 9px;
+}
+
+.format-assessment {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--blue);
+  border-radius: 8px;
+  display: grid;
+  gap: 8px;
+  padding: 11px;
+}
+
+.format-assessment.review {
+  border-left-color: var(--amber);
+}
+
+.format-assessment.rejected {
+  border-left-color: var(--red);
+}
+
+.format-assessment-header {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+}
+
+.format-assessment-header strong {
+  color: var(--ink);
+  font-size: 0.86rem;
+}
+
+.format-assessment-header span {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 780;
+  padding: 4px 7px;
+  white-space: nowrap;
+}
+
+.format-assessment p,
+.format-assessment ul,
+.format-tips {
+  margin: 0;
+}
+
+.format-assessment p,
+.format-assessment li span,
+.format-tips span {
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+
+.format-meta {
+  font-size: 0.78rem;
+}
+
+.format-assessment ul {
+  display: grid;
+  gap: 7px;
+  list-style: none;
+  padding: 0;
+}
+
+.format-assessment li,
+.format-tips {
+  display: grid;
+  gap: 2px;
+}
+
+.format-assessment li strong,
+.format-tips strong {
+  color: var(--ink);
+  font-size: 0.82rem;
+}
+
+.dataset-hints-grid {
+  border-top: 1px solid var(--line);
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  padding-top: 14px;
+}
+
+.dataset-hints-grid label {
+  font-weight: 720;
+}
+
+.dataset-note-field {
+  grid-column: 1 / -1;
 }
 
 .profile-card {
@@ -2572,7 +2711,9 @@ tr:last-child td {
   }
 
   .template-selector,
-  .brief-form-grid {
+  .brief-form-grid,
+  .agent-context-checklist,
+  .dataset-hints-grid {
     grid-template-columns: 1fr;
   }
 

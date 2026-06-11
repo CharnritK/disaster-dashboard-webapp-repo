@@ -268,6 +268,8 @@ export function minimizeProfiles(profiles: DatasetProfile[]) {
     potentialGeographicFields: profile.potentialGeographicFields,
     potentialDemographicFields: profile.potentialDemographicFields,
     potentialMetricFields: profile.potentialMetricFields,
+    inputHints: minimizeInputHints(profile.inputHints),
+    formatAssessment: minimizeFormatAssessment(profile.formatAssessment),
     columns: profile.columns.map((column) => ({
       columnName: column.columnName,
       inferredType: column.inferredType,
@@ -319,6 +321,82 @@ function parseDatasetProfile(input: unknown, limits: WorkflowContextLimits): Dat
     potentialGeographicFields: stringArray(input.potentialGeographicFields, limits.maxStringLength).slice(0, limits.maxColumnsPerProfile),
     potentialDemographicFields: stringArray(input.potentialDemographicFields, limits.maxStringLength).slice(0, limits.maxColumnsPerProfile),
     potentialMetricFields: stringArray(input.potentialMetricFields, limits.maxStringLength).slice(0, limits.maxColumnsPerProfile),
+    inputHints: parseInputHints(input.inputHints, limits),
+    formatAssessment: parseFormatAssessment(input.formatAssessment, limits),
+  };
+}
+
+function minimizeInputHints(inputHints: DatasetProfile["inputHints"]) {
+  if (!inputHints) return undefined;
+  return compactRecord({
+    evidenceRole: optionalString(inputHints.evidenceRole, DEFAULT_WORKFLOW_CONTEXT_LIMITS.maxStringLength),
+    primaryField: optionalString(inputHints.primaryField, DEFAULT_WORKFLOW_CONTEXT_LIMITS.maxStringLength),
+    joinField: optionalString(inputHints.joinField, DEFAULT_WORKFLOW_CONTEXT_LIMITS.maxStringLength),
+    timeField: optionalString(inputHints.timeField, DEFAULT_WORKFLOW_CONTEXT_LIMITS.maxStringLength),
+    measurementUnit: optionalString(inputHints.measurementUnit, DEFAULT_WORKFLOW_CONTEXT_LIMITS.maxStringLength),
+    semanticNotes: optionalString(inputHints.semanticNotes, DEFAULT_WORKFLOW_CONTEXT_LIMITS.maxStringLength),
+  });
+}
+
+function minimizeFormatAssessment(formatAssessment: DatasetProfile["formatAssessment"]) {
+  if (!formatAssessment) return undefined;
+  return {
+    status: formatAssessment.status,
+    summary: truncateString(stripHtml(formatAssessment.summary), DEFAULT_WORKFLOW_CONTEXT_LIMITS.maxStringLength),
+    fileType: formatAssessment.fileType,
+    sheetName: formatAssessment.sheetName
+      ? truncateString(stripHtml(formatAssessment.sheetName), DEFAULT_WORKFLOW_CONTEXT_LIMITS.maxStringLength)
+      : undefined,
+    sheetCount: formatAssessment.sheetCount,
+    issues: formatAssessment.issues.slice(0, 5).map((issue) => ({
+      severity: issue.severity,
+      title: truncateString(stripHtml(issue.title), DEFAULT_WORKFLOW_CONTEXT_LIMITS.maxStringLength),
+      detail: truncateString(stripHtml(issue.detail), DEFAULT_WORKFLOW_CONTEXT_LIMITS.maxStringLength),
+      suggestedAction: issue.suggestedAction
+        ? truncateString(stripHtml(issue.suggestedAction), DEFAULT_WORKFLOW_CONTEXT_LIMITS.maxStringLength)
+        : undefined,
+    })),
+  };
+}
+
+function parseInputHints(input: unknown, limits: WorkflowContextLimits): DatasetProfile["inputHints"] {
+  if (!isRecord(input)) return undefined;
+  return compactRecord({
+    evidenceRole: optionalString(input.evidenceRole, limits.maxStringLength),
+    primaryField: optionalString(input.primaryField, limits.maxStringLength),
+    joinField: optionalString(input.joinField, limits.maxStringLength),
+    timeField: optionalString(input.timeField, limits.maxStringLength),
+    measurementUnit: optionalString(input.measurementUnit, limits.maxStringLength),
+    semanticNotes: optionalString(input.semanticNotes, limits.maxStringLength),
+  });
+}
+
+function parseFormatAssessment(input: unknown, limits: WorkflowContextLimits): DatasetProfile["formatAssessment"] {
+  if (!isRecord(input)) return undefined;
+  const status =
+    input.status === "accepted" || input.status === "review" || input.status === "rejected"
+      ? input.status
+      : undefined;
+  const fileType = input.fileType === "csv" || input.fileType === "xlsx" ? input.fileType : "xlsx";
+  if (!status) return undefined;
+  return {
+    status,
+    summary: stringOr(input.summary, "", limits.maxStringLength),
+    fileType,
+    sheetName: optionalString(input.sheetName, limits.maxStringLength),
+    sheetCount: optionalNumber(input.sheetCount),
+    issues: Array.isArray(input.issues)
+      ? input.issues
+          .filter(isRecord)
+          .slice(0, 5)
+          .map((issue) => ({
+            severity: isFormatIssueSeverity(issue.severity) ? issue.severity : "info",
+            title: stringOr(issue.title, "Format note", limits.maxStringLength),
+            detail: stringOr(issue.detail, "Review the uploaded file format.", limits.maxStringLength),
+            suggestedAction: optionalString(issue.suggestedAction, limits.maxStringLength),
+          }))
+      : [],
+    learningTips: stringArray(input.learningTips, limits.maxStringLength).slice(0, 5),
   };
 }
 
@@ -357,7 +435,7 @@ function stringOr(value: unknown, fallback: string, maxLength = DEFAULT_STRING_L
 
 function optionalString(value: unknown, maxLength = DEFAULT_STRING_LIMIT) {
   return typeof value === "string" && value.trim()
-    ? truncateString(value.trim(), maxLength)
+    ? truncateString(stripHtml(value.trim()), maxLength)
     : undefined;
 }
 
@@ -397,6 +475,18 @@ function isColumnType(value: unknown): value is DatasetProfile["columns"][number
 
 function isSeverity(value: unknown): value is "info" | "low" | "medium" | "high" {
   return value === "info" || value === "low" || value === "medium" || value === "high";
+}
+
+function isFormatIssueSeverity(value: unknown): value is NonNullable<DatasetProfile["formatAssessment"]>["issues"][number]["severity"] {
+  return value === "info" || value === "warning" || value === "error";
+}
+
+function compactRecord<T extends Record<string, string | undefined>>(record: T) {
+  const entries = Object.entries(record).filter(([, value]) => Boolean(value));
+  if (entries.length === 0) return undefined;
+  return Object.fromEntries(entries) as {
+    [K in keyof T]?: string;
+  };
 }
 
 function isDashboardSection(value: unknown): value is ChartRecommendation["section"] {

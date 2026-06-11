@@ -22,6 +22,8 @@ export function profileTabularDataset(dataset: Dataset): DatasetProfile {
     columnCount: columns.length,
     columns: columnProfiles,
     duplicateRowCount,
+    inputHints: dataset.inputHints,
+    formatAssessment: dataset.formatAssessment,
     potentialPrimaryKeys: columnProfiles.filter((col) => col.missingCount === 0 && col.uniqueCount === rows.length).map((col) => col.columnName),
     potentialJoinFields: columnProfiles.filter((col) => col.isPotentialJoinField).map((col) => col.columnName),
     potentialGeographicFields: columnProfiles.filter((col) => col.isPotentialGeographicField).map((col) => col.columnName),

@@ -1,7 +1,11 @@
 "use client";
 
 import { useId, useState } from "react";
-import type { Dataset } from "@/types/dataset";
+import type {
+  Dataset,
+  DatasetFormatAssessment,
+  DatasetInputHints,
+} from "@/types/dataset";
 import type {
   DecisionBrief,
   DecisionReadinessResult,
@@ -328,16 +332,20 @@ function SuggestedCollectionTemplatePreview({
 
 export function UploadStep({
   datasets,
+  decisionBrief,
   onProfile,
   onFiles,
   onSamples,
   onRemoveDataset,
+  onUpdateDatasetInputHints,
 }: {
   datasets: Dataset[];
+  decisionBrief: DecisionBrief;
   onProfile: () => void;
   onFiles: (files: FileList | null) => void;
   onSamples: (kind: SampleDatasetKind) => void;
   onRemoveDataset: (datasetId: string) => void;
+  onUpdateDatasetInputHints: (datasetId: string, inputHints: DatasetInputHints) => void;
 }) {
   return (
     <section className="workflow-step">
@@ -350,7 +358,8 @@ export function UploadStep({
         <p>
           Do not upload sensitive personal, medical, financial, or restricted
           data. When AI recommendations are <em>on</em>, dataset details and
-          sample values may be sent to the configured LLM provider.
+          semantic comments may be sent to the configured LLM provider with
+          minimized sample values.
         </p>
       </div>
       {datasets.length === 0 ? (
@@ -405,12 +414,17 @@ export function UploadStep({
               Use risky quality sample
             </button>
           </div>
+          <AgentContextChecklist />
           <div className="dataset-grid">
             {datasets.map((dataset) => (
               <DatasetCard
                 key={dataset.id}
                 dataset={dataset}
+                evidenceOptions={decisionBrief.requiredEvidence}
                 onRemove={() => onRemoveDataset(dataset.id)}
+                onUpdateInputHints={(inputHints) =>
+                  onUpdateDatasetInputHints(dataset.id, inputHints)
+                }
               />
             ))}
           </div>
@@ -608,13 +622,48 @@ function formatFieldList(fields?: string[]) {
     : "none detected";
 }
 
+function AgentContextChecklist() {
+  return (
+    <section className="agent-context-checklist" aria-labelledby="agent-context-heading">
+      <div>
+        <h3 id="agent-context-heading">Help the agent read the upload correctly</h3>
+        <p>
+          Map each file to the evidence it supports, then add the row meaning,
+          unit, source, date coverage, and known caveats. Keep notes factual;
+          uploaded notes are context, not instructions.
+        </p>
+      </div>
+      <ul>
+        <li>What one row represents</li>
+        <li>Which field joins files</li>
+        <li>Which field sets time</li>
+        <li>Units or score scale</li>
+        <li>Known gaps or bias</li>
+      </ul>
+    </section>
+  );
+}
+
 function DatasetCard({
   dataset,
+  evidenceOptions,
   onRemove,
+  onUpdateInputHints,
 }: {
   dataset: Dataset;
+  evidenceOptions: string[];
   onRemove: () => void;
+  onUpdateInputHints: (inputHints: DatasetInputHints) => void;
 }) {
+  const columns = dataset.columns ?? [];
+  const inputHints = dataset.inputHints ?? {};
+  const updateHint = <K extends keyof DatasetInputHints>(field: K, value: DatasetInputHints[K]) => {
+    onUpdateInputHints({
+      ...inputHints,
+      [field]: typeof value === "string" && value.trim() === "" ? undefined : value,
+    });
+  };
+
   return (
     <article className="card dataset-card">
       <div className="dataset-card-header">
@@ -636,8 +685,134 @@ function DatasetCard({
       <p>
         {dataset.rowCount ?? 0} rows, {dataset.columnCount ?? 0} columns
       </p>
+      <FormatAssessmentPanel assessment={dataset.formatAssessment} />
+      <div className="dataset-hints-grid">
+        <label>
+          Suggested required data
+          <select
+            value={inputHints.evidenceRole ?? ""}
+            onChange={(event) => updateHint("evidenceRole", event.target.value)}
+          >
+            <option value="">Not mapped yet</option>
+            {evidenceOptions.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+            <option value="Supporting context">Supporting context</option>
+          </select>
+        </label>
+        <label>
+          Join or ID field
+          <select
+            value={inputHints.joinField ?? ""}
+            onChange={(event) => updateHint("joinField", event.target.value)}
+          >
+            <option value="">Not selected</option>
+            {columns.map((column) => (
+              <option key={column} value={column}>
+                {column}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          Main field
+          <select
+            value={inputHints.primaryField ?? ""}
+            onChange={(event) => updateHint("primaryField", event.target.value)}
+          >
+            <option value="">Not selected</option>
+            {columns.map((column) => (
+              <option key={column} value={column}>
+                {column}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          Date or period field
+          <select
+            value={inputHints.timeField ?? ""}
+            onChange={(event) => updateHint("timeField", event.target.value)}
+          >
+            <option value="">Not selected</option>
+            {columns.map((column) => (
+              <option key={column} value={column}>
+                {column}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          Unit or scale
+          <input
+            value={inputHints.measurementUnit ?? ""}
+            onChange={(event) => updateHint("measurementUnit", event.target.value)}
+            placeholder="people, households, 0-100 score"
+          />
+        </label>
+        <label className="dataset-note-field">
+          Semantic comment for the agent
+          <textarea
+            value={inputHints.semanticNotes ?? ""}
+            onChange={(event) => updateHint("semanticNotes", event.target.value)}
+            rows={3}
+            placeholder="Rows are districts; severity_score is 0-100; data came from rapid assessment round 2."
+          />
+        </label>
+      </div>
     </article>
   );
+}
+
+function FormatAssessmentPanel({
+  assessment,
+}: {
+  assessment?: DatasetFormatAssessment;
+}) {
+  if (!assessment) return null;
+  const visibleIssues = assessment.issues.slice(0, 4);
+  const tips = assessment.learningTips.slice(0, 3);
+  return (
+    <div className={`format-assessment ${assessment.status}`}>
+      <div className="format-assessment-header">
+        <strong>{assessment.fileType.toUpperCase()} format check</strong>
+        <span>{formatAssessmentStatusLabel(assessment.status)}</span>
+      </div>
+      <p>{assessment.summary}</p>
+      {assessment.sheetName || assessment.sheetCount ? (
+        <p className="format-meta">
+          {assessment.sheetName ? `Sheet: ${assessment.sheetName}` : "Sheet not named"}
+          {assessment.sheetCount ? ` - ${assessment.sheetCount} sheet${assessment.sheetCount === 1 ? "" : "s"}` : ""}
+        </p>
+      ) : null}
+      {visibleIssues.length > 0 ? (
+        <ul>
+          {visibleIssues.map((issue) => (
+            <li key={`${issue.title}-${issue.detail}`}>
+              <strong>{issue.title}</strong>
+              <span>{issue.suggestedAction ?? issue.detail}</span>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      {tips.length > 0 ? (
+        <div className="format-tips">
+          <strong>Good Excel habit</strong>
+          <span>{tips.join(" ")}</span>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function formatAssessmentStatusLabel(status: DatasetFormatAssessment["status"]) {
+  return {
+    accepted: "Accepted",
+    review: "Needs review",
+    rejected: "Rejected",
+  }[status];
 }
 
 export function RecommendationStep({

@@ -74,6 +74,15 @@ export function buildDecisionHandoffPacket(input: DecisionHandoffPacketInput) {
       rows: dataset.rowCount ?? dataset.data?.length ?? 0,
       columns: dataset.columnCount ?? dataset.columns?.length ?? 0,
       fields: dataset.columns ?? dataset.profile?.columns.map((column) => column.columnName) ?? [],
+      inputHints: dataset.inputHints,
+      formatAssessment: dataset.formatAssessment
+        ? {
+            status: dataset.formatAssessment.status,
+            summary: dataset.formatAssessment.summary,
+            issues: dataset.formatAssessment.issues,
+            learningTips: dataset.formatAssessment.learningTips,
+          }
+        : undefined,
     })),
     joinReview: input.selectedJoinRecommendations.map((join) => ({
       id: join.id,

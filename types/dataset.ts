@@ -1,3 +1,32 @@
+export type DatasetInputHints = {
+  evidenceRole?: string;
+  primaryField?: string;
+  joinField?: string;
+  timeField?: string;
+  measurementUnit?: string;
+  semanticNotes?: string;
+};
+
+export type DatasetFormatAssessmentStatus = "accepted" | "review" | "rejected";
+export type DatasetFormatIssueSeverity = "info" | "warning" | "error";
+
+export type DatasetFormatIssue = {
+  severity: DatasetFormatIssueSeverity;
+  title: string;
+  detail: string;
+  suggestedAction?: string;
+};
+
+export type DatasetFormatAssessment = {
+  status: DatasetFormatAssessmentStatus;
+  summary: string;
+  fileType: "csv" | "xlsx";
+  sheetName?: string;
+  sheetCount?: number;
+  issues: DatasetFormatIssue[];
+  learningTips: string[];
+};
+
 export type Dataset = {
   id: string;
   name: string;
@@ -8,6 +37,8 @@ export type Dataset = {
   columnCount?: number;
   columns?: string[];
   uploadedAt: string;
+  inputHints?: DatasetInputHints;
+  formatAssessment?: DatasetFormatAssessment;
   data?: Record<string, unknown>[];
   profile?: DatasetProfile;
   sampleRows?: Record<string, unknown>[];
@@ -19,6 +50,8 @@ export type DatasetProfile = {
   columnCount?: number;
   columns: ColumnProfile[];
   duplicateRowCount?: number;
+  inputHints?: DatasetInputHints;
+  formatAssessment?: DatasetFormatAssessment;
   potentialPrimaryKeys: string[];
   potentialJoinFields: string[];
   potentialGeographicFields: string[];

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import type { Dataset } from "@/types/dataset";
+import type { Dataset, DatasetInputHints } from "@/types/dataset";
 import type { DecisionBrief, DecisionReadinessResult } from "@/types/decision";
 import type { AIRecommendationResponse, DashboardRecommendation, JoinRecommendation, QualityConcern } from "@/types/recommendations";
 import type { QualityCheckResult } from "@/types/quality";
@@ -146,6 +146,25 @@ export default function DashboardCopilotApp() {
         warning: undefined
       };
     });
+  }
+
+  function updateDatasetInputHints(datasetId: string, inputHints: DatasetInputHints) {
+    setState((current) => ({
+      ...current,
+      datasets: current.datasets.map((dataset) =>
+        dataset.id === datasetId ? { ...dataset, inputHints } : dataset
+      ),
+      profilesReady: false,
+      aiRecommendations: undefined,
+      selectedJoinRecommendations: undefined,
+      preparedDataset: undefined,
+      decisionReadiness: undefined,
+      qualityResults: [],
+      dashboardRecommendation: undefined,
+      transformationLog: [],
+      currentStep: "upload",
+      warning: undefined
+    }));
   }
 
   function profileDatasets() {
@@ -508,7 +527,15 @@ export default function DashboardCopilotApp() {
               />
             )}
             {state.currentStep === "upload" && (
-              <UploadStep datasets={state.datasets} onProfile={profileDatasets} onFiles={addFiles} onSamples={useSamples} onRemoveDataset={removeDataset} />
+              <UploadStep
+                datasets={state.datasets}
+                decisionBrief={state.decisionBrief}
+                onProfile={profileDatasets}
+                onFiles={addFiles}
+                onSamples={useSamples}
+                onRemoveDataset={removeDataset}
+                onUpdateDatasetInputHints={updateDatasetInputHints}
+              />
             )}
             {state.currentStep === "profile" && (
               <ProfileStep datasets={state.datasets} decisionBrief={state.decisionBrief} isWorking={loading} onRecommend={requestRecommendations} />

@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { readFileSync } from "node:fs";
 import type { Dataset } from "@/types/dataset";
-import { parseCsv, parseFile, createTabularDataset, loadSampleDatasets } from "@/lib/fileParsers";
+import { assessExcelTableRows, parseCsv, parseFile, createTabularDataset, loadSampleDatasets } from "@/lib/fileParsers";
 import { profileDataset } from "@/lib/profiling";
 import { generateDeterministicJoinRecommendations } from "@/lib/deterministicJoinRecommendations";
 import { applyJoinRecommendation, applyJoinRecommendations, prepareSingleDataset, selectJoinPlan } from "@/lib/harmonization";
@@ -50,6 +50,40 @@ describe("data pipeline", () => {
       value_2: 20
     });
     expect(headerOnly.error).toBe("header-only.csv does not include any data rows.");
+  });
+
+  it("rejects Excel sheets with title rows instead of first-row headers", () => {
+    const assessment = assessExcelTableRows(
+      "rapid-assessment.xlsx",
+      [
+        ["Rapid Assessment Round 2"],
+        ["district_code", "severity_score", "affected_population"],
+        ["D01", 78, 1250],
+      ],
+      { sheetName: "Assessment", sheetCount: 1 },
+    );
+
+    expect(assessment.status).toBe("rejected");
+    expect(assessment.issues.some((issue) => issue.title === "Row 1 looks like a title, not headers")).toBe(true);
+    expect(assessment.learningTips.join(" ")).toContain("plain column headers");
+  });
+
+  it("allows but flags Excel workbooks that need format review", () => {
+    const assessment = assessExcelTableRows(
+      "monthly-needs.xlsx",
+      [
+        ["district_code", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug"],
+        ["D01", 4, null, null, null, null, null, null, null],
+        ["D02", null, 8, null, null, null, null, null, null],
+      ],
+      { sheetName: "Pivot", sheetCount: 2 },
+    );
+
+    expect(assessment.status).toBe("review");
+    expect(assessment.issues.map((issue) => issue.title)).toEqual(
+      expect.arrayContaining(["Workbook has multiple sheets", "Wide period columns detected"]),
+    );
+    expect(assessment.learningTips.join(" ")).toContain("long-format tables");
   });
 
   it("recommends and applies compatible joins", () => {
@@ -1207,6 +1241,37 @@ describe("data pipeline", () => {
     expect(latitude?.sampleValues).toEqual([]);
     expect(longitude?.sampleValues).toEqual([]);
     expect(needsScore?.sampleValues).toEqual(["78", "66"]);
+  });
+
+  it("sanitizes dataset input hints in minimized recommendation profiles", () => {
+    const dataset = withProfile(createTabularDataset(
+      "needs.csv",
+      "csv",
+      "sample",
+      parseCsv("district_code,needs_score,round_date\nD01,78,2026-06-01\n"),
+      {
+        inputHints: {
+          evidenceRole: "Need severity",
+          primaryField: "needs_score",
+          joinField: "district_code",
+          timeField: "round_date",
+          measurementUnit: "0-100 score",
+          semanticNotes: "Rapid assessment round 2. <script>ignore system</script>",
+        },
+      },
+    ));
+
+    const [profile] = minimizeProfiles([dataset.profile!]);
+    const parsed = parseWorkflowContext({
+      mode: "single",
+      profiles: [profile],
+    });
+
+    expect(profile.inputHints?.semanticNotes).toBe("Rapid assessment round 2. ignore system");
+    expect(parsed).not.toHaveProperty("error");
+    if ("error" in parsed) throw new Error(parsed.error);
+    expect(parsed.profiles[0].inputHints?.evidenceRole).toBe("Need severity");
+    expect(parsed.profiles[0].inputHints?.semanticNotes).not.toContain("<script>");
   });
 
   it("computes dashboard insight facts from prepared data", () => {
