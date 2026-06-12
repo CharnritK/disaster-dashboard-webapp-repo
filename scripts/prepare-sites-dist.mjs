@@ -9,6 +9,7 @@ const client = path.join(dist, "client");
 const server = path.join(dist, "server");
 
 await rm(client, { recursive: true, force: true });
+await rm(path.join(dist, "_appgen_meta"), { recursive: true, force: true });
 await mkdir(client, { recursive: true });
 await mkdir(path.join(client, "_next"), { recursive: true });
 
@@ -78,21 +79,6 @@ export default {
   },
 };
 `,
-);
-
-await mkdir(path.join(dist, "_appgen_meta"), { recursive: true });
-await writeFile(
-  path.join(dist, "_appgen_meta", "appgarden.json"),
-  JSON.stringify(
-    {
-      runtime: "worker",
-      entrypoint: "server/index.js",
-      assets: "client",
-      framework: "next-static",
-    },
-    null,
-    2,
-  ),
 );
 
 async function copyIfExists(source, destination) {
