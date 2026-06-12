@@ -1,0 +1,15 @@
+district_code,district_name,population,households,admin_level
+D001,District 1,17100,3350,district
+D002,District 2,19200,3700,district
+D003,District 3,21300,4050,district
+D004,District 4,23400,4400,district
+D005,District 5,25500,4750,district
+D006,District 6,27600,5100,district
+D007,District 7,29700,5450,district
+D008,District 8,31800,5800,district
+D009,District 9,33900,6150,district
+D010,District 10,36000,6500,district
+D011,District 11,38100,6850,district
+D012,District 12,40200,7200,district
+D013,District 13,42300,7550,district
+D014,,44400,7900,district

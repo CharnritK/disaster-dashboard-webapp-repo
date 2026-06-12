@@ -205,16 +205,55 @@ function parseChartRecommendation(input: unknown): ChartRecommendation | null {
     id: stringOr(input.id, `ai-chart-${chartType}`),
     chartType,
     title: stringOr(input.title, "Recommended chart"),
+    subtitle: optionalString(input.subtitle),
     xField: optionalString(input.xField),
     yField: optionalString(input.yField),
     groupByField: optionalString(input.groupByField),
     metricField: optionalString(input.metricField),
     aggregation: isMetricAggregation(input.aggregation) ? input.aggregation : undefined,
     rationale: stringOr(input.rationale, "This chart supports the recommended dashboard path."),
+    unit: optionalString(input.unit),
+    timeScope: optionalString(input.timeScope),
+    sourceNote: optionalString(input.sourceNote),
+    annotations: parseAnnotations(input.annotations),
+    qualityBadge: isQualityBadge(input.qualityBadge) ? input.qualityBadge : undefined,
+    mobileBehavior: isMobileBehavior(input.mobileBehavior) ? input.mobileBehavior : undefined,
+    sortBy: isSortBy(input.sortBy) ? input.sortBy : undefined,
+    maxCategories: typeof input.maxCategories === "number" ? Math.round(numberBetween(input.maxCategories, 1, 50, 10)) : undefined,
+    screenReaderSummary: optionalString(input.screenReaderSummary),
     section: isDashboardSection(input.section) ? input.section : undefined,
     priority: typeof input.priority === "number" ? numberBetween(input.priority, 0, 100, 50) : undefined,
-    supportedInsightIds: stringArray(input.supportedInsightIds).slice(0, 6)
+    supportedInsightIds: stringArray(input.supportedInsightIds).slice(0, 6),
+    geoKey: optionalString(input.geoKey),
+    dataKey: optionalString(input.dataKey),
+    measureType: isMeasureType(input.measureType) ? input.measureType : undefined,
+    classificationMethod: isClassificationMethod(input.classificationMethod) ? input.classificationMethod : undefined,
+    classCount: typeof input.classCount === "number" ? Math.round(numberBetween(input.classCount, 2, 9, 5)) : undefined,
+    fallbackChartType: input.fallbackChartType === "bar" || input.fallbackChartType === "table" ? input.fallbackChartType : undefined
   };
+}
+
+function parseAnnotations(input: unknown): ChartRecommendation["annotations"] {
+  if (!Array.isArray(input)) return undefined;
+  const annotations = input
+    .filter(isRecord)
+    .map((annotation, index) => ({
+      id: stringOr(annotation.id, `annotation-${index + 1}`),
+      label: stringOr(annotation.label, ""),
+      xValue: typeof annotation.xValue === "string" || typeof annotation.xValue === "number"
+        ? annotation.xValue
+        : undefined,
+      yValue: typeof annotation.yValue === "number" && Number.isFinite(annotation.yValue)
+        ? annotation.yValue
+        : undefined,
+      value: typeof annotation.value === "number" && Number.isFinite(annotation.value)
+        ? annotation.value
+        : undefined,
+      tone: isAnnotationTone(annotation.tone) ? annotation.tone : undefined,
+    }))
+    .filter((annotation) => annotation.label)
+    .slice(0, 4);
+  return annotations.length ? annotations : undefined;
 }
 
 function parseDashboardInsight(input: unknown): DashboardInsight | null {
@@ -497,6 +536,30 @@ function isMetricAggregation(value: unknown): value is ChartRecommendation["aggr
   return value === "sum" || value === "average" || value === "count";
 }
 
+function isAnnotationTone(value: unknown): value is NonNullable<NonNullable<ChartRecommendation["annotations"]>[number]["tone"]> {
+  return value === "neutral" || value === "success" || value === "warn" || value === "alert";
+}
+
+function isMobileBehavior(value: unknown): value is ChartRecommendation["mobileBehavior"] {
+  return value === "auto" || value === "top5" || value === "collapse-legend" || value === "table-fallback";
+}
+
+function isQualityBadge(value: unknown): value is ChartRecommendation["qualityBadge"] {
+  return value === "ok" || value === "warn" || value === "block";
+}
+
+function isSortBy(value: unknown): value is ChartRecommendation["sortBy"] {
+  return value === "time_asc" || value === "value_desc" || value === "label_asc";
+}
+
+function isMeasureType(value: unknown): value is ChartRecommendation["measureType"] {
+  return value === "count" || value === "rate" || value === "ratio" || value === "density" || value === "index";
+}
+
+function isClassificationMethod(value: unknown): value is ChartRecommendation["classificationMethod"] {
+  return value === "quantile" || value === "jenks" || value === "equal_interval";
+}
+
 function isInsightType(value: unknown): value is DashboardInsightType {
   return (
     value === "trend" ||
@@ -513,12 +576,15 @@ function isChartType(value: unknown): value is ChartRecommendation["chartType"] 
   return (
     value === "bar" ||
     value === "area" ||
+    value === "choropleth" ||
     value === "line" ||
     value === "map" ||
     value === "pie" ||
     value === "table" ||
     value === "summary" ||
     value === "scatter" ||
-    value === "missingness"
+    value === "missingness" ||
+    value === "stacked-area" ||
+    value === "small-multiples"
   );
 }

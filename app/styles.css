@@ -1925,8 +1925,81 @@ tr:last-child td {
   justify-content: space-between;
 }
 
+.chart-title-group {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
 .chart-card-header h3 {
   margin-bottom: 0;
+}
+
+.chart-subtitle {
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 640;
+  line-height: 1.35;
+  margin: 0;
+}
+
+.chart-rationale {
+  color: var(--muted);
+  margin: 0;
+}
+
+.chart-body {
+  display: grid;
+  gap: 10px;
+}
+
+.chart-source-note {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.45;
+  padding: 9px 10px;
+}
+
+.quality-pill {
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  flex: 0 0 auto;
+  font-size: 0.7rem;
+  font-weight: 800;
+  line-height: 1;
+  padding: 6px 8px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.quality-pill.success {
+  background: rgba(35, 95, 88, 0.1);
+  border-color: rgba(35, 95, 88, 0.36);
+  color: var(--accent);
+}
+
+.quality-pill.warn {
+  background: rgba(165, 99, 21, 0.11);
+  border-color: rgba(165, 99, 21, 0.34);
+  color: var(--amber);
+}
+
+.quality-pill.alert {
+  background: rgba(180, 35, 24, 0.1);
+  border-color: rgba(180, 35, 24, 0.34);
+  color: var(--red);
+}
+
+.chart-card.quality-warn,
+.chart-card.quality-block {
+  border-color: rgba(165, 99, 21, 0.32);
+}
+
+.chart-card.quality-block {
+  border-color: rgba(180, 35, 24, 0.38);
 }
 
 .bar-track {

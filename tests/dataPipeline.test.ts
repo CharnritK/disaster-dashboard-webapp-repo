@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 import { readFileSync } from "node:fs";
+import { isValidElement, type ReactElement } from "react";
 import type { Dataset } from "@/types/dataset";
+import { ChartFrame } from "@/components/charts/ChartFrame";
 import { assessExcelTableRows, parseCsv, parseFile, createTabularDataset, loadSampleDatasets } from "@/lib/fileParsers";
 import { profileDataset } from "@/lib/profiling";
 import { generateDeterministicJoinRecommendations } from "@/lib/deterministicJoinRecommendations";
@@ -28,6 +30,8 @@ import {
 import { buildDecisionHandoffPacket } from "@/lib/workflowExport";
 import { generateFallbackRecommendations, requestAIRecommendations } from "@/lib/recommendations";
 import { findLocationFields } from "@/lib/locationFields";
+import { enforceVizPolicy } from "@/lib/vizPolicy";
+import { validateVizSpec } from "@/lib/vizSpecValidator";
 
 describe("data pipeline", () => {
   it("parses and profiles tabular CSV data", () => {
@@ -888,7 +892,7 @@ describe("data pipeline", () => {
     ).toEqual(["sum", "average", "count"]);
     const chartProperties =
       body.response_format.json_schema.schema.properties.dashboardRecommendations.properties.charts.items.properties;
-    expect(chartProperties.chartType.enum).toEqual(["map", "area", "bar", "line", "pie", "scatter", "missingness", "table", "summary"]);
+    expect(chartProperties.chartType.enum).toEqual(["map", "area", "choropleth", "bar", "line", "pie", "scatter", "missingness", "table", "summary"]);
     expect(chartProperties.xField.type).toEqual(["string", "null"]);
     expect(chartProperties.metricField.type).toEqual(["string", "null"]);
     expect(
@@ -1078,6 +1082,177 @@ describe("data pipeline", () => {
       expect.objectContaining({ label: "North", value: 30 }),
       expect.objectContaining({ label: "South", value: 5 })
     ]);
+  });
+
+  it("enforces deterministic visualization policy without mutating chart specs", () => {
+    const dataset = withProfile(createTabularDataset(
+      "synthetic-needs.csv",
+      "csv",
+      "sample",
+      parseCsv([
+        "district_name,reported_at,affected_households,response_gap_percent",
+        "A,2026-01-01,10,20",
+        "B,2026-01-01,9,30",
+        "C,2026-01-01,8,40",
+        "D,2026-01-01,7,50",
+        "E,2026-01-01,6,60",
+        "F,2026-01-01,5,70"
+      ].join("\n"))
+    ));
+    const chart = {
+      id: "share-by-district",
+      chartType: "pie" as const,
+      title: "Share by district",
+      rationale: "Part-to-whole comparison.",
+      groupByField: "district_name",
+      metricField: "affected_households",
+      aggregation: "sum" as const,
+    };
+
+    const next = enforceVizPolicy(dataset, [], chart);
+
+    expect(next.chartType).toBe("bar");
+    expect(next.sortBy).toBe("value_desc");
+    expect(next.mobileBehavior).toBe("top5");
+    expect(next.maxCategories).toBe(5);
+    expect(next.qualityBadge).toBe("ok");
+    expect(next.screenReaderSummary).toContain("Share by district");
+    expect(validateVizSpec(next)).toEqual([]);
+    expect(chart.chartType).toBe("pie");
+  });
+
+  it("blocks invalid part-to-whole, one-point trends, and raw-count choropleths", () => {
+    const dataset = withProfile(createTabularDataset(
+      "synthetic-needs.csv",
+      "csv",
+      "sample",
+      parseCsv([
+        "district_name,reported_at,affected_households,response_gap_percent",
+        "North,2026-01-01,10,20",
+        "South,2026-01-01,-5,40"
+      ].join("\n"))
+    ));
+
+    const invalidPie = enforceVizPolicy(dataset, [], {
+      id: "invalid-pie",
+      chartType: "pie",
+      title: "Affected households share",
+      rationale: "Shows share of affected households.",
+      groupByField: "district_name",
+      metricField: "affected_households",
+      aggregation: "sum",
+    });
+    const onePointTrend = enforceVizPolicy(dataset, [], {
+      id: "one-point-trend",
+      chartType: "line",
+      title: "Affected households over time",
+      rationale: "Shows trend.",
+      xField: "reported_at",
+      metricField: "affected_households",
+      aggregation: "sum",
+    });
+    const rawCountMap = enforceVizPolicy(dataset, [], {
+      id: "raw-count-map",
+      chartType: "choropleth",
+      title: "Affected households by district",
+      rationale: "Maps raw affected households.",
+      groupByField: "district_name",
+      metricField: "affected_households",
+      aggregation: "sum",
+      measureType: "count",
+      fallbackChartType: "table",
+    });
+
+    expect(invalidPie.chartType).toBe("bar");
+    expect(invalidPie.rationale).toContain("positive additive values");
+    expect(onePointTrend.chartType).toBe("bar");
+    expect(onePointTrend.sortBy).toBe("value_desc");
+    expect(rawCountMap.chartType).toBe("table");
+    expect(rawCountMap.rationale).toContain("raw counts");
+  });
+
+  it("turns high-risk chart fields into visible quality badges and source notes", () => {
+    const dataset = withProfile(createTabularDataset(
+      "needs.csv",
+      "csv",
+      "sample",
+      parseCsv("district_name,response_gap_percent\nNorth,20\nSouth,130\n")
+    ));
+    const chart = enforceVizPolicy(dataset, [
+      {
+        id: "invalid-response-gap",
+        checkType: "Decision readiness",
+        status: "fail",
+        severity: "high",
+        description: "Response gap has invalid percentages.",
+        affectedColumns: ["response_gap_percent"],
+        caveat: "Do not use response-gap charts for action until invalid percentages are corrected.",
+      }
+    ], {
+      id: "response-gap",
+      chartType: "bar",
+      title: "Response gap by district",
+      rationale: "Compares response gap.",
+      groupByField: "district_name",
+      metricField: "response_gap_percent",
+      aggregation: "average",
+    });
+
+    expect(chart.qualityBadge).toBe("block");
+    expect(chart.sourceNote).toContain("Do not use response-gap charts");
+    expect(chart.unit).toBe("%");
+  });
+
+  it("loads synthetic visualization fixtures with disaster-dashboard edge cases", () => {
+    const needs = parseCsv(readFileSync("public/samples/needs_assessment_synthetic.csv", "utf8"));
+    const population = parseCsv(readFileSync("public/samples/population_synthetic.csv", "utf8"));
+    const geojson = JSON.parse(readFileSync("public/samples/admin_boundaries_synthetic.geojson", "utf8"));
+
+    expect(new Set(needs.map((row) => row.district_code)).size).toBeGreaterThanOrEqual(12);
+    expect(new Set(needs.map((row) => row.reported_at)).size).toBeGreaterThanOrEqual(2);
+    expect(needs.some((row) => Number(row.response_gap_percent) > 100)).toBe(true);
+    expect(needs.some((row) => Number(row.affected_households) < 0)).toBe(true);
+    expect(needs.some((row) => !row.district_name)).toBe(true);
+    expect(population.length).toBeGreaterThanOrEqual(12);
+    expect(geojson.type).toBe("FeatureCollection");
+    expect(geojson.features.length).toBeGreaterThanOrEqual(12);
+  });
+
+  it("renders ChartFrame metadata as an accessible React structure", () => {
+    const element = ChartFrame({
+      id: "chart-response-gap",
+      title: "Response gap by district",
+      subtitle: "Percent · District",
+      sourceNote: "Requires data quality review.",
+      screenReaderSummary: "Response gap chart with review caveat.",
+      qualityBadge: "warn",
+      children: "chart body",
+    });
+
+    expect(isValidElement(element)).toBe(true);
+    const article = element as unknown as ReactElement<{
+      "aria-describedby": string;
+      "aria-labelledby": string;
+      "data-quality": string;
+      className: string;
+      children: ReactElement[];
+    }>;
+    const children = article.props.children;
+    const header = children[0] as ReactElement<{ children: ReactElement[] }>;
+    const headerChildren = header.props.children;
+    const titleGroup = headerChildren[0] as ReactElement<{ children: ReactElement[] }>;
+    const titleGroupChildren = titleGroup.props.children;
+    const title = titleGroupChildren[0] as ReactElement<{ children: string }>;
+    const subtitle = titleGroupChildren[1] as ReactElement<{ children: string }>;
+    const badge = headerChildren[1] as ReactElement<{ children: string }>;
+
+    expect(article.props["aria-labelledby"]).toBe("chart-response-gap-title");
+    expect(article.props["aria-describedby"]).toContain("chart-response-gap-description");
+    expect(article.props["data-quality"]).toBe("warn");
+    expect(article.props.className).toContain("quality-warn");
+    expect(title.props.children).toBe("Response gap by district");
+    expect(subtitle.props.children).toBe("Percent · District");
+    expect(badge.props.children).toBe("Use with caution");
   });
 
   it("reconciles LLM dashboard recommendations against prepared dataset fields", () => {
@@ -1342,7 +1517,7 @@ describe("data pipeline", () => {
     expect(quality.some((issue) => issue.id === "join-completeness")).toBe(true);
     expect(chartTypes.has("line")).toBe(true);
     expect(chartTypes.has("bar")).toBe(true);
-    expect(chartTypes.has("pie")).toBe(true);
+    expect(recommendation.charts.some((chart) => chart.rationale.includes("Converted from pie to bar"))).toBe(true);
     expect(recommendation.charts.length).toBeGreaterThanOrEqual(5);
     expect(facts.some((fact) => fact.id === "fact-join-coverage")).toBe(true);
     expect(facts.some((fact) => fact.insightType === "quality")).toBe(true);

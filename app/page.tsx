@@ -320,7 +320,8 @@ export default function DashboardCopilotApp() {
     };
     let dashboardRecommendation = reconcileDashboardRecommendation(
       preparedDataset,
-      fallback.dashboardRecommendations
+      fallback.dashboardRecommendations,
+      { qualityResults: state.qualityResults }
     );
     let qualityResults = state.qualityResults;
     let warning: string | undefined;
@@ -364,7 +365,8 @@ export default function DashboardCopilotApp() {
           const recommendations = mergeRecommendationResponse(updatedFallback, ai, [preparedDataset]);
           dashboardRecommendation = reconcileDashboardRecommendation(
             preparedDataset,
-            recommendations.dashboardRecommendations
+            recommendations.dashboardRecommendations,
+            { qualityResults }
           );
           if (ai.source !== "llm") {
             warning = llmFallbackWarning(ai, "visualizations");

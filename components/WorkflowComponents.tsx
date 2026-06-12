@@ -49,6 +49,7 @@ import {
 } from "@/lib/chartMetrics";
 import { cleaningTransformLabel } from "@/lib/cleaningTransforms";
 import { isValidLatitude, isValidLongitude } from "@/lib/locationFields";
+import { ChartFrame } from "@/components/charts/ChartFrame";
 
 const STEP_LABELS: Record<WorkflowStep, string> = {
   brief: "Template",
@@ -1429,8 +1430,9 @@ function defaultChartSection(
   chartType: DashboardRecommendation["charts"][number]["chartType"],
 ) {
   if (chartType === "summary") return "overview";
-  if (chartType === "map" || chartType === "area") return "location";
+  if (chartType === "map" || chartType === "area" || chartType === "choropleth") return "location";
   if (chartType === "table") return "details";
+  if (chartType === "missingness") return "quality";
   return "comparisons";
 }
 
@@ -1500,89 +1502,94 @@ function ChartPanel({
     ? aggregateRows(rows, groupField, metricField, effectiveAggregation)
     : [];
   const chartClassName = [
-    "card",
-    "chart-card",
     featured ? "featured" : "",
     highlighted ? "highlighted" : "",
     `chart-card-${chart.chartType}`,
   ]
     .filter(Boolean)
     .join(" ");
-
-  return (
-    <article className={chartClassName} id={`chart-${chart.id}`}>
-      <div className="chart-card-header">
-        <h3>{chart.title}</h3>
-      </div>
-      <p>{chart.rationale}</p>
-      {chart.chartType === "summary" ? (
+  const chartBody =
+    chart.chartType === "summary" ? (
+      <SummaryChart
+        dataset={dataset}
+        groupField={groupField}
+        metricField={metricField}
+        aggregation={effectiveAggregation}
+      />
+    ) : chart.chartType === "table" ? (
+      <RankedTable dataset={dataset} chart={chart} />
+    ) : chart.chartType === "pie" ? (
+      <PieChart
+        grouped={grouped}
+        metricLabel={metricLabel}
+        title={chart.title}
+      />
+    ) : chart.chartType === "line" ? (
+      <LineChart
+        grouped={grouped}
+        groupLabel={groupLabel}
+        metricLabel={metricLabel}
+        title={chart.title}
+      />
+    ) : chart.chartType === "map" ? (
+      <MapChart
+        dataset={dataset}
+        latitudeField={chart.yField}
+        longitudeField={chart.xField}
+        labelField={chart.groupByField}
+        metricField={metricField}
+        metricLabel={metricLabel}
+        title={chart.title}
+      />
+    ) : chart.chartType === "area" ? (
+      <AreaIntensityChart
+        grouped={grouped}
+        groupLabel={groupLabel}
+        metricLabel={metricLabel}
+        title={chart.title}
+      />
+    ) : chart.chartType === "scatter" ? (
+      <ScatterChart
+        dataset={dataset}
+        groupField={groupField}
+        title={chart.title}
+        xField={chart.xField}
+        yField={chart.yField ?? metricField}
+      />
+    ) : chart.chartType === "missingness" ? (
+      <MissingnessChart dataset={dataset} title={chart.title} />
+    ) : grouped.length === 0 ? (
+      metricField ? (
         <SummaryChart
           dataset={dataset}
-          groupField={groupField}
           metricField={metricField}
           aggregation={effectiveAggregation}
         />
-      ) : chart.chartType === "table" ? (
-        <RankedTable dataset={dataset} chart={chart} />
-      ) : chart.chartType === "pie" ? (
-        <PieChart
-          grouped={grouped}
-          metricLabel={metricLabel}
-          title={chart.title}
-        />
-      ) : chart.chartType === "line" ? (
-        <LineChart
-          grouped={grouped}
-          groupLabel={groupLabel}
-          metricLabel={metricLabel}
-          title={chart.title}
-        />
-      ) : chart.chartType === "map" ? (
-        <MapChart
-          dataset={dataset}
-          latitudeField={chart.yField}
-          longitudeField={chart.xField}
-          labelField={chart.groupByField}
-          metricField={metricField}
-          metricLabel={metricLabel}
-          title={chart.title}
-        />
-      ) : chart.chartType === "area" ? (
-        <AreaIntensityChart
-          grouped={grouped}
-          groupLabel={groupLabel}
-          metricLabel={metricLabel}
-          title={chart.title}
-        />
-      ) : chart.chartType === "scatter" ? (
-        <ScatterChart
-          dataset={dataset}
-          groupField={groupField}
-          title={chart.title}
-          xField={chart.xField}
-          yField={chart.yField ?? metricField}
-        />
-      ) : chart.chartType === "missingness" ? (
-        <MissingnessChart dataset={dataset} title={chart.title} />
-      ) : grouped.length === 0 ? (
-        metricField ? (
-          <SummaryChart
-            dataset={dataset}
-            metricField={metricField}
-            aggregation={effectiveAggregation}
-          />
-        ) : (
-          <DatasetPreview dataset={dataset} />
-        )
       ) : (
-        <BarChart
-          grouped={grouped}
-          groupLabel={groupLabel}
-          metricLabel={metricLabel}
-          title={chart.title}
-        />
-      )}
-    </article>
+        <DatasetPreview dataset={dataset} />
+      )
+    ) : (
+      <BarChart
+        grouped={grouped}
+        groupLabel={groupLabel}
+        metricLabel={metricLabel}
+        title={chart.title}
+      />
+    );
+
+  return (
+    <ChartFrame
+      className={chartClassName}
+      id={`chart-${chart.id}`}
+      qualityBadge={chart.qualityBadge}
+      screenReaderSummary={chart.screenReaderSummary}
+      sourceNote={chart.sourceNote}
+      subtitle={chart.subtitle}
+      title={chart.title}
+    >
+      <p className="chart-rationale">{chart.rationale}</p>
+      {chartBody}
+    </ChartFrame>
   );
 }
 
@@ -2165,10 +2172,10 @@ function ScatterChart({
           </text>
           <text
             className="chart-axis-label"
-            fill="#5f656d"
             fontSize="11"
-            textAnchor="middle"
-            transform={`translate(14 ${padding.top + plotHeight / 2}) rotate(-90)`}
+            textAnchor="start"
+            x={padding.left}
+            y={padding.top - 8}
           >
             {yLabel}
           </text>
@@ -2375,8 +2382,9 @@ function MapChart({
           </text>
           <text
             className="chart-axis-label"
-            textAnchor="middle"
-            transform={`translate(16 ${padding.top + plotHeight / 2}) rotate(-90)`}
+            textAnchor="start"
+            x={padding.left}
+            y={padding.top - 8}
           >
             Latitude {formatNumber(latMin)} to {formatNumber(latMax)}
           </text>

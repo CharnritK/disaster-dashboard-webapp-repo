@@ -5,6 +5,7 @@ import type { TransformationStep } from "@/types/transformations";
 import { fieldDisplayLabel, inferMetricAggregation } from "./chartMetrics";
 import { computeDashboardInsightFacts, factsToDashboardInsights } from "./dashboardInsights";
 import { findLocationFields, isCoordinateField, isLatitudeField, isLongitudeField } from "./locationFields";
+import { enforceVizPolicies } from "./vizPolicy";
 
 const MAX_SUMMARY_METRICS = 5;
 const MAX_FIELDS = 8;
@@ -43,22 +44,30 @@ export function generateDeterministicDashboardRecommendation(
     locationFields
   });
   const caveatedCharts = applyChartCaveats(charts, context.qualityResults);
+  const policyCharts = enforceVizPolicies(
+    dataset,
+    context.qualityResults ?? [],
+    caveatedCharts
+  );
 
   return {
     summaryMetrics: uniqueValues(["Total records", ...metricFields.slice(0, MAX_SUMMARY_METRICS - 1)]),
     groupByFields,
     demographicFields: (profile?.potentialDemographicFields ?? []).filter((field) => groupByFields.includes(field)).slice(0, MAX_FIELDS),
     metricFields,
-    charts: caveatedCharts,
-    insights: buildDeterministicInsights(dataset, caveatedCharts, context)
+    charts: policyCharts,
+    insights: buildDeterministicInsights(dataset, policyCharts, context)
   };
 }
 
 export function reconcileDashboardRecommendation(
   dataset: Dataset,
-  recommendation?: DashboardRecommendation
+  recommendation?: DashboardRecommendation,
+  context: {
+    qualityResults?: QualityCheckResult[];
+  } = {}
 ): DashboardRecommendation {
-  const fallback = generateDeterministicDashboardRecommendation(dataset);
+  const fallback = generateDeterministicDashboardRecommendation(dataset, context);
   if (!recommendation) return fallback;
 
   const fields = new Set(dataset.columns ?? dataset.profile?.columns.map((column) => column.columnName) ?? []);
@@ -90,11 +99,15 @@ export function reconcileDashboardRecommendation(
     fallback.metricFields,
     MAX_FIELDS
   );
-  const charts = mergeCharts(
-    normalizedRecommendation.charts.filter((chart) =>
-      isUsableChart(chart, fields, metricFieldSet, numericFields)
-    ),
-    fallback.charts
+  const charts = enforceVizPolicies(
+    dataset,
+    context.qualityResults ?? [],
+    mergeCharts(
+      normalizedRecommendation.charts.filter((chart) =>
+        isUsableChart(chart, fields, metricFieldSet, numericFields)
+      ),
+      fallback.charts
+    )
   );
 
   return {
