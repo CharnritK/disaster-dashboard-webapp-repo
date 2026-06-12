@@ -1,0 +1,13 @@
+assessment_id,district_id,assessment_at,evacuees_estimated,households_requesting_water,households_requesting_food,medical_priority_cases,sanitation_risk_score,communications_status,assessment_confidence
+NA-4001,D-104,2026-06-12T09:30:00+07:00,3250,2280,2140,46,88,partial,high
+NA-4002,D-102,2026-06-12T09:35:00+07:00,2480,1760,1680,31,73,partial,high
+NA-4003,D-105,2026-06-12T09:40:00+07:00,2860,1910,2050,22,79,partial,medium
+NA-4004,D-110,2026-06-12T09:45:00+07:00,1980,1510,1320,27,84,intermittent,medium
+NA-4005,D-107,2026-06-12T09:50:00+07:00,1720,1180,1060,18,81,partial,high
+NA-4006,D-103,2026-06-12T09:55:00+07:00,1390,880,940,14,57,online,medium
+NA-4007,D-101,2026-06-12T10:00:00+07:00,840,520,610,9,49,online,high
+NA-4008,D-108,2026-06-12T10:05:00+07:00,760,310,420,39,34,online,high
+NA-4009,D-109,2026-06-12T10:10:00+07:00,1110,720,790,11,62,partial,medium
+NA-4010,D-106,2026-06-12T10:15:00+07:00,260,140,170,4,21,online,high
+NA-4011,D-111,2026-06-12T10:20:00+07:00,180,90,120,2,18,online,high
+NA-4012,D-112,2026-06-12T10:25:00+07:00,920,640,580,12,68,intermittent,low

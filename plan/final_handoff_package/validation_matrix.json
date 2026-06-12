@@ -1,0 +1,90 @@
+{
+  "commands": [
+    {
+      "command": "npm ci",
+      "purpose": "Install exactly from lockfile",
+      "failure_reporting": "Report dependency/environment failure"
+    },
+    {
+      "command": "npm run lint",
+      "purpose": "Type/lint gate",
+      "failure_reporting": "Report file and error summary"
+    },
+    {
+      "command": "npm run test",
+      "purpose": "Vitest unit/regression coverage",
+      "failure_reporting": "Report failing test names"
+    },
+    {
+      "command": "npm run build",
+      "purpose": "Production/static build gate",
+      "failure_reporting": "Report build/type/runtime failure"
+    }
+  ],
+  "test_cases": [
+    "Good fragmented demo data",
+    "Risky quality sample",
+    "AI disabled fallback",
+    "Invalid model output fallback",
+    "Oversized upload",
+    "Unsupported file type",
+    "Missing evidence",
+    "Unsafe readiness caveat",
+    "Export handoff contains caveats",
+    "No full-row LLM transmission",
+    "Visualization policy enforcement"
+  ],
+  "manual_smoke": [
+    "Start local app",
+    "Use template and continue",
+    "Use fragmented demo data",
+    "Profile data",
+    "Harmonize data",
+    "Accept recommendation",
+    "Review readiness",
+    "Generate dashboard",
+    "Export CSV/PDF/PNG/handoff",
+    "Repeat with risky quality sample",
+    "Repeat with AI disabled"
+  ],
+  "execution_results": {
+    "recorded_on": "2026-06-12",
+    "commands": [
+      {
+        "command": "npm ci",
+        "status": "passed",
+        "summary": "108 packages installed; 0 vulnerabilities reported"
+      },
+      {
+        "command": "npm run test",
+        "status": "passed",
+        "summary": "1 test file passed; 73 tests passed"
+      },
+      {
+        "command": "npm run lint",
+        "status": "passed",
+        "summary": "TypeScript no-emit gate completed"
+      },
+      {
+        "command": "npm run build",
+        "status": "passed",
+        "summary": "Next.js production build and sites dist preparation completed"
+      }
+    ],
+    "browser_smoke": {
+      "status": "passed",
+      "url": "http://127.0.0.1:3000",
+      "notes": [
+        "AI-off deterministic notice was visible",
+        "Fragmented demo data loaded",
+        "Profile, harmonize, accept recommendation, dashboard, export, and deterministic handoff summary completed"
+      ]
+    },
+    "remaining_review_gates": [
+      "RG-02 Humanitarian workflow",
+      "RG-03 AI/privacy",
+      "RG-04 Export safety",
+      "RG-06 Release"
+    ]
+  }
+}

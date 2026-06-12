@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { isValidElement, type ReactElement } from "react";
 import type { Dataset } from "@/types/dataset";
 import { ChartFrame } from "@/components/charts/ChartFrame";
+import { POST as postRecommendRoute } from "@/app/api/recommend/route";
 import { POST as postCopilotRoute } from "@/app/api/copilot/route";
 import { assessExcelTableRows, parseCsv, parseFile, createTabularDataset, loadSampleDatasets } from "@/lib/fileParsers";
 import { profileDataset } from "@/lib/profiling";
@@ -15,7 +16,7 @@ import { computeDashboardInsightFacts } from "@/lib/dashboardInsights";
 import { checkRateLimit } from "@/lib/apiSecurity";
 import { positiveNumberFromConfig } from "@/lib/config";
 import { toCsv } from "@/lib/exportCsv";
-import { qualityLinesForPdf } from "@/lib/exportPdf";
+import { decisionReadinessLinesForPdf, qualityLinesForPdf } from "@/lib/exportPdf";
 import {
   buildDecisionHandoffRequestBody,
   buildRecommendationRequestBody,
@@ -48,6 +49,17 @@ import { validateVizSpec } from "@/lib/vizSpecValidator";
 
 function copilotRouteRequest(body: unknown) {
   return new Request("http://localhost/api/copilot", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "x-forwarded-for": `test-${crypto.randomUUID()}`,
+    },
+    body: JSON.stringify(body),
+  });
+}
+
+function recommendRouteRequest(body: unknown) {
+  return new Request("http://localhost/api/recommend", {
     method: "POST",
     headers: {
       "content-type": "application/json",
@@ -700,10 +712,12 @@ describe("data pipeline", () => {
       expect.objectContaining({
         name: "demo_needs_assessment",
         sourceType: "sample",
-        rows: 1,
+        rowCount: 1,
+        columnCount: 5,
         fields: expect.arrayContaining(["admin_pcode", "people_assessed"]),
       }),
     ]);
+    expect("rows" in packet.datasetLineage[0]).toBe(false);
   });
 
   it("handoff packet records deterministic fallback mode", () => {
@@ -721,9 +735,13 @@ describe("data pipeline", () => {
       qualityResults: [],
       transformationLog: [],
       aiMode: "fallback",
+      aiFallbackReason: "model_response_invalid",
+      aiFallbackMessage: "The model returned invalid JSON.",
     });
 
     expect(packet.aiAssistance.mode).toBe("fallback");
+    expect(packet.aiAssistance.fallbackReason).toBe("model_response_invalid");
+    expect(packet.aiAssistance.fallbackMessage).toBe("The model returned invalid JSON.");
     expect(packet.aiAssistance.summary).toContain("deterministic recommendations");
   });
 
@@ -750,6 +768,7 @@ describe("data pipeline", () => {
 
     expect(packet.decisionReadiness?.status).toBe("decision_unsafe");
     expect(packet.reviewNotice).toContain("Dashboard generation is allowed for review, not for automatic action.");
+    expect(packet.aiAssistance.mode).toBe("deterministic");
     expect(packet.limitations).toEqual(
       expect.arrayContaining([
         expect.stringContaining("review-only"),
@@ -902,6 +921,24 @@ describe("data pipeline", () => {
     );
   });
 
+  it("formats unsafe PDF readiness lines as review-only", () => {
+    const lines = decisionReadinessLinesForPdf({
+      status: "decision_unsafe",
+      title: "Not safe for action yet",
+      summary: "Invalid response-gap values are present.",
+      caveats: ["Do not use response-gap charts for action until invalid percentages are corrected."],
+      blockerCount: 1,
+      reviewCount: 0,
+      requiredEvidenceCovered: ["Admin geography"],
+      requiredEvidenceMissing: ["Capacity signal"],
+    });
+
+    expect(lines).toEqual(expect.arrayContaining([
+      "DECISION UNSAFE: Invalid response-gap values are present.",
+      "Review-only: Dashboard generation is allowed for review, not for automatic action.",
+    ]));
+  });
+
   it("applies typed safe cleaning transforms during harmonization", () => {
     const dataset = createTabularDataset("messy.csv", "csv", "sample", [
       { district_name: " North ", households: "120", active: "true", note: "   " },
@@ -987,6 +1024,36 @@ describe("data pipeline", () => {
     expect(parsed.qualitySummary).toEqual(["xxxxxxxx"]);
     expect(parsed.dashboardFacts?.[0].description).toBe("yyyyyyyy");
     expect("error" in rejected).toBe(true);
+  });
+
+  it("rejects raw row payloads in recommendation contexts", async () => {
+    const profile = profileDataset(createTabularDataset(
+      "needs.csv",
+      "csv",
+      "sample",
+      parseCsv("district_code,needs_score\nD01,80\n")
+    ));
+    const rawRows = [{ district_code: "D01", private_note: "raw row should not pass" }];
+    const parsed = parseWorkflowContext({
+      mode: "single",
+      profiles: [profile],
+      rows: rawRows,
+    });
+    const nested = parseWorkflowContext({
+      mode: "single",
+      profiles: [profile],
+      payload: { data: rawRows },
+    });
+    const response = await postRecommendRoute(recommendRouteRequest({
+      mode: "single",
+      profiles: [profile],
+      sampleRows: rawRows,
+    }));
+
+    expect(parsed).toEqual({ error: "Recommendation requests cannot include raw row data." });
+    expect(nested).toEqual({ error: "Recommendation requests cannot include raw row data." });
+    await expect(response.json()).resolves.toEqual({ error: "Recommendation requests cannot include raw row data." });
+    expect(response.status).toBe(400);
   });
 
   it("builds strict Responses API request bodies with task controls", () => {

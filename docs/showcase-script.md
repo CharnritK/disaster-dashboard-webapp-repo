@@ -3,6 +3,7 @@
 Related docs:
 
 - [Digital Public Good Guide](digital-public-good-guide.md)
+- [AI Mode Configuration](AI_MODE.md)
 - [Codex Starter Prompts](codex-starter-prompts.md)
 
 ## 3-minute demo script
@@ -50,6 +51,6 @@ Turn `AI` off in the header, then run the main sample path. Use this talk track:
 
 - V1 includes only the response-prioritization template.
 - Uploaded data remains session-only; there is no persistence or account workflow.
-- AI receives minimized profile metadata, not full uploaded rows, and deterministic fallback remains available.
+- Recommendation AI receives minimized profile metadata; decision handoff AI receives derived summaries only. Full uploaded rows are not sent to either route, and deterministic fallback remains available.
 - The local demo uses synthetic sample data only.
 - Future work: more decision templates, richer geospatial boundaries, stronger accessibility test automation, and owner-approved operational review gates.

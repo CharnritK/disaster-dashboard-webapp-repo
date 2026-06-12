@@ -1,5 +1,9 @@
 # Feature Specification: Decision-Context Data Quality
 
+> Historical/non-authoritative spec: this predates the current `/api/copilot` handoff route, task-specific LLM model variables, and current handoff privacy boundaries. Use `AGENTS.md`, `README.md`, and `docs/AI_MODE.md` for current implementation guidance.
+
+> Historical feature specification: this records the decision-context scope and acceptance criteria. It is not the current setup guide. For current project behavior, start with `docs/README.md`, `README.md`, and `AGENTS.md`.
+
 **Feature Branch**: `001-decision-context-data-quality`
 
 **Created**: 2026-06-11

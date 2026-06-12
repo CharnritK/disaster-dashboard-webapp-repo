@@ -1,5 +1,9 @@
 # Tasks: Decision-Context Data Quality
 
+> Historical/non-authoritative task ledger: this predates the current `/api/copilot` handoff route, task-specific LLM model variables, and current handoff privacy boundaries. Use `AGENTS.md`, `README.md`, and `docs/AI_MODE.md` for current implementation guidance.
+
+> Historical task ledger: this records the implementation and validation checklist for the decision-context feature package. It is not the current setup guide. For current project behavior, start with `docs/README.md`, `README.md`, and `AGENTS.md`.
+
 **Input**: Design documents from `specs/001-decision-context-data-quality/`
 
 **Prerequisites**: `plan.md`, `spec.md`

@@ -1,6 +1,8 @@
 # [PROJECT_NAME] Constitution
 <!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
 
+> Placeholder notice: this file has not been ratified for Dashboard Copilot and is not an operative project constitution. Use `AGENTS.md`, `README.md`, and `docs/README.md` for current repo guidance until this template is intentionally replaced.
+
 ## Core Principles
 
 ### [PRINCIPLE_1_NAME]

@@ -11,6 +11,8 @@ Remotion project for a short tutorial that shows the business workflow and the t
 
 ## Commands
 
+Run these from `tutorial-video/`, not from the repository root:
+
 ```bash
 npm install
 npm run dev

@@ -267,6 +267,7 @@ export function DecisionBriefStep({
         ) : null}
         <div className="action-row">
           <button
+            type="button"
             className="primary-button"
             disabled={missingFields.length > 0}
             onClick={onContinue}

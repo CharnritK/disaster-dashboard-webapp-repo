@@ -30,6 +30,7 @@ Before editing code, define:
 - `lib/recommendationSchema.ts`: minimized request payload validation.
 - `lib/dashboardRecommendations.ts`: caveat-aware dashboard recommendations.
 - `lib/dashboardInsights.ts`: facts and insight support.
+- `lib/copilotHandoff.ts`: decision handoff summaries and review-only caveats.
 - `lib/exportPdf.ts` and related export helpers: report and handoff wording.
 - `tests/dataPipeline.test.ts`: deterministic behavior coverage.
 

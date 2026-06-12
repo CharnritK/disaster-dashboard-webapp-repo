@@ -1,0 +1,294 @@
+[
+  {
+    "task_id": "P0-01",
+    "title": "Surface AI fallback reason and deterministic mode in UI",
+    "owner": "Frontend UX Agent + Safety/AI Boundary Agent",
+    "objective": "Make AI-disabled, unavailable, rate-limited, timeout, and invalid-output fallback states clear to analysts without implying failure of the workflow.",
+    "context_files": [
+      "app/page.tsx",
+      "components/WorkflowComponents.tsx",
+      "lib/recommendations.ts",
+      "types/recommendations.ts",
+      "tests/dataPipeline.test.ts"
+    ],
+    "files_to_modify": [
+      "app/page.tsx",
+      "components/WorkflowComponents.tsx",
+      "tests/dataPipeline.test.ts"
+    ],
+    "constraints": [
+      "Do not change fallback contract unless needed",
+      "Do not expose secrets",
+      "Do not imply AI approval"
+    ],
+    "acceptance_criteria": [
+      "AI-off mode displays deterministic-mode notice",
+      "Provider failure / invalid output displays fallback notice",
+      "Dashboard and handoff flows still work when AI is disabled",
+      "Tests or manual smoke notes cover at least AI-off and invalid-output fallback"
+    ],
+    "validation": [
+      "npm run test",
+      "manual: run main sample path with AI off"
+    ],
+    "stop_conditions": [
+      "Fallback reason source is unclear",
+      "Need to change API response shape beyond UI consumption"
+    ]
+  },
+  {
+    "task_id": "P0-02",
+    "title": "Add privacy regression tests for no full-row LLM transmission",
+    "owner": "Safety/AI Boundary Agent + Test/QA Agent",
+    "objective": "Ensure recommendation and copilot contexts cannot include full uploaded row payloads.",
+    "context_files": [
+      "lib/recommendationSchema.ts",
+      "lib/copilotHandoff.ts",
+      "lib/llmClient.ts",
+      "app/api/recommend/route.ts",
+      "app/api/copilot/route.ts",
+      "tests/dataPipeline.test.ts"
+    ],
+    "files_to_modify": [
+      "tests/dataPipeline.test.ts",
+      "lib/recommendationSchema.ts",
+      "lib/copilotHandoff.ts"
+    ],
+    "constraints": [
+      "Use minimized profiles only",
+      "Reject raw row/data arrays in handoff routes",
+      "Keep deterministic fallback intact"
+    ],
+    "acceptance_criteria": [
+      "Tests assert profile payload includes only capped metadata/sample values",
+      "Tests reject obvious raw row fields in copilot handoff route",
+      "No route accepts `rows`, `data`, or full dataset payload for AI contexts"
+    ],
+    "validation": [
+      "npm run test"
+    ],
+    "stop_conditions": [
+      "Current API intentionally accepts a raw row field; request owner review before changing contract"
+    ]
+  },
+  {
+    "task_id": "P0-03",
+    "title": "Guarantee caveat parity across dashboard, PDF, and handoff JSON",
+    "owner": "Export/Handoff Agent + Test/QA Agent",
+    "objective": "Ensure readiness caveats and review-only language carry into all export surfaces.",
+    "context_files": [
+      "lib/exportPdf.ts",
+      "lib/workflowExport.ts",
+      "lib/copilotHandoff.ts",
+      "components/WorkflowComponents.tsx",
+      "tests/dataPipeline.test.ts"
+    ],
+    "files_to_modify": [
+      "lib/exportPdf.ts",
+      "lib/workflowExport.ts",
+      "tests/dataPipeline.test.ts"
+    ],
+    "constraints": [
+      "Do not make export sound like approval",
+      "Do not add server storage",
+      "Do not add external sending"
+    ],
+    "acceptance_criteria": [
+      "Decision handoff JSON includes readiness status, caveats, review notice, AI mode",
+      "PDF includes decision readiness and caveats",
+      "Unsafe status includes review-only language",
+      "Tests cover unsafe packet and PDF quality lines"
+    ],
+    "validation": [
+      "npm run test",
+      "manual: export from risky quality sample"
+    ],
+    "stop_conditions": [
+      "PDF library cannot support requested accessibility content without new dependency"
+    ]
+  },
+  {
+    "task_id": "P0-04",
+    "title": "Strengthen unsafe readiness and data-quality regression tests",
+    "owner": "Backend Pipeline Agent + Test/QA Agent",
+    "objective": "Ensure risky quality sample and missing evidence do not appear action-ready.",
+    "context_files": [
+      "lib/validation.ts",
+      "lib/decisionContext.ts",
+      "public/samples/demo_quality_risk.csv",
+      "tests/dataPipeline.test.ts"
+    ],
+    "files_to_modify": [
+      "lib/validation.ts",
+      "lib/decisionContext.ts",
+      "tests/dataPipeline.test.ts"
+    ],
+    "constraints": [
+      "Row-preserving checks only",
+      "No automatic row deletion/imputation",
+      "No hidden correction"
+    ],
+    "acceptance_criteria": [
+      "Negative counts and >100 percentages are warning/fail as appropriate",
+      "Missing admin/evidence fields downgrade readiness",
+      "Readiness remains deterministic",
+      "Tests cover missing evidence and risky quality sample"
+    ],
+    "validation": [
+      "npm run test"
+    ],
+    "stop_conditions": [
+      "Business rule thresholds are ambiguous and materially affect readiness"
+    ]
+  },
+  {
+    "task_id": "P1-01",
+    "title": "Create client-side dashboard project kit export",
+    "owner": "Export/Handoff Agent",
+    "objective": "Improve second-pass handoff by exporting prepared CSV, handoff JSON, transformation log, schema/config JSON, and README text.",
+    "context_files": [
+      "lib/exportCsv.ts",
+      "lib/workflowExport.ts",
+      "components/WorkflowComponents.tsx"
+    ],
+    "files_to_modify": [
+      "lib/workflowExport.ts",
+      "components/WorkflowComponents.tsx",
+      "tests/dataPipeline.test.ts"
+    ],
+    "constraints": [
+      "Client-side only",
+      "No persistence",
+      "No auto-send",
+      "No external upload"
+    ],
+    "acceptance_criteria": [
+      "Project kit can be downloaded from export step",
+      "Kit includes README text with caveats and review requirements",
+      "Prepared data export preserves formula neutralization",
+      "Tests cover project kit JSON structure"
+    ],
+    "validation": [
+      "npm run test",
+      "manual: download project kit"
+    ],
+    "stop_conditions": [
+      "Zip dependency needed; request approval before adding dependency"
+    ]
+  },
+  {
+    "task_id": "P1-02",
+    "title": "Add one additional decision template with synthetic sample data",
+    "owner": "Product/Safety Agent + Backend Pipeline Agent + Docs Agent",
+    "objective": "Demonstrate reusable template pattern without broad platform expansion.",
+    "context_files": [
+      "types/decision.ts",
+      "lib/decisionContext.ts",
+      "components/WorkflowComponents.tsx",
+      "public/samples/",
+      "docs/showcase-script.md",
+      "tests/dataPipeline.test.ts"
+    ],
+    "files_to_modify": [
+      "types/decision.ts",
+      "lib/decisionContext.ts",
+      "components/WorkflowComponents.tsx",
+      "public/samples/<new-sample>.csv",
+      "docs/showcase-script.md",
+      "tests/dataPipeline.test.ts"
+    ],
+    "constraints": [
+      "One template only",
+      "Synthetic data only",
+      "No PII",
+      "Add tests and docs"
+    ],
+    "acceptance_criteria": [
+      "Template appears in selector",
+      "Suggested collection fields reflect new decision",
+      "Evidence coverage and readiness checks work",
+      "Demo sample loads and completes profile/harmonization path",
+      "Docs explain scope and caveats"
+    ],
+    "validation": [
+      "npm run test",
+      "manual: run new sample workflow"
+    ],
+    "stop_conditions": [
+      "Template requires new architecture or persistence"
+    ]
+  },
+  {
+    "task_id": "P1-03",
+    "title": "Accessibility baseline for workflow and chart outputs",
+    "owner": "Frontend UX Agent + Test/QA Agent",
+    "objective": "Improve non-technical and accessibility readiness without rewriting UI architecture.",
+    "context_files": [
+      "components/WorkflowComponents.tsx",
+      "components/charts/",
+      "lib/dashboardRecommendations.ts",
+      "lib/exportPdf.ts",
+      "tests/"
+    ],
+    "files_to_modify": [
+      "components/WorkflowComponents.tsx",
+      "components/charts/*",
+      "lib/dashboardRecommendations.ts",
+      "tests/dataPipeline.test.ts"
+    ],
+    "constraints": [
+      "No large visual redesign",
+      "No dependency unless justified",
+      "Keep charts deterministic"
+    ],
+    "acceptance_criteria": [
+      "Buttons/inputs/alerts have accessible labels",
+      "Charts include screenReaderSummary where recommended",
+      "Manual keyboard smoke test documented",
+      "Unit tests validate chart summaries where feasible"
+    ],
+    "validation": [
+      "npm run test",
+      "manual: keyboard navigation and screen-reader spot check"
+    ],
+    "stop_conditions": [
+      "Accessibility tooling dependency requested; owner approval needed"
+    ]
+  },
+  {
+    "task_id": "DOC-01",
+    "title": "Create repo-local final handoff docs",
+    "owner": "Docs Agent",
+    "objective": "Add concise handoff docs to the repository after owner approval.",
+    "context_files": [
+      "README.md",
+      "docs/digital-public-good-guide.md",
+      "docs/codex-starter-prompts.md",
+      "docs/showcase-script.md"
+    ],
+    "files_to_modify": [
+      "docs/current-state-and-target-state.md",
+      "docs/vnext-build-handoff.md",
+      "docs/safety-privacy-note.md",
+      "docs/test-evidence.md"
+    ],
+    "constraints": [
+      "Docs only",
+      "No marketing claims",
+      "No test-passed claims unless evidence provided"
+    ],
+    "acceptance_criteria": [
+      "Docs distinguish implemented, claimed, aspirational, and out-of-scope",
+      "Docs include safety and privacy boundaries",
+      "Docs include validation commands and review gates",
+      "Docs link to demo script and codex prompts"
+    ],
+    "validation": [
+      "manual: docs review",
+      "npm run lint if markdown/type checks apply"
+    ],
+    "stop_conditions": [
+      "Docs conflict with current code behavior; ask owner to verify"
+    ]
+  }
+]

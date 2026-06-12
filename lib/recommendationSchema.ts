@@ -42,6 +42,9 @@ export function parseWorkflowContext(
   limits: WorkflowContextLimits = DEFAULT_WORKFLOW_CONTEXT_LIMITS
 ): WorkflowContext | { error: string } {
   if (!isRecord(input)) return { error: "Request body must be a JSON object." };
+  if (containsRawRowPayload(input)) {
+    return { error: "Recommendation requests cannot include raw row data." };
+  }
   if (!allowedModes.has(String(input.mode))) return { error: "mode must be single or multi." };
   if (!Array.isArray(input.profiles)) return { error: "profiles must be an array." };
   if (input.profiles.length === 0) return { error: "profiles must include at least one dataset profile." };
@@ -466,6 +469,24 @@ function parseDecisionContext(
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function containsRawRowPayload(value: unknown, depth = 0): boolean {
+  if (depth > 6) return false;
+  if (Array.isArray(value)) {
+    return value.some((item) => containsRawRowPayload(item, depth + 1));
+  }
+  if (!isRecord(value)) return false;
+  for (const [key, child] of Object.entries(value)) {
+    if (
+      (key === "rows" || key === "data" || key === "sampleRows") &&
+      Array.isArray(child)
+    ) {
+      return true;
+    }
+    if (containsRawRowPayload(child, depth + 1)) return true;
+  }
+  return false;
 }
 
 function stringOr(value: unknown, fallback: string, maxLength = DEFAULT_STRING_LIMIT) {

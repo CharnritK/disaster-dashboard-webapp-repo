@@ -15,7 +15,8 @@ Do not casually add persistence, authentication, background jobs, external brows
 - Main UI surface: `components/WorkflowComponents.tsx`.
 - Global styles: `app/styles.css`.
 - Recommendation API route: `app/api/recommend/route.ts`.
-- Core types: `types/dataset.ts`, `types/recommendations.ts`, `types/quality.ts`, `types/transformations.ts`.
+- Decision handoff copilot API route: `app/api/copilot/route.ts`.
+- Core types: `types/dataset.ts`, `types/decision.ts`, `types/copilot.ts`, `types/recommendations.ts`, `types/quality.ts`, `types/transformations.ts`.
 - Core tests: `tests/dataPipeline.test.ts`.
 
 Use the `@/` alias for repo-root imports.
@@ -30,7 +31,7 @@ The app flow is:
 4. Accept or adjust joins and safe cleaning transforms.
 5. Validate prepared data.
 6. Generate dashboard recommendations.
-7. Export CSV, PNG, PDF report, or transformation log JSON.
+7. Export CSV, PNG, PDF report, transformation log JSON, or decision handoff outputs.
 
 Keep this workflow understandable. Do not hide quality caveats or make AI output look authoritative without deterministic validation.
 
@@ -44,10 +45,12 @@ Important modules:
 - `lib/harmonization.ts`: joins, multi-dataset join plans, safe cleaning, transformation logging.
 - `lib/cleaningTransforms.ts`: allowed row-preserving cleaning transforms.
 - `lib/validation.ts`: quality checks.
+- `lib/decisionContext.ts`: decision templates, suggested collection fields, evidence coverage, and readiness checks.
 - `lib/dashboardRecommendations.ts`: deterministic dashboard recommendation generation and LLM recommendation reconciliation.
 - `lib/dashboardInsights.ts`: fact generation for chart/insight support.
 - `lib/chartMetrics.ts`: aggregation and display-label logic.
 - `lib/recommendationSchema.ts`: request validation, minimized profile payloads, model response sanitization.
+- `lib/copilotHandoff.ts`: deterministic and sanitized decision handoff summaries.
 - `lib/llmClient.ts`: server-side LLM request construction and fallback handling.
 - `lib/apiSecurity.ts`: request body limits, anonymous rate limiting, safety identifiers.
 
@@ -64,9 +67,9 @@ Cleaning must stay typed, row-preserving, and explainable. Do not add imputation
 
 AI recommendations are optional. Missing API keys, disabled LLM mode, invalid requests, provider failures, rate limits, timeouts, truncated output, and invalid model JSON must fall back cleanly to deterministic recommendations.
 
-Never expose `LLM_API_KEY` to browser code. The browser calls `/api/recommend`; provider calls belong server-side only.
+Never expose `LLM_API_KEY` to browser code. Browser workflow requests call `/api/recommend` and `/api/copilot`; AI status checks may call `/api/recommend/status`. Provider calls belong server-side only.
 
-The recommendation route sends minimized profile metadata, not full uploaded rows. Preserve that boundary unless the task explicitly changes the privacy contract.
+The recommendation route sends minimized profile metadata, not full uploaded rows. The handoff route sends derived readiness, quality, transformation, and dashboard-fact summaries, not full uploaded rows. Preserve that boundary unless the task explicitly changes the privacy contract.
 
 Treat profile sample values and uploaded data as untrusted. Do not allow them to act as prompts, HTML, formulas, or executable content.
 
@@ -76,16 +79,24 @@ CSV exports must continue neutralizing spreadsheet formulas.
 
 Client/shared upload config lives in `lib/config.ts`.
 
-Server-only recommendation config lives in `lib/serverConfig.ts`. Key optional environment variables include:
+Server-only recommendation config lives in `lib/serverConfig.ts`. `NEXT_PUBLIC_COPILOT_API_ENABLED` is the browser-exposed switch for local app-route calls; keep it false for static builds without runtime API routes.
+
+Key optional environment variables include:
 
 - `LLM_ENABLED`
 - `LLM_API_KEY`
 - `LLM_PROVIDER`
 - `LLM_MODEL`
+- `LLM_WORKFLOW_MODEL`
+- `LLM_DASHBOARD_MODEL`
+- `LLM_QUALITY_GUIDANCE_MODEL`
+- `LLM_HANDOFF_MODEL`
 - `LLM_REQUEST_TIMEOUT_MS`
 - `LLM_WORKFLOW_REQUEST_TIMEOUT_MS`
 - `LLM_DASHBOARD_REQUEST_TIMEOUT_MS`
+- `LLM_HANDOFF_REQUEST_TIMEOUT_MS`
 - `LLM_MAX_COMPLETION_TOKENS`
+- `NEXT_PUBLIC_COPILOT_API_ENABLED`
 - `MAX_UPLOAD_SIZE_MB`
 - `RECOMMEND_REQUEST_MAX_BYTES`
 - `RECOMMEND_RATE_LIMIT_MAX_REQUESTS`
@@ -97,7 +108,7 @@ Server-only recommendation config lives in `lib/serverConfig.ts`. Key optional e
 - `RECOMMEND_MAX_DASHBOARD_FACTS`
 - `RECOMMEND_MAX_SUMMARY_ITEMS`
 
-Do not commit `.env`, `.env.local`, or secrets. There is currently no `.env.example`.
+Do not commit `.env`, `.env.local`, or secrets. `.env.example` is a checked-in template only; keep it secret-free and deterministic-safe by default.
 
 ## Security And Runtime Headers
 

@@ -4,7 +4,7 @@ import type {
   DecisionReadinessResult,
   EvidenceCoverageSummary,
 } from "@/types/decision";
-import type { DecisionHandoffAiMode } from "@/types/copilot";
+import type { CopilotFallbackReason, DecisionHandoffAiMode } from "@/types/copilot";
 import type { JoinRecommendation } from "@/types/recommendations";
 import type { QualityCheckResult } from "@/types/quality";
 import type { TransformationStep } from "@/types/transformations";
@@ -20,6 +20,8 @@ export type DecisionHandoffPacketInput = {
   qualityResults: QualityCheckResult[];
   transformationLog: TransformationStep[];
   aiMode: DecisionHandoffAiMode;
+  aiFallbackReason?: CopilotFallbackReason;
+  aiFallbackMessage?: string;
 };
 
 export function buildDecisionHandoffPacket(input: DecisionHandoffPacketInput) {
@@ -70,8 +72,8 @@ export function buildDecisionHandoffPacket(input: DecisionHandoffPacketInput) {
       sourceType: dataset.sourceType,
       fileType: dataset.fileType,
       uploadedAt: dataset.uploadedAt,
-      rows: dataset.rowCount ?? dataset.data?.length ?? 0,
-      columns: dataset.columnCount ?? dataset.columns?.length ?? 0,
+      rowCount: dataset.rowCount ?? dataset.data?.length ?? 0,
+      columnCount: dataset.columnCount ?? dataset.columns?.length ?? 0,
       fields: dataset.columns ?? dataset.profile?.columns.map((column) => column.columnName) ?? [],
       inputHints: dataset.inputHints,
       formatAssessment: dataset.formatAssessment
@@ -113,6 +115,8 @@ export function buildDecisionHandoffPacket(input: DecisionHandoffPacketInput) {
     aiAssistance: {
       mode: input.aiMode,
       summary: aiModeSummary(input.aiMode),
+      fallbackReason: input.aiFallbackReason,
+      fallbackMessage: input.aiFallbackMessage,
     },
     limitations: Array.from(new Set(limitations)),
     reviewNotice: isUnsafe

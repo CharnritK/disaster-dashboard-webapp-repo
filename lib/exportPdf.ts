@@ -116,10 +116,7 @@ export async function exportElementAsPdf(
     );
     pdf.setFont("helvetica", "normal");
     pdf.setFontSize(10);
-    const readinessLines = [
-      `${options.decisionReadiness.status.replaceAll("_", " ").toUpperCase()}: ${options.decisionReadiness.summary}`,
-      ...options.decisionReadiness.caveats.map((caveat) => `Caveat: ${caveat}`)
-    ];
+    const readinessLines = decisionReadinessLinesForPdf(options.decisionReadiness);
     for (const line of readinessLines.slice(0, 8)) {
       cursor = writeWrappedLine(
         pdf,
@@ -205,6 +202,21 @@ export function qualityLinesForPdf(qualityResults: QualityCheckResult[]) {
           .join(" "),
       )
     : ["No quality checks require attention."];
+}
+
+export function decisionReadinessLinesForPdf(
+  readiness: DecisionReadinessResult,
+) {
+  const lines = [
+    `${readiness.status.replaceAll("_", " ").toUpperCase()}: ${readiness.summary}`,
+    ...readiness.caveats.map((caveat) => `Caveat: ${caveat}`),
+  ];
+  if (readiness.status === "decision_unsafe") {
+    lines.push(
+      "Review-only: Dashboard generation is allowed for review, not for automatic action.",
+    );
+  }
+  return lines;
 }
 
 function dashboardPdfBlocks(element: HTMLElement): PdfBlock[] {

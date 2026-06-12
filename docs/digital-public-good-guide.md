@@ -70,7 +70,7 @@ Those features may be useful later, but adding them changes the product contract
 
 AI is optional. The app must still work when AI is disabled, unavailable, rate limited, or returns invalid output.
 
-When AI is enabled, the server sends minimized dataset profile information, not full uploaded rows. The app still relies on deterministic checks for safety-sensitive labels such as data readiness.
+When AI is enabled, the server sends minimized dataset profile, readiness, quality, transformation, and dashboard-fact summaries, not full uploaded rows. The app still relies on deterministic checks for safety-sensitive labels such as data readiness.
 
 The right mental model is: AI can help explain, summarize, and recommend. It should not silently approve unsafe data for action.
 
@@ -126,7 +126,7 @@ Review this repository as a digital public good candidate. Identify what is reus
 ### Strengthen AI Safety And Privacy
 
 ```text
-Audit the AI recommendation path. Confirm that browser code never receives the LLM API key, full uploaded rows are not sent to the LLM route, invalid model output falls back safely, and user-facing caveats remain visible. Fix only issues directly related to this contract and update tests where needed.
+Audit the AI recommendation and handoff paths. Confirm that browser code never receives the LLM API key, full uploaded rows are not sent to recommendation or handoff routes, invalid model output falls back safely, and user-facing caveats remain visible. Fix only issues directly related to this contract and update tests where needed.
 ```
 
 ## Repo-Local Codex Skills
@@ -163,6 +163,7 @@ These are not a replacement for product judgment. They are guardrails to help fu
 - `lib/dashboardRecommendations.ts`: deterministic and reconciled dashboard recommendations.
 - `lib/dashboardInsights.ts`: insight facts and caveats.
 - `lib/recommendationSchema.ts`: request validation and model-response sanitization.
+- `lib/copilotHandoff.ts`: deterministic and sanitized decision handoff summaries.
 - `lib/llmClient.ts`: server-side LLM request construction and fallback handling.
 - `lib/apiSecurity.ts`: request-size limits, rate limiting, and safety identifiers.
 
@@ -208,10 +209,10 @@ npm run build
 ### Privacy And Runtime Boundaries
 
 - Uploaded data is session-only.
-- The browser calls `/api/recommend` and `/api/copilot`; provider calls stay server-side.
+- Browser workflow requests call `/api/recommend` and `/api/copilot`; AI status checks may call `/api/recommend/status`. Provider calls stay server-side.
 - `LLM_API_KEY` must never be exposed to browser code.
-- LLM requests use minimized profile metadata and capped sample values.
-- Full uploaded rows should not be sent to the recommendation or handoff routes.
+- `/api/recommend` sends minimized profile metadata and capped sample values; `/api/copilot` sends derived readiness, quality, transformation, dashboard-fact, limitation, and review-notice summaries.
+- Full uploaded rows should not be sent to the recommendation or handoff routes; handoff requests use derived readiness, quality, transformation, and dashboard-fact summaries.
 - Missing API keys, disabled AI mode, provider errors, timeouts, invalid JSON, and rate limits must fall back cleanly.
 
 ### Extension Checklist

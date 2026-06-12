@@ -225,10 +225,9 @@ export default function DashboardCopilotApp() {
             warning = llmFallbackWarning(ai, "recommendations");
           }
         } catch (error) {
-          warning = llmFallbackWarning(
-            fallbackWithRecommendationError(fallback, error),
-            "recommendations"
-          );
+          const erroredFallback = fallbackWithRecommendationError(fallback, error);
+          recommendations = erroredFallback;
+          warning = llmFallbackWarning(erroredFallback, "recommendations");
         }
       } else {
         warning = "AI is off. Deterministic profiling, evidence coverage, readiness checks, and dashboard recommendations remain available.";
@@ -434,6 +433,8 @@ export default function DashboardCopilotApp() {
       qualityResults: state.qualityResults,
       transformationLog: state.transformationLog,
       aiMode: currentAiMode(llmEnabled, state.aiRecommendations, state.warning),
+      aiFallbackReason: state.aiRecommendations?.fallbackReason,
+      aiFallbackMessage: state.aiRecommendations?.fallbackMessage,
     });
     downloadText(
       "dashboard-copilot-decision-handoff-log.json",
@@ -460,6 +461,8 @@ export default function DashboardCopilotApp() {
         qualityResults: state.qualityResults,
         transformationLog: state.transformationLog,
         aiMode,
+        aiFallbackReason: state.aiRecommendations?.fallbackReason,
+        aiFallbackMessage: state.aiRecommendations?.fallbackMessage,
       });
       const dashboardFacts = computeDashboardInsightFacts(
         state.preparedDataset,
@@ -779,8 +782,8 @@ function currentAiMode(
   warning?: string,
 ): DecisionHandoffAiMode {
   if (!llmEnabled) return "disabled";
-  if (recommendations?.source === "llm") return "llm";
   if (recommendations?.fallbackReason || warning) return "fallback";
+  if (recommendations?.source === "llm") return "llm";
   return "deterministic";
 }
 
