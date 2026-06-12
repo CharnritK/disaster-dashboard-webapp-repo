@@ -13,6 +13,12 @@ const resources = [
     description: "The open-sourced code behind Dashboard Copilot.",
   },
   {
+    title: "Public-Good Guide",
+    href: "https://github.com/datakind/disaster-dashboard-webapp-repo/blob/main/docs/digital-public-good-guide.md",
+    description:
+      "Plain-English project tutorial, scope, extension guidance, and technical appendix.",
+  },
+  {
     title: "License",
     href: "https://github.com/datakind/disaster-dashboard-webapp-repo?tab=Apache-2.0-1-ov-file#readme",
     description: "Open-source licensing for Dashboard Copilot.",
@@ -86,7 +92,7 @@ export default function AboutPage() {
             <h2>How AI is Used</h2>
             <p>
               When enabled, the server asks the configured LLM for structured
-              recommendations using minimized profile metadata. The app keeps
+              recommendations using minimized column summaries. The app keeps
               deterministic fallbacks available when AI is off, unavailable,
               rate limited, or unable to return valid structured output.
             </p>
@@ -131,7 +137,7 @@ export default function AboutPage() {
               <strong>Export artifacts</strong>
               <span>
                 Download prepared data, dashboard images, PDF reports, and
-                transformation logs.
+                decision handoff logs.
               </span>
             </li>
           </ol>
@@ -146,7 +152,7 @@ export default function AboutPage() {
             <p>
               Uploaded files are held in browser session memory. The browser
               never reads the server LLM API key. When AI recommendations are
-              enabled, the server sends minimized profile metadata and capped
+              enabled, the server sends minimized column summaries and capped
               sample values to the configured provider; full uploaded rows are
               not sent to the recommendation route.
             </p>

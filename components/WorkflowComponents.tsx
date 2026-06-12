@@ -1,7 +1,21 @@
 "use client";
 
-import { useId, useState } from "react";
-import type { Dataset } from "@/types/dataset";
+import { useEffect, useId, useRef, useState } from "react";
+import type {
+  Dataset,
+  ColumnProfile,
+  ColumnTopValue,
+  DatasetFormatAssessment,
+  DatasetInputHints,
+} from "@/types/dataset";
+import type {
+  DecisionBrief,
+  DecisionReadinessResult,
+  EvidenceCoverageSummary,
+  SuggestedDataCollectionTemplate,
+} from "@/types/decision";
+import type { DecisionHandoffSummary } from "@/types/copilot";
+import type { SampleDatasetKind } from "@/lib/fileParsers";
 import type {
   AIRecommendationResponse,
   CleaningRecommendation,
@@ -19,6 +33,16 @@ import {
 } from "@/lib/config";
 import { runQualityChecks } from "@/lib/validation";
 import {
+  buildEvidenceCoverageSummary,
+  buildDecisionMapDataGroups,
+  buildSuggestedCollectionTemplateRows,
+  buildSuggestedDataCollectionTemplate,
+  evidenceCoverageStatusLabel,
+  readinessStatusLabel,
+  RESPONSE_PRIORITIZATION_TEMPLATE,
+} from "@/lib/decisionContext";
+import { downloadText, toCsv } from "@/lib/exportCsv";
+import {
   aggregateField,
   aggregateRows,
   fieldDisplayLabel,
@@ -28,8 +52,11 @@ import {
   type GroupedMetricValue,
 } from "@/lib/chartMetrics";
 import { cleaningTransformLabel } from "@/lib/cleaningTransforms";
+import { isValidLatitude, isValidLongitude } from "@/lib/locationFields";
+import { ChartFrame } from "@/components/charts/ChartFrame";
 
 const STEP_LABELS: Record<WorkflowStep, string> = {
+  brief: "Template",
   upload: "Upload",
   profile: "Profile",
   recommend: "Harmonize",
@@ -68,14 +95,18 @@ export function StepIndicator({
               : "";
         const isCurrent = step === currentStep;
         const canNavigate = canNavigateTo(step) && !isCurrent;
+        const isUnavailable = !canNavigate && !isCurrent;
         return (
           <button
             type="button"
             className={["step", stateClass].filter(Boolean).join(" ")}
             key={step}
             aria-current={isCurrent ? "step" : undefined}
-            disabled={!canNavigate}
-            onClick={() => onNavigate(step)}
+            aria-disabled={isCurrent ? true : undefined}
+            disabled={isUnavailable}
+            onClick={() => {
+              if (canNavigate) onNavigate(step);
+            }}
           >
             <span className="step-index">{index + 1}</span>
             <span className="step-label">{STEP_LABELS[step]}</span>
@@ -114,23 +145,398 @@ export function LoadingStatus() {
   );
 }
 
-export function UploadStep({
-  datasets,
-  onProfile,
-  onFiles,
-  onSamples,
-  onRemoveDataset,
+export function DecisionBriefStep({
+  brief,
+  missingFields,
+  onChange,
+  onContinue,
 }: {
-  datasets: Dataset[];
-  onProfile: () => void;
-  onFiles: (files: FileList | null) => void;
-  onSamples: (kind: "single" | "multi") => void;
-  onRemoveDataset: (datasetId: string) => void;
+  brief: DecisionBrief;
+  missingFields: string[];
+  onChange: (brief: DecisionBrief) => void;
+  onContinue: () => void;
 }) {
+  const updateField = <K extends keyof DecisionBrief>(field: K, value: DecisionBrief[K]) => {
+    onChange({ ...brief, [field]: value });
+  };
+  const collectionTemplate = buildSuggestedDataCollectionTemplate(brief);
+  const [isDecisionMapOpen, setIsDecisionMapOpen] = useState(false);
+  const decisionMapTitleId = useId();
+  const decisionMapDescriptionId = useId();
   return (
     <section className="workflow-step">
       <div className="section-heading">
         <p className="eyebrow">Step 1</p>
+        <h2>Select Decision Template</h2>
+      </div>
+      <article className="decision-brief-panel">
+        <div className="template-selector">
+          <label>
+            Template
+            <select
+              value={brief.useCaseId}
+              onChange={(event) =>
+                updateField("useCaseId", event.target.value as DecisionBrief["useCaseId"])
+              }
+            >
+              <option value={RESPONSE_PRIORITIZATION_TEMPLATE.id}>
+                {RESPONSE_PRIORITIZATION_TEMPLATE.title}
+              </option>
+            </select>
+          </label>
+          <div className="template-summary">
+            <h3>{RESPONSE_PRIORITIZATION_TEMPLATE.title}</h3>
+            <p>{RESPONSE_PRIORITIZATION_TEMPLATE.description}</p>
+            <p className="helper-text">
+              Defaults are ready to run. Adjust the brief only where your decision differs.
+            </p>
+            <button
+              type="button"
+              className="decision-map-trigger"
+              onClick={() => setIsDecisionMapOpen(true)}
+            >
+              View decision map
+            </button>
+          </div>
+        </div>
+        <div className="brief-form-grid">
+          <label>
+            Decision question
+            <textarea
+              value={brief.decisionQuestion}
+              onChange={(event) => updateField("decisionQuestion", event.target.value)}
+              rows={3}
+            />
+          </label>
+          <label>
+            Intended action
+            <textarea
+              value={brief.intendedAction}
+              onChange={(event) => updateField("intendedAction", event.target.value)}
+              rows={3}
+            />
+          </label>
+          <label>
+            Decision-maker
+            <input
+              value={brief.decisionMaker}
+              onChange={(event) => updateField("decisionMaker", event.target.value)}
+            />
+          </label>
+          <label>
+            Geography scope
+            <input
+              value={brief.geographyScope}
+              onChange={(event) => updateField("geographyScope", event.target.value)}
+            />
+          </label>
+          <label>
+            Timeframe
+            <input
+              value={brief.timeframe}
+              onChange={(event) => updateField("timeframe", event.target.value)}
+            />
+          </label>
+        </div>
+        <fieldset className="evidence-fieldset">
+          <legend>Decision signals</legend>
+          <div className="evidence-choice-grid">
+            {RESPONSE_PRIORITIZATION_TEMPLATE.requiredEvidence.map((item) => (
+              <label key={item} className="checkbox-row">
+                <input
+                  type="checkbox"
+                  checked={brief.requiredEvidence.includes(item)}
+                  onChange={(event) => {
+                    const next = event.target.checked
+                      ? [...brief.requiredEvidence, item]
+                      : brief.requiredEvidence.filter((value) => value !== item);
+                    updateField("requiredEvidence", Array.from(new Set(next)));
+                  }}
+                />
+                <span>{item}</span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
+        <SuggestedCollectionTemplatePreview template={collectionTemplate} />
+        {missingFields.length > 0 ? (
+          <div className="quality medium">
+            <strong>Review brief before loading data</strong>
+            <p>Missing: {missingFields.join(", ")}.</p>
+          </div>
+        ) : null}
+        <div className="action-row">
+          <button
+            className="primary-button"
+            disabled={missingFields.length > 0}
+            onClick={onContinue}
+          >
+            Use template and continue
+          </button>
+        </div>
+        {isDecisionMapOpen ? (
+          <DecisionMapDialog
+            brief={brief}
+            descriptionId={decisionMapDescriptionId}
+            template={collectionTemplate}
+            titleId={decisionMapTitleId}
+            onClose={() => setIsDecisionMapOpen(false)}
+          />
+        ) : null}
+      </article>
+    </section>
+  );
+}
+
+function DecisionMapDialog({
+  brief,
+  descriptionId,
+  template,
+  titleId,
+  onClose,
+}: {
+  brief: DecisionBrief;
+  descriptionId: string;
+  template: SuggestedDataCollectionTemplate;
+  titleId: string;
+  onClose: () => void;
+}) {
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const dataGroups = buildDecisionMapDataGroups(brief, template);
+  const sourceConfigFields = template.fields.filter((field) =>
+    ["Source quality", "Review context"].includes(field.evidenceNeed)
+  );
+  const sourceConfigNotes = [
+    {
+      label: "Source",
+      value: sourceConfigFields.find((field) => field.evidenceNeed === "Source quality")?.description ??
+        "Record the agency, assessment, or system behind each observation.",
+    },
+    {
+      label: "Unit / scale",
+      value: "Capture the unit or scoring scale for each decision signal.",
+    },
+    {
+      label: "Date coverage",
+      value: `Align observations to ${brief.timeframe.toLowerCase() || "the selected timeframe"}.`,
+    },
+    {
+      label: "Join key",
+      value: "Use a stable administrative code across uploaded files.",
+    },
+    {
+      label: "Row meaning",
+      value: `Keep one row tied to one ${brief.geographyScope.toLowerCase() || "area"} observation.`,
+    },
+    {
+      label: "Caveats",
+      value: sourceConfigFields.find((field) => field.evidenceNeed === "Review context")?.description ??
+        "Keep known gaps, bias, and assumptions factual.",
+    },
+  ];
+
+  useEffect(() => {
+    closeButtonRef.current?.focus();
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", closeOnEscape);
+    return () => document.removeEventListener("keydown", closeOnEscape);
+  }, [onClose]);
+
+  return (
+    <div
+      className="decision-map-backdrop"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+    >
+      <section
+        aria-describedby={descriptionId}
+        aria-labelledby={titleId}
+        aria-modal="true"
+        className="decision-map-dialog"
+        role="dialog"
+      >
+        <div className="decision-map-dialog-header">
+          <div>
+            <p className="eyebrow">Decision map</p>
+            <h3 id={titleId}>Response-prioritization decision chain</h3>
+            <p id={descriptionId}>
+              Read-only view of the selected template, current action, required signals, data fields, and metadata checks.
+            </p>
+          </div>
+          <button
+            ref={closeButtonRef}
+            type="button"
+            className="decision-map-close"
+            aria-label="Close decision map"
+            onClick={onClose}
+          >
+            Close
+          </button>
+        </div>
+        <div className="decision-map-chain" aria-label="Decision chain">
+          <DecisionMapNode label="Decision question" value={brief.decisionQuestion || "Decision question needed"} />
+          <DecisionMapConnector />
+          <DecisionMapNode label="User action" value={brief.intendedAction || "Intended action needed"} />
+          <DecisionMapConnector />
+          <section className="decision-map-node decision-map-node-wide">
+            <span>Decision signals</span>
+            <div className="decision-map-signal-list">
+              {brief.requiredEvidence.length > 0 ? (
+                brief.requiredEvidence.map((signal) => (
+                  <strong key={signal}>{signal}</strong>
+                ))
+              ) : (
+                <strong>Decision signals needed</strong>
+              )}
+            </div>
+          </section>
+          <DecisionMapConnector />
+          <section className="decision-map-node decision-map-node-wide">
+            <span>Data required</span>
+            <div className="decision-map-data-grid">
+              {dataGroups.map((group) => (
+                <article className="decision-map-data-group" key={group.evidenceNeed}>
+                  <h4>{group.evidenceNeed}</h4>
+                  <ul>
+                    {group.fields.map((field) => (
+                      <li key={field.name}>
+                        <code>{field.name}</code>
+                        <span>
+                          {field.label} - {field.type}
+                          {field.required ? " - required" : " - optional"}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </article>
+              ))}
+            </div>
+          </section>
+          <DecisionMapConnector />
+          <section className="decision-map-node decision-map-node-wide">
+            <span>Source/config notes</span>
+            <div className="decision-map-note-grid">
+              {sourceConfigNotes.map((note) => (
+                <article key={note.label}>
+                  <strong>{note.label}</strong>
+                  <p>{note.value}</p>
+                </article>
+              ))}
+            </div>
+          </section>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function DecisionMapNode({ label, value }: { label: string; value: string }) {
+  return (
+    <section className="decision-map-node">
+      <span>{label}</span>
+      <strong>{value}</strong>
+    </section>
+  );
+}
+
+function DecisionMapConnector() {
+  return <div className="decision-map-connector" aria-hidden="true" />;
+}
+
+function SuggestedCollectionTemplatePreview({
+  template,
+}: {
+  template: SuggestedDataCollectionTemplate;
+}) {
+  const requiredCount = template.fields.filter((field) => field.required).length;
+  const downloadTemplate = () => {
+    downloadText(
+      "response-prioritization-collection-template.csv",
+      toCsv(buildSuggestedCollectionTemplateRows(template)),
+      "text/csv;charset=utf-8",
+    );
+  };
+  return (
+    <section className="collection-template-section">
+      <div className="collection-template-heading">
+        <div>
+          <p className="eyebrow">Suggested data collection template</p>
+          <h3>{template.title}</h3>
+        </div>
+        <div className="collection-template-actions">
+          <span className="template-count">{requiredCount} required</span>
+          <button type="button" onClick={downloadTemplate}>
+            Download CSV template
+          </button>
+        </div>
+      </div>
+      <div className="collection-template-meta">
+        <span>{template.geographyScope}</span>
+        <span>{template.timeframe}</span>
+        <span>{template.decisionMaker}</span>
+      </div>
+      <div className="collection-table-wrapper">
+        <table className="collection-template-table">
+          <caption>Suggested data collection fields for this decision template</caption>
+          <thead>
+            <tr>
+              <th>Field</th>
+              <th>Evidence</th>
+              <th>Type</th>
+              <th>Status</th>
+              <th>Example</th>
+              <th>Caveat</th>
+            </tr>
+          </thead>
+          <tbody>
+            {template.fields.map((field) => (
+              <tr key={field.name}>
+                <td>
+                  <strong>{field.name}</strong>
+                  <span>{field.label}</span>
+                </td>
+                <td>{field.evidenceNeed}</td>
+                <td>{field.type}</td>
+                <td>
+                  <span className={field.required ? "field-pill required" : "field-pill"}>
+                    {field.required ? "Required" : "Optional"}
+                  </span>
+                </td>
+                <td>{field.example}</td>
+                <td>{field.caveat ?? field.description}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
+export function UploadStep({
+  datasets,
+  decisionBrief,
+  onProfile,
+  onFiles,
+  onSamples,
+  onRemoveDataset,
+  onUpdateDatasetInputHints,
+}: {
+  datasets: Dataset[];
+  decisionBrief: DecisionBrief;
+  onProfile: () => void;
+  onFiles: (files: FileList | null) => void;
+  onSamples: (kind: SampleDatasetKind) => void;
+  onRemoveDataset: (datasetId: string) => void;
+  onUpdateDatasetInputHints: (datasetId: string, inputHints: DatasetInputHints) => void;
+}) {
+  return (
+    <section className="workflow-step">
+      <div className="section-heading">
+        <p className="eyebrow">Step 2</p>
         <h2>Upload Data</h2>
       </div>
       <div className="sensitive-data-note" role="note">
@@ -138,7 +544,8 @@ export function UploadStep({
         <p>
           Do not upload sensitive personal, medical, financial, or restricted
           data. When AI recommendations are <em>on</em>, dataset details and
-          sample values may be sent to the configured LLM provider.
+          semantic comments may be sent to the configured LLM provider with
+          minimized sample values.
         </p>
       </div>
       {datasets.length === 0 ? (
@@ -161,6 +568,14 @@ export function UploadStep({
               />
             </label>
             <button onClick={() => onSamples("multi")}>Use sample data</button>
+            <button onClick={() => onSamples("fragmented")}>
+              Use fragmented demo data
+              <span>needs + population + capacity</span>
+            </button>
+            <button onClick={() => onSamples("quality-risk")}>
+              Use risky quality sample
+              <span>invalid values and missing evidence</span>
+            </button>
           </div>
         </div>
       ) : (
@@ -178,13 +593,24 @@ export function UploadStep({
             <button onClick={() => onSamples("multi")}>
               Replace with sample data
             </button>
+            <button onClick={() => onSamples("fragmented")}>
+              Use fragmented demo data
+            </button>
+            <button onClick={() => onSamples("quality-risk")}>
+              Use risky quality sample
+            </button>
           </div>
+          <AgentContextChecklist />
           <div className="dataset-grid">
             {datasets.map((dataset) => (
               <DatasetCard
                 key={dataset.id}
                 dataset={dataset}
+                evidenceOptions={decisionBrief.requiredEvidence}
                 onRemove={() => onRemoveDataset(dataset.id)}
+                onUpdateInputHints={(inputHints) =>
+                  onUpdateDatasetInputHints(dataset.id, inputHints)
+                }
               />
             ))}
           </div>
@@ -199,19 +625,24 @@ export function UploadStep({
 
 export function ProfileStep({
   datasets,
+  decisionBrief,
   isWorking = false,
   onRecommend,
 }: {
   datasets: Dataset[];
+  decisionBrief?: DecisionBrief;
   isWorking?: boolean;
   onRecommend: () => void;
 }) {
-  const quality = buildProfileQualityResults(datasets);
+  const quality = buildProfileQualityResults(datasets, decisionBrief);
+  const evidenceCoverage = decisionBrief
+    ? buildEvidenceCoverageSummary(datasets, decisionBrief)
+    : undefined;
   const highlightTerms = datasetTextTerms(datasets);
   return (
     <section className="workflow-step">
       <div className="section-heading">
-        <p className="eyebrow">Step 2</p>
+        <p className="eyebrow">Step 3</p>
         <h2>Review Data Profiling</h2>
       </div>
       <div className="dataset-grid">
@@ -219,6 +650,7 @@ export function ProfileStep({
           <ProfileCard key={dataset.id} dataset={dataset} />
         ))}
       </div>
+      <EvidenceCoveragePanel summary={evidenceCoverage} />
       <QualityPanel quality={quality} highlightTerms={highlightTerms} />
       <MetadataPanel datasets={datasets} />
       <button
@@ -228,6 +660,72 @@ export function ProfileStep({
       >
         {isWorking ? "Generating recommendations..." : "Harmonize data"}
       </button>
+    </section>
+  );
+}
+
+function EvidenceCoveragePanel({
+  summary,
+}: {
+  summary?: EvidenceCoverageSummary;
+}) {
+  if (!summary) return null;
+  return (
+    <section
+      className="evidence-coverage-panel"
+      aria-labelledby="evidence-coverage-heading"
+      role="status"
+      aria-live="polite"
+    >
+      <div className="evidence-coverage-header">
+        <div>
+          <p className="eyebrow">Evidence coverage</p>
+          <h3 id="evidence-coverage-heading">Evidence coverage</h3>
+          <p>
+            This checks whether your uploaded files contain the evidence needed
+            for the selected decision.
+          </p>
+        </div>
+        <div className="coverage-summary-chips" aria-label="Evidence coverage summary">
+          <span>{summary.coveredCount} covered</span>
+          <span>{summary.ambiguousCount} need review</span>
+          <span>{summary.missingCount} missing</span>
+        </div>
+      </div>
+      <div className="coverage-item-list">
+        {summary.items.map((item) => (
+          <article className={`coverage-item ${item.status}`} key={item.evidenceNeed}>
+            <div className="coverage-item-heading">
+              <h4>{item.evidenceNeed}</h4>
+              <span>{evidenceCoverageStatusLabel(item.status)}</span>
+            </div>
+            {item.candidates.length > 0 ? (
+              <ul className="coverage-candidates">
+                {item.candidates.map((candidate) => (
+                  <li key={`${candidate.datasetId}-${candidate.columnName}`}>
+                    <span>
+                      <strong>{candidate.datasetName}</strong>{" "}
+                      <code className="inline-code">{candidate.columnName}</code>
+                    </span>
+                    <span>
+                      {candidate.missingPercentage}% missing,{" "}
+                      {Math.round(candidate.confidence * 100)}% confidence
+                    </span>
+                    <span>{candidate.rationale}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="coverage-empty">No matching field was detected.</p>
+            )}
+            <p className="coverage-caveat">{item.caveat}</p>
+            <p className="coverage-next-action">
+              <strong>Next action</strong>
+              <span>{item.nextAction}</span>
+            </p>
+          </article>
+        ))}
+      </div>
     </section>
   );
 }
@@ -277,6 +775,7 @@ function ProfileCard({ dataset }: { dataset: Dataset }) {
                 <th>Type</th>
                 <th>Missing</th>
                 <th>Unique</th>
+                <th>Stats</th>
                 <th>Samples</th>
               </tr>
             </thead>
@@ -292,13 +791,14 @@ function ProfileCard({ dataset }: { dataset: Dataset }) {
                   <td>{column.inferredType}</td>
                   <td>{column.missingPercentage}%</td>
                   <td>{column.uniqueCount}</td>
+                  <td>{columnStatsSummary(column)}</td>
                   <td>{column.sampleValues.join(", ")}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-        <DatasetPreview dataset={dataset} />
+        <DatasetPreview dataset={dataset} title="Profile sample data" />
       </details>
     </article>
   );
@@ -310,13 +810,77 @@ function formatFieldList(fields?: string[]) {
     : "none detected";
 }
 
+function columnStatsSummary(column: ColumnProfile) {
+  const stats = column.descriptiveStats;
+  if (!stats || stats.nonMissingCount === 0) return "No values";
+  if (stats.numeric) {
+    const { min, max, mean, median } = stats.numeric;
+    return `Range ${formatNumber(min)}-${formatNumber(max)}; median ${formatNumber(median)}; mean ${formatNumber(mean)}`;
+  }
+  if (stats.date) {
+    const invalid = stats.date.invalidCount > 0
+      ? `; ${formatCount(stats.date.invalidCount, "invalid value")}`
+      : "";
+    return `${stats.date.earliest} to ${stats.date.latest}${invalid}`;
+  }
+  return `Top: ${formatTopValues(stats.topValues)}`;
+}
+
+function formatTopValues(values: ColumnTopValue[]) {
+  return values.length > 0
+    ? values
+        .slice(0, 3)
+        .map((item) => `${truncateText(item.value, 28)} (${formatCount(item.count, "row")}, ${formatPercentage(item.percentage)})`)
+        .join("; ")
+    : "none";
+}
+
+function truncateText(value: string, maxLength: number) {
+  return value.length > maxLength ? `${value.slice(0, maxLength - 3)}...` : value;
+}
+
+function AgentContextChecklist() {
+  return (
+    <section className="agent-context-checklist" aria-labelledby="agent-context-heading">
+      <div>
+        <h3 id="agent-context-heading">Help the agent read the upload correctly</h3>
+        <p>
+          Map each file to the evidence it supports, then add the row meaning,
+          unit, source, date coverage, and known caveats. Keep notes factual;
+          uploaded notes are context, not instructions.
+        </p>
+      </div>
+      <ul>
+        <li>What one row represents</li>
+        <li>Which field joins files</li>
+        <li>Which field sets time</li>
+        <li>Units or score scale</li>
+        <li>Known gaps or bias</li>
+      </ul>
+    </section>
+  );
+}
+
 function DatasetCard({
   dataset,
+  evidenceOptions,
   onRemove,
+  onUpdateInputHints,
 }: {
   dataset: Dataset;
+  evidenceOptions: string[];
   onRemove: () => void;
+  onUpdateInputHints: (inputHints: DatasetInputHints) => void;
 }) {
+  const columns = dataset.columns ?? [];
+  const inputHints = dataset.inputHints ?? {};
+  const updateHint = <K extends keyof DatasetInputHints>(field: K, value: DatasetInputHints[K]) => {
+    onUpdateInputHints({
+      ...inputHints,
+      [field]: typeof value === "string" && value.trim() === "" ? undefined : value,
+    });
+  };
+
   return (
     <article className="card dataset-card">
       <div className="dataset-card-header">
@@ -338,8 +902,135 @@ function DatasetCard({
       <p>
         {dataset.rowCount ?? 0} rows, {dataset.columnCount ?? 0} columns
       </p>
+      <FormatAssessmentPanel assessment={dataset.formatAssessment} />
+      <DatasetPreview dataset={dataset} title="Parsed data preview" defaultOpen />
+      <div className="dataset-hints-grid">
+        <label>
+          Suggested required data
+          <select
+            value={inputHints.evidenceRole ?? ""}
+            onChange={(event) => updateHint("evidenceRole", event.target.value)}
+          >
+            <option value="">Not mapped yet</option>
+            {evidenceOptions.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+            <option value="Supporting context">Supporting context</option>
+          </select>
+        </label>
+        <label>
+          Join or ID field
+          <select
+            value={inputHints.joinField ?? ""}
+            onChange={(event) => updateHint("joinField", event.target.value)}
+          >
+            <option value="">Not selected</option>
+            {columns.map((column) => (
+              <option key={column} value={column}>
+                {column}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          Main field
+          <select
+            value={inputHints.primaryField ?? ""}
+            onChange={(event) => updateHint("primaryField", event.target.value)}
+          >
+            <option value="">Not selected</option>
+            {columns.map((column) => (
+              <option key={column} value={column}>
+                {column}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          Date or period field
+          <select
+            value={inputHints.timeField ?? ""}
+            onChange={(event) => updateHint("timeField", event.target.value)}
+          >
+            <option value="">Not selected</option>
+            {columns.map((column) => (
+              <option key={column} value={column}>
+                {column}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          Unit or scale
+          <input
+            value={inputHints.measurementUnit ?? ""}
+            onChange={(event) => updateHint("measurementUnit", event.target.value)}
+            placeholder="people, households, 0-100 score"
+          />
+        </label>
+        <label className="dataset-note-field">
+          Semantic comment for the agent
+          <textarea
+            value={inputHints.semanticNotes ?? ""}
+            onChange={(event) => updateHint("semanticNotes", event.target.value)}
+            rows={3}
+            placeholder="Rows are districts; severity_score is 0-100; data came from rapid assessment round 2."
+          />
+        </label>
+      </div>
     </article>
   );
+}
+
+function FormatAssessmentPanel({
+  assessment,
+}: {
+  assessment?: DatasetFormatAssessment;
+}) {
+  if (!assessment) return null;
+  const visibleIssues = assessment.issues.slice(0, 4);
+  const tips = assessment.learningTips.slice(0, 3);
+  return (
+    <div className={`format-assessment ${assessment.status}`}>
+      <div className="format-assessment-header">
+        <strong>{assessment.fileType.toUpperCase()} format check</strong>
+        <span>{formatAssessmentStatusLabel(assessment.status)}</span>
+      </div>
+      <p>{assessment.summary}</p>
+      {assessment.sheetName || assessment.sheetCount ? (
+        <p className="format-meta">
+          {assessment.sheetName ? `Sheet: ${assessment.sheetName}` : "Sheet not named"}
+          {assessment.sheetCount ? ` - ${assessment.sheetCount} sheet${assessment.sheetCount === 1 ? "" : "s"}` : ""}
+        </p>
+      ) : null}
+      {visibleIssues.length > 0 ? (
+        <ul>
+          {visibleIssues.map((issue) => (
+            <li key={`${issue.title}-${issue.detail}`}>
+              <strong>{issue.title}</strong>
+              <span>{issue.suggestedAction ?? issue.detail}</span>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      {tips.length > 0 ? (
+        <div className="format-tips">
+          <strong>Good Excel habit</strong>
+          <span>{tips.join(" ")}</span>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function formatAssessmentStatusLabel(status: DatasetFormatAssessment["status"]) {
+  return {
+    accepted: "Accepted",
+    review: "Needs review",
+    rejected: "Rejected",
+  }[status];
 }
 
 export function RecommendationStep({
@@ -389,8 +1080,8 @@ export function RecommendationStep({
   return (
     <section className="workflow-step">
       <div className="section-heading">
-        <p className="eyebrow">Step 3</p>
-        <h2>Harmonize Data</h2>
+        <p className="eyebrow">Step 4</p>
+        <h2>Review before combining files</h2>
       </div>
       <div className="recommendation-card">
         <p className="eyebrow">Recommended</p>
@@ -416,8 +1107,8 @@ export function RecommendationStep({
       </div>
       {showAdjust && join && source && target && (
         <article className="card reveal-panel">
-          <h3>Join adjustment</h3>
-          <p>Change the join field or join type.</p>
+          <h3>Join/combine adjustment</h3>
+          <p>Change the combine field or join type.</p>
           <div className="control-grid">
             <label>
               Source field
@@ -512,7 +1203,7 @@ function JoinReviewCard({
   return (
     <details className="card profile-accordion">
       <summary>
-        <span>{joins.length === 1 ? "Review join recommendation" : "Review join plan"}</span>
+        <span>{joins.length === 1 ? "Review join/combine recommendation" : "Review join/combine plan"}</span>
         <span className="accordion-meta">{planMeta}</span>
       </summary>
       <div className="accordion-content">
@@ -559,6 +1250,7 @@ function JoinReviewCard({
 
 export function ValidationStep({
   dataset,
+  decisionReadiness,
   joins,
   quality,
   transformationLog,
@@ -566,6 +1258,7 @@ export function ValidationStep({
   onProceed,
 }: {
   dataset: Dataset;
+  decisionReadiness?: DecisionReadinessResult;
   joins?: JoinRecommendation[];
   quality: QualityCheckResult[];
   transformationLog: TransformationStep[];
@@ -580,9 +1273,10 @@ export function ValidationStep({
   return (
     <section className="workflow-step">
       <div className="section-heading">
-        <p className="eyebrow">Step 4</p>
-        <h2>{joins?.length ? "Review Joined Dataset" : "Review Prepared Dataset"}</h2>
+        <p className="eyebrow">Step 5</p>
+        <h2>{joins?.length ? "Review Combined Dataset" : "Review Prepared Dataset"}</h2>
       </div>
+      <DecisionReadinessPanel readiness={decisionReadiness} />
       <article className="recommendation-card">
         <p className="eyebrow">Recommended</p>
         <h2>
@@ -605,12 +1299,61 @@ export function ValidationStep({
           </button>
         </div>
       </article>
-      <DatasetPreview dataset={dataset} />
+      <DatasetPreview dataset={dataset} title="Final prepared data preview" defaultOpen />
       <TransformationLogPanel
         highlightTerms={logHighlightTerms}
         log={transformationLog}
       />
     </section>
+  );
+}
+
+function DecisionReadinessPanel({
+  readiness,
+  compact = false,
+}: {
+  readiness?: DecisionReadinessResult;
+  compact?: boolean;
+}) {
+  if (!readiness) return null;
+  const tone =
+    readiness.status === "decision_unsafe"
+      ? "high"
+      : readiness.status === "review_needed"
+        ? "medium"
+        : "low";
+  return (
+    <article className={`decision-readiness ${tone}`}>
+      <div>
+        <p className="eyebrow">Decision readiness</p>
+        <p className="status-label">{readinessStatusLabel(readiness.status)}</p>
+        <h3>{readiness.title}</h3>
+        <p>{readiness.summary}</p>
+      </div>
+      {!compact ? (
+        <div className="readiness-grid">
+          <div>
+            <span>Covered evidence</span>
+            <strong>{readiness.requiredEvidenceCovered.length}</strong>
+          </div>
+          <div>
+            <span>Missing evidence</span>
+            <strong>{readiness.requiredEvidenceMissing.length}</strong>
+          </div>
+          <div>
+            <span>Blockers</span>
+            <strong>{readiness.blockerCount}</strong>
+          </div>
+        </div>
+      ) : null}
+      {readiness.caveats.length > 0 ? (
+        <ul className="caveat-list">
+          {readiness.caveats.slice(0, compact ? 2 : 4).map((caveat) => (
+            <li key={caveat}>{caveat}</li>
+          ))}
+        </ul>
+      ) : null}
+    </article>
   );
 }
 
@@ -662,11 +1405,13 @@ function CleaningRecommendationsPanel({
 export function DashboardStep({
   refNode,
   dataset,
+  decisionReadiness,
   recommendation,
   onExport,
 }: {
   refNode: React.RefObject<HTMLDivElement | null>;
   dataset: Dataset;
+  decisionReadiness?: DecisionReadinessResult;
   recommendation: DashboardRecommendation;
   onExport: () => void;
 }) {
@@ -679,6 +1424,7 @@ export function DashboardStep({
       <DashboardPreview
         refNode={refNode}
         dataset={dataset}
+        decisionReadiness={decisionReadiness}
         recommendation={recommendation}
       />
       <button
@@ -695,14 +1441,18 @@ export function DashboardStep({
 export function DashboardPreview({
   refNode,
   dataset,
+  decisionReadiness,
   recommendation,
   expandInsights = false,
+  interactive = true,
   showInsightLinks = true,
 }: {
   refNode: React.RefObject<HTMLDivElement | null>;
   dataset: Dataset;
+  decisionReadiness?: DecisionReadinessResult;
   recommendation: DashboardRecommendation;
   expandInsights?: boolean;
+  interactive?: boolean;
   showInsightLinks?: boolean;
 }) {
   const [highlightedChartId, setHighlightedChartId] = useState<string>();
@@ -718,6 +1468,7 @@ export function DashboardPreview({
 
   return (
     <div ref={refNode} className="dashboard">
+      <DecisionReadinessPanel readiness={decisionReadiness} compact />
       <SummaryMetrics
         dataset={dataset}
         metrics={recommendation.summaryMetrics}
@@ -727,7 +1478,7 @@ export function DashboardPreview({
         activeChartId={highlightedChartId}
         onInsightSelect={selectInsightChart}
         defaultOpen={expandInsights}
-        showChartLinks={showInsightLinks}
+        showChartLinks={showInsightLinks && interactive}
       />
       {chartSections.map((section) => {
         const hasFeaturedCard =
@@ -756,6 +1507,7 @@ export function DashboardPreview({
                   chart={chart}
                   featured={section.id === "comparisons" && index === 0}
                   highlighted={chart.id === highlightedChartId}
+                  interactive={interactive}
                 />
               ))}
             </div>
@@ -855,6 +1607,12 @@ function groupChartsBySection(charts: DashboardRecommendation["charts"]) {
         "Headline signals and summary views for the prepared dataset.",
     },
     {
+      id: "location",
+      title: "Location",
+      description:
+        "Local coordinate and administrative-area views from uploaded fields.",
+    },
+    {
       id: "comparisons",
       title: "Key Comparisons",
       description:
@@ -892,7 +1650,9 @@ function defaultChartSection(
   chartType: DashboardRecommendation["charts"][number]["chartType"],
 ) {
   if (chartType === "summary") return "overview";
+  if (chartType === "map" || chartType === "area" || chartType === "choropleth") return "location";
   if (chartType === "table") return "details";
+  if (chartType === "missingness") return "quality";
   return "comparisons";
 }
 
@@ -939,11 +1699,13 @@ function ChartPanel({
   chart,
   featured = false,
   highlighted = false,
+  interactive = true,
 }: {
   dataset: Dataset;
   chart: DashboardRecommendation["charts"][number];
   featured?: boolean;
   highlighted?: boolean;
+  interactive?: boolean;
 }) {
   const rows = dataset.data ?? [];
   const groupField = chart.groupByField ?? chart.xField;
@@ -962,88 +1724,121 @@ function ChartPanel({
     ? aggregateRows(rows, groupField, metricField, effectiveAggregation)
     : [];
   const chartClassName = [
-    "card",
-    "chart-card",
     featured ? "featured" : "",
     highlighted ? "highlighted" : "",
     `chart-card-${chart.chartType}`,
   ]
     .filter(Boolean)
     .join(" ");
-
-  return (
-    <article className={chartClassName} id={`chart-${chart.id}`}>
-      <div className="chart-card-header">
-        <h3>{chart.title}</h3>
-      </div>
-      <p>{chart.rationale}</p>
-      {chart.chartType === "summary" ? (
+  const chartBody =
+    chart.chartType === "summary" ? (
+      <SummaryChart
+        dataset={dataset}
+        groupField={groupField}
+        metricField={metricField}
+        aggregation={effectiveAggregation}
+        interactive={interactive}
+      />
+    ) : chart.chartType === "table" ? (
+      <RankedTable dataset={dataset} chart={chart} />
+    ) : chart.chartType === "pie" ? (
+      <PieChart
+        grouped={grouped}
+        metricLabel={metricLabel}
+        title={chart.title}
+        interactive={interactive}
+      />
+    ) : chart.chartType === "line" ? (
+      <LineChart
+        grouped={grouped}
+        groupLabel={groupLabel}
+        metricLabel={metricLabel}
+        title={chart.title}
+        interactive={interactive}
+      />
+    ) : chart.chartType === "map" ? (
+      <MapChart
+        dataset={dataset}
+        latitudeField={chart.yField}
+        longitudeField={chart.xField}
+        labelField={chart.groupByField}
+        metricField={metricField}
+        metricLabel={metricLabel}
+        title={chart.title}
+        interactive={interactive}
+      />
+    ) : chart.chartType === "area" ? (
+      <AreaIntensityChart
+        grouped={grouped}
+        groupLabel={groupLabel}
+        metricLabel={metricLabel}
+        title={chart.title}
+        interactive={interactive}
+      />
+    ) : chart.chartType === "scatter" ? (
+      <ScatterChart
+        dataset={dataset}
+        groupField={groupField}
+        title={chart.title}
+        xField={chart.xField}
+        yField={chart.yField ?? metricField}
+        interactive={interactive}
+      />
+    ) : chart.chartType === "missingness" ? (
+      <MissingnessChart dataset={dataset} title={chart.title} interactive={interactive} />
+    ) : grouped.length === 0 ? (
+      metricField ? (
         <SummaryChart
           dataset={dataset}
-          groupField={groupField}
           metricField={metricField}
           aggregation={effectiveAggregation}
+          interactive={interactive}
         />
-      ) : chart.chartType === "table" ? (
-        <RankedTable dataset={dataset} chart={chart} />
-      ) : chart.chartType === "pie" ? (
-        <PieChart
-          grouped={grouped}
-          metricLabel={metricLabel}
-          title={chart.title}
-        />
-      ) : chart.chartType === "line" ? (
-        <LineChart
-          grouped={grouped}
-          groupLabel={groupLabel}
-          metricLabel={metricLabel}
-          title={chart.title}
-        />
-      ) : chart.chartType === "scatter" ? (
-        <ScatterChart
-          dataset={dataset}
-          groupField={groupField}
-          title={chart.title}
-          xField={chart.xField}
-          yField={chart.yField ?? metricField}
-        />
-      ) : chart.chartType === "missingness" ? (
-        <MissingnessChart dataset={dataset} title={chart.title} />
-      ) : grouped.length === 0 ? (
-        metricField ? (
-          <SummaryChart
-            dataset={dataset}
-            metricField={metricField}
-            aggregation={effectiveAggregation}
-          />
-        ) : (
-          <DatasetPreview dataset={dataset} />
-        )
       ) : (
-        <BarChart
-          grouped={grouped}
-          groupLabel={groupLabel}
-          metricLabel={metricLabel}
-          title={chart.title}
-        />
-      )}
-    </article>
+        <DatasetPreview dataset={dataset} />
+      )
+    ) : (
+      <BarChart
+        grouped={grouped}
+        groupLabel={groupLabel}
+        metricLabel={metricLabel}
+        title={chart.title}
+        interactive={interactive}
+      />
+    );
+
+  return (
+    <ChartFrame
+      className={chartClassName}
+      id={`chart-${chart.id}`}
+      qualityBadge={chart.qualityBadge}
+      screenReaderSummary={chart.screenReaderSummary}
+      sourceNote={chart.sourceNote}
+      subtitle={chart.subtitle}
+      title={chart.title}
+    >
+      <p className="chart-rationale">{chart.rationale}</p>
+      {chartBody}
+    </ChartFrame>
   );
 }
 
 function BarChart({
   grouped,
   groupLabel,
+  interactive = true,
   metricLabel,
   title,
 }: {
   grouped: GroupedMetricValue[];
   groupLabel: string;
+  interactive?: boolean;
   metricLabel: string;
   title: string;
 }) {
   const visible = grouped.slice(0, 10);
   const max = Math.max(...visible.map((item) => item.value), 1);
+  const chartTabIndex = interactive ? 0 : -1;
   return (
     <div
       className="bars"
@@ -1057,7 +1852,7 @@ function BarChart({
           data-tooltip={chartValueDescription(item, metricLabel)}
           key={item.label}
           role="listitem"
-          tabIndex={0}
+          tabIndex={chartTabIndex}
         >
           <span title={item.label}>{item.label}</span>
           <div className="bar-track">
@@ -1081,15 +1876,18 @@ function BarChart({
 
 function PieChart({
   grouped,
+  interactive = true,
   metricLabel,
   title,
 }: {
   grouped: GroupedMetricValue[];
+  interactive?: boolean;
   metricLabel: string;
   title: string;
 }) {
   const chartId = useId();
   const [activeIndex, setActiveIndex] = useState<number>();
+  const chartTabIndex = interactive ? 0 : -1;
   const total = grouped.reduce((sum, item) => sum + item.value, 0);
   const visible = grouped.slice(0, 5);
   const otherValue = grouped
@@ -1178,7 +1976,7 @@ function PieChart({
               strokeDashoffset={item.dashOffset}
               strokeLinecap="butt"
               strokeWidth="30"
-              tabIndex={0}
+              tabIndex={chartTabIndex}
               transform="rotate(-90 100 100)"
             >
               <title>{chartValueDescription(item, metricLabel, total)}</title>
@@ -1230,7 +2028,7 @@ function PieChart({
             className="chart-mark"
             data-tooltip={chartValueDescription(item, metricLabel, total)}
             key={item.label}
-            tabIndex={0}
+            tabIndex={chartTabIndex}
           >
             <i style={{ background: item.color }} />
             <span>{item.label}</span>
@@ -1245,22 +2043,26 @@ function PieChart({
 function LineChart({
   grouped,
   groupLabel,
+  interactive = true,
   metricLabel,
   title,
 }: {
   grouped: GroupedMetricValue[];
   groupLabel: string;
+  interactive?: boolean;
   metricLabel: string;
   title: string;
 }) {
   const chartId = useId();
   const [activeIndex, setActiveIndex] = useState<number>();
+  const chartTabIndex = interactive ? 0 : -1;
   const points = grouped.slice().sort(compareChartLabels).slice(0, 14);
   if (points.length < 2) {
     return (
       <BarChart
         grouped={grouped}
         groupLabel={groupLabel}
+        interactive={interactive}
         metricLabel={metricLabel}
         title={title}
       />
@@ -1395,7 +2197,7 @@ function LineChart({
               onFocus={() => setActiveIndex(index)}
               onMouseEnter={() => setActiveIndex(index)}
               onMouseLeave={() => setActiveIndex(undefined)}
-              tabIndex={0}
+              tabIndex={chartTabIndex}
             >
               <circle
                 cx={point.x}
@@ -1431,18 +2233,21 @@ function LineChart({
 function ScatterChart({
   dataset,
   groupField,
+  interactive = true,
   title,
   xField,
   yField,
 }: {
   dataset: Dataset;
   groupField?: string;
+  interactive?: boolean;
   title: string;
   xField?: string;
   yField?: string;
 }) {
   const chartId = useId();
   const [activeIndex, setActiveIndex] = useState<number>();
+  const chartTabIndex = interactive ? 0 : -1;
   if (!xField || !yField || xField === yField) {
     return (
       <div className="mini-empty">
@@ -1580,7 +2385,7 @@ function ScatterChart({
               onFocus={() => setActiveIndex(index)}
               onMouseEnter={() => setActiveIndex(index)}
               onMouseLeave={() => setActiveIndex(undefined)}
-              tabIndex={0}
+              tabIndex={chartTabIndex}
             >
               <circle
                 cx={point.cx}
@@ -1610,10 +2415,10 @@ function ScatterChart({
           </text>
           <text
             className="chart-axis-label"
-            fill="#5f656d"
             fontSize="11"
-            textAnchor="middle"
-            transform={`translate(14 ${padding.top + plotHeight / 2}) rotate(-90)`}
+            textAnchor="start"
+            x={padding.left}
+            y={padding.top - 8}
           >
             {yLabel}
           </text>
@@ -1640,13 +2445,294 @@ function ScatterChart({
   );
 }
 
-function MissingnessChart({
+function MapChart({
   dataset,
+  interactive = true,
+  latitudeField,
+  longitudeField,
+  labelField,
+  metricField,
+  metricLabel,
   title,
 }: {
   dataset: Dataset;
+  interactive?: boolean;
+  latitudeField?: string;
+  longitudeField?: string;
+  labelField?: string;
+  metricField?: string;
+  metricLabel: string;
   title: string;
 }) {
+  const chartId = useId();
+  const [activeIndex, setActiveIndex] = useState<number>();
+  const chartTabIndex = interactive ? 0 : -1;
+  if (!latitudeField || !longitudeField) {
+    return (
+      <div className="mini-empty">
+        Latitude and longitude fields are needed for a location map.
+      </div>
+    );
+  }
+
+  type MapPoint = {
+    label: string;
+    latitude: number;
+    longitude: number;
+    metricValue: number | undefined;
+  };
+  const points = (dataset.data ?? [])
+    .map((row, index) => {
+      if (
+        !isValidLatitude(row[latitudeField]) ||
+        !isValidLongitude(row[longitudeField])
+      ) {
+        return null;
+      }
+      const latitude = finiteChartNumber(row[latitudeField]);
+      const longitude = finiteChartNumber(row[longitudeField]);
+      if (latitude === undefined || longitude === undefined) return null;
+      return {
+        label: labelField
+          ? String(row[labelField] ?? "Missing")
+          : `Record ${index + 1}`,
+        latitude,
+        longitude,
+        metricValue: metricField ? finiteChartNumber(row[metricField]) : undefined,
+      };
+    })
+    .filter((point): point is MapPoint => point !== null)
+    .slice(0, 160);
+  if (points.length < 2) {
+    return (
+      <div className="mini-empty">
+        At least two usable coordinate pairs are needed for a location map.
+      </div>
+    );
+  }
+
+  const width = 560;
+  const height = 300;
+  const padding = { top: 26, right: 32, bottom: 46, left: 58 };
+  const plotWidth = width - padding.left - padding.right;
+  const plotHeight = height - padding.top - padding.bottom;
+  const latMin = Math.min(...points.map((point) => point.latitude));
+  const latMax = Math.max(...points.map((point) => point.latitude));
+  const lonMin = Math.min(...points.map((point) => point.longitude));
+  const lonMax = Math.max(...points.map((point) => point.longitude));
+  const latRange = latMax - latMin;
+  const lonRange = lonMax - lonMin;
+  const metricValues = points
+    .map((point) => point.metricValue)
+    .filter((value): value is number => value !== undefined && value > 0);
+  const metricMax = Math.max(...metricValues, 1);
+  const coords = points.map((point) => {
+    const cx =
+      lonRange === 0
+        ? padding.left + plotWidth / 2
+        : padding.left + ((point.longitude - lonMin) / lonRange) * plotWidth;
+    const cy =
+      latRange === 0
+        ? padding.top + plotHeight / 2
+        : padding.top + ((latMax - point.latitude) / latRange) * plotHeight;
+    const radius =
+      point.metricValue === undefined
+        ? 5
+        : Math.max(5, Math.min(13, 5 + (point.metricValue / metricMax) * 8));
+    return { ...point, cx, cy, radius };
+  });
+  const activePoint =
+    activeIndex === undefined ? undefined : coords[activeIndex];
+
+  return (
+    <div className="map-chart">
+      <div className="line-plot">
+        <svg
+          aria-describedby={`${chartId}-description`}
+          aria-labelledby={`${chartId}-title`}
+          fill="none"
+          role="img"
+          viewBox={`0 0 ${width} ${height}`}
+        >
+          <title id={`${chartId}-title`}>{title}</title>
+          <desc id={`${chartId}-description`}>
+            Local coordinate plot showing {formatCount(points.length, "record")}{" "}
+            with usable latitude and longitude values. This view does not use
+            geocoding, basemap tiles, or boundary geometry.
+          </desc>
+          {[0, 0.25, 0.5, 0.75, 1].map((ratio) => {
+            const x = padding.left + ratio * plotWidth;
+            const y = padding.top + ratio * plotHeight;
+            return (
+              <g key={ratio}>
+                <line
+                  className="chart-grid-line"
+                  x1={x}
+                  x2={x}
+                  y1={padding.top}
+                  y2={height - padding.bottom}
+                />
+                <line
+                  className="chart-grid-line"
+                  x1={padding.left}
+                  x2={width - padding.right}
+                  y1={y}
+                  y2={y}
+                />
+              </g>
+            );
+          })}
+          <rect
+            className="map-frame"
+            height={plotHeight}
+            width={plotWidth}
+            x={padding.left}
+            y={padding.top}
+          />
+          {coords.map((point, index) => (
+            <g
+              aria-label={`${point.label}: latitude ${formatNumber(point.latitude)}, longitude ${formatNumber(point.longitude)}${point.metricValue === undefined ? "" : `, ${metricLabel} ${formatNumber(point.metricValue)}`}.`}
+              className="map-point"
+              key={`${point.latitude}-${point.longitude}-${index}`}
+              onBlur={() => setActiveIndex(undefined)}
+              onFocus={() => setActiveIndex(index)}
+              onMouseEnter={() => setActiveIndex(index)}
+              onMouseLeave={() => setActiveIndex(undefined)}
+              tabIndex={chartTabIndex}
+            >
+              <circle
+                cx={point.cx}
+                cy={point.cy}
+                fill={activeIndex === index ? "#d55e00" : "#005ab5"}
+                fillOpacity={activeIndex === index ? "0.94" : "0.64"}
+                r={activeIndex === index ? point.radius + 2 : point.radius}
+                stroke="#ffffff"
+                strokeWidth={activeIndex === index ? 3 : 2}
+              />
+              <title>
+                {point.label}: {formatNumber(point.latitude)},{" "}
+                {formatNumber(point.longitude)}
+                {point.metricValue === undefined
+                  ? ""
+                  : `; ${metricLabel}: ${formatNumber(point.metricValue)}`}
+              </title>
+            </g>
+          ))}
+          <text
+            className="chart-axis-label"
+            textAnchor="middle"
+            x={padding.left + plotWidth / 2}
+            y={height - 12}
+          >
+            Longitude {formatNumber(lonMin)} to {formatNumber(lonMax)}
+          </text>
+          <text
+            className="chart-axis-label"
+            textAnchor="start"
+            x={padding.left}
+            y={padding.top - 8}
+          >
+            Latitude {formatNumber(latMin)} to {formatNumber(latMax)}
+          </text>
+        </svg>
+        {activePoint && (
+          <div
+            className="chart-tooltip line-tooltip"
+            style={{
+              left: `${(activePoint.cx / width) * 100}%`,
+              top: `${(activePoint.cy / height) * 100}%`,
+            }}
+          >
+            <strong>{activePoint.label}</strong>
+            <span>Lat: {formatNumber(activePoint.latitude)}</span>
+            <span>Lon: {formatNumber(activePoint.longitude)}</span>
+            {activePoint.metricValue !== undefined && (
+              <span>
+                {metricLabel}: {formatNumber(activePoint.metricValue)}
+              </span>
+            )}
+          </div>
+        )}
+      </div>
+      <p className="chart-note">
+        Local coordinate view only. It does not verify boundaries, routes, or
+        administrative coverage.
+      </p>
+    </div>
+  );
+}
+
+function AreaIntensityChart({
+  grouped,
+  groupLabel,
+  interactive = true,
+  metricLabel,
+  title,
+}: {
+  grouped: GroupedMetricValue[];
+  groupLabel: string;
+  interactive?: boolean;
+  metricLabel: string;
+  title: string;
+}) {
+  const visible = grouped.slice(0, 12);
+  const max = Math.max(...visible.map((item) => item.value), 1);
+  const chartTabIndex = interactive ? 0 : -1;
+  if (visible.length === 0) {
+    return (
+      <div className="mini-empty">
+        No administrative area values were found for this view.
+      </div>
+    );
+  }
+  return (
+    <div
+      aria-label={`${title}. ${metricLabel} across ${groupLabel}.`}
+      className="area-intensity-chart"
+      role="list"
+    >
+      {visible.map((item) => {
+        const intensity = Math.max(0.14, Math.min(0.82, item.value / max));
+        const description = chartValueDescription(item, metricLabel);
+        return (
+          <div
+            aria-label={description}
+            className="area-tile chart-mark"
+            data-tooltip={description}
+            key={item.label}
+            role="listitem"
+            style={{
+              backgroundColor: `rgba(0, 90, 181, ${intensity})`,
+              borderColor:
+                intensity > 0.45 ? "rgba(0, 67, 135, 0.62)" : "#bdd1ff",
+              color: intensity > 0.45 ? "white" : "#171717",
+            }}
+            tabIndex={chartTabIndex}
+          >
+            <span title={item.label}>{item.label}</span>
+            <strong>{formatNumber(item.value)}</strong>
+            <small>{formatCount(item.count, "record")}</small>
+          </div>
+        );
+      })}
+      <p className="chart-note">
+        Area intensity uses uploaded area labels only. Add verified local
+        boundary geometry before treating this as a choropleth map.
+      </p>
+    </div>
+  );
+}
+
+function MissingnessChart({
+  dataset,
+  interactive = true,
+  title,
+}: {
+  dataset: Dataset;
+  interactive?: boolean;
+  title: string;
+}) {
+  const chartTabIndex = interactive ? 0 : -1;
   const totalRows =
     dataset.profile?.rowCount ?? dataset.rowCount ?? dataset.data?.length ?? 0;
   const columns = (dataset.profile?.columns ?? [])
@@ -1679,7 +2765,7 @@ function MissingnessChart({
             data-tooltip={description}
             key={column.columnName}
             role="listitem"
-            tabIndex={0}
+            tabIndex={chartTabIndex}
           >
             <span title={column.columnName}>{label}</span>
             <div className="bar-track">
@@ -1703,14 +2789,17 @@ function MissingnessChart({
 function SummaryChart({
   dataset,
   groupField,
+  interactive = true,
   metricField,
   aggregation,
 }: {
   dataset: Dataset;
   groupField?: string;
+  interactive?: boolean;
   metricField?: string;
   aggregation?: MetricAggregation;
 }) {
+  const chartTabIndex = interactive ? 0 : -1;
   const rows = dataset.data ?? [];
   const resolvedAggregation =
     aggregation ?? inferMetricAggregation(metricField);
@@ -1748,7 +2837,7 @@ function SummaryChart({
             : "Records"
         }: ${formatNumber(metricTotal)}`}
         role="listitem"
-        tabIndex={0}
+        tabIndex={chartTabIndex}
       >
         <span>
           {metricField
@@ -1763,7 +2852,7 @@ function SummaryChart({
           className="chart-mark"
           data-tooltip={`${metricDisplayLabel(metricField, "average")}: ${formatNumber(metricAverage)}`}
           role="listitem"
-          tabIndex={0}
+          tabIndex={chartTabIndex}
         >
           <span>{metricDisplayLabel(metricField, "average")}</span>
           <strong>{formatNumber(metricAverage)}</strong>
@@ -1775,7 +2864,7 @@ function SummaryChart({
           className="chart-mark"
           data-tooltip={`${fieldDisplayLabel(groupField)}: ${formatNumber(uniqueGroups)}`}
           role="listitem"
-          tabIndex={0}
+          tabIndex={chartTabIndex}
         >
           <span>{fieldDisplayLabel(groupField)}</span>
           <strong>{uniqueGroups}</strong>
@@ -1787,7 +2876,7 @@ function SummaryChart({
           className="chart-mark"
           data-tooltip={`Missing cells: ${formatNumber(missingCells)}`}
           role="listitem"
-          tabIndex={0}
+          tabIndex={chartTabIndex}
         >
           <span>Missing cells</span>
           <strong>{missingCells}</strong>
@@ -2072,10 +3161,10 @@ function MetadataPanel({ datasets }: { datasets: Dataset[] }) {
   );
 }
 
-function buildProfileQualityResults(datasets: Dataset[]) {
+function buildProfileQualityResults(datasets: Dataset[], decisionBrief?: DecisionBrief) {
   return datasets
     .flatMap((dataset) =>
-      runQualityChecks(dataset).map((issue) => ({
+      runQualityChecks(dataset, decisionBrief).map((issue) => ({
         ...issue,
         id: `${dataset.id}-${issue.id}`,
         description: `${dataset.name}: ${issue.description}`,
@@ -2191,18 +3280,38 @@ function truncateChartLabel(label: string, maxLength = 14) {
     : label;
 }
 
-function DatasetPreview({ dataset }: { dataset: Dataset }) {
-  const visibleColumnLimit = 12;
-  const rows = dataset.sampleRows ?? dataset.data?.slice(0, 5) ?? [];
-  const columns = dataset.columns ?? Object.keys(rows[0] ?? {});
-  const visibleColumns = columns.slice(0, visibleColumnLimit);
+function DatasetPreview({
+  dataset,
+  title = "Sample data",
+  defaultOpen = false,
+  rowLimit = 10,
+  columnLimit = 12,
+}: {
+  dataset: Dataset;
+  title?: string;
+  defaultOpen?: boolean;
+  rowLimit?: number;
+  columnLimit?: number;
+}) {
+  const allRows = dataset.data ?? dataset.sampleRows ?? [];
+  const rows = allRows.slice(0, rowLimit);
+  const columns = uniqueValues([
+    ...(dataset.columns ?? []),
+    ...Object.keys(rows[0] ?? {}),
+  ]);
+  const visibleColumns = selectVisiblePreviewColumns(
+    prioritizePreviewColumns(dataset, columns),
+    columnLimit,
+  );
+  const totalRowCount = dataset.rowCount ?? allRows.length;
   const hiddenColumnCount = Math.max(columns.length - visibleColumns.length, 0);
+  const hiddenRowCount = Math.max(totalRowCount - rows.length, 0);
   return (
-    <details className="card profile-accordion sample-data-card">
+    <details className="dataset-preview-panel sample-data-card" open={defaultOpen}>
       <summary>
-        <span>Sample data</span>
+        <span>{title}</span>
         <span className="accordion-meta">
-          {formatCount(rows.length, "row")},{" "}
+          {formatCount(totalRowCount, "row")},{" "}
           {formatCount(columns.length, "column")}
         </span>
       </summary>
@@ -2212,9 +3321,13 @@ function DatasetPreview({ dataset }: { dataset: Dataset }) {
         ) : (
           <>
             <p>
-              Showing {formatCount(visibleColumns.length, "column")}
+              Showing {formatCount(rows.length, "row")} and{" "}
+              {formatCount(visibleColumns.length, "column")}
+              {hiddenRowCount > 0
+                ? `, with ${formatCount(hiddenRowCount, "additional row")} available in exports`
+                : ""}
               {hiddenColumnCount > 0
-                ? `, with ${formatCount(hiddenColumnCount, "additional column")} available in exports.`
+                ? `${hiddenRowCount > 0 ? " and" : ", with"} ${formatCount(hiddenColumnCount, "additional column")} available in exports.`
                 : "."}
             </p>
             <div className="table-wrap">
@@ -2244,6 +3357,31 @@ function DatasetPreview({ dataset }: { dataset: Dataset }) {
       </div>
     </details>
   );
+}
+
+function prioritizePreviewColumns(dataset: Dataset, columns: string[]) {
+  const preferredColumns = [
+    dataset.inputHints?.joinField,
+    ...(dataset.profile?.potentialJoinFields ?? []),
+    dataset.inputHints?.primaryField,
+    dataset.inputHints?.timeField,
+    "__join_matched",
+    ...(dataset.profile?.potentialGeographicFields ?? []),
+    ...(dataset.profile?.potentialMetricFields ?? []),
+    ...columns,
+  ];
+  return uniqueValues(preferredColumns.filter((column): column is string => Boolean(column)))
+    .filter((column) => columns.includes(column));
+}
+
+function selectVisiblePreviewColumns(columns: string[], limit: number) {
+  if (columns.length <= limit) return columns;
+  const tailCount = Math.min(3, Math.floor(limit / 4));
+  const headCount = Math.max(limit - tailCount, 1);
+  return uniqueValues([
+    ...columns.slice(0, headCount),
+    ...columns.slice(-tailCount),
+  ]).slice(0, limit);
 }
 
 export function TransformationLogPanel({
@@ -2334,8 +3472,12 @@ export function ExportStep({
   rowCount,
   chartCount,
   qualityIssueCount,
+  decisionReadiness,
+  handoffSummary,
+  handoffLoading = false,
   transformationCount,
   onCsv,
+  onHandoffSummary,
   onReport,
   onPng,
   onLog,
@@ -2346,24 +3488,63 @@ export function ExportStep({
   rowCount: number;
   chartCount: number;
   qualityIssueCount: number;
+  decisionReadiness?: DecisionReadinessResult;
+  handoffSummary?: DecisionHandoffSummary;
+  handoffLoading?: boolean;
   transformationCount: number;
   onCsv: () => void;
+  onHandoffSummary: () => void;
   onReport: () => void;
   onPng: () => void;
   onLog: () => void;
 }) {
+  const [acknowledged, setAcknowledged] = useState(false);
+  const needsAcknowledgement =
+    decisionReadiness !== undefined && decisionReadiness.status !== "ready";
+  const exportReady = !needsAcknowledgement || acknowledged;
   return (
     <section className="workflow-step export-page">
       <div className="section-heading">
-        <p className="eyebrow">Step 6</p>
+        <p className="eyebrow">Step 7</p>
         <h2>Export Dashboard Assets</h2>
       </div>
+      <DecisionReadinessPanel readiness={decisionReadiness} />
+      {needsAcknowledgement ? (
+        <label className="export-acknowledgement">
+          <input
+            type="checkbox"
+            checked={acknowledged}
+            onChange={(event) => setAcknowledged(event.target.checked)}
+          />
+          <span>I reviewed the decision-readiness caveats before exporting.</span>
+        </label>
+      ) : null}
+      <article className="card handoff-copilot-card">
+        <div>
+          <p className="eyebrow">Decision handoff copilot</p>
+          <h3>Review summary</h3>
+          <p>
+            Generate a review-ready narrative from readiness, quality, transformation, and dashboard facts.
+          </p>
+        </div>
+        <button
+          type="button"
+          className="primary-action"
+          disabled={!dashboardReady || !exportReady || handoffLoading}
+          onClick={onHandoffSummary}
+        >
+          {handoffLoading ? "Generating handoff..." : "Generate handoff summary"}
+        </button>
+        {handoffSummary ? (
+          <HandoffSummaryPanel summary={handoffSummary} />
+        ) : null}
+      </article>
       <article className="card export-options-card">
         <div className="export-options-header">
           <p className="eyebrow">Available exports</p>
         </div>
         <div className="export-grid">
-          <button className="export-option" disabled={!ready} onClick={onCsv}>
+          <button className="export-option" disabled={!ready || !exportReady} onClick={onCsv}>
             <span className="export-option-type">CSV</span>
             <span className="export-option-label">Prepared dataset</span>
             <span className="export-option-meta">
@@ -2376,14 +3557,14 @@ export function ExportStep({
           </button>
           <button
             className="export-option"
-            disabled={!logReady}
+            disabled={!logReady || !exportReady}
             onClick={onLog}
           >
             <span className="export-option-type">JSON</span>
-            <span className="export-option-label">Transformation log</span>
+            <span className="export-option-label">Decision handoff log</span>
             <span className="export-option-meta">
-              Exports the scoped record of joins, cleaning, and preparation
-              steps applied to the data.
+              Includes evidence coverage, join review, quality caveats, and
+              transformation history.
             </span>
             <span className="export-option-detail">
               {transformationCount > 0
@@ -2393,7 +3574,7 @@ export function ExportStep({
           </button>
           <button
             className="export-option"
-            disabled={!dashboardReady}
+            disabled={!dashboardReady || !exportReady}
             onClick={onPng}
           >
             <span className="export-option-type">PNG</span>
@@ -2408,7 +3589,7 @@ export function ExportStep({
           </button>
           <button
             className="export-option"
-            disabled={!dashboardReady}
+            disabled={!dashboardReady || !exportReady}
             onClick={onReport}
           >
             <span className="export-option-type">PDF</span>
@@ -2428,13 +3609,71 @@ export function ExportStep({
   );
 }
 
+function HandoffSummaryPanel({ summary }: { summary: DecisionHandoffSummary }) {
+  return (
+    <section className="handoff-summary-panel" aria-label="Generated handoff summary">
+      <div className="handoff-summary-header">
+        <span className={`quality-pill ${summary.source === "llm" ? "success" : "warn"}`}>
+          {summary.source === "llm" ? "AI drafted" : "Deterministic fallback"}
+        </span>
+        {summary.fallbackReason ? (
+          <span className="helper-text">
+            Fallback reason: {summary.fallbackReason.replaceAll("_", " ")}
+          </span>
+        ) : null}
+      </div>
+      <div className="handoff-summary-grid">
+        <article>
+          <h4>Readiness</h4>
+          <p>{summary.readinessExplanation}</p>
+        </article>
+        <article>
+          <h4>Handoff narrative</h4>
+          <p>{summary.handoffNarrative}</p>
+        </article>
+      </div>
+      {summary.repairActions.length > 0 ? (
+        <div>
+          <h4>Repair priorities</h4>
+          <ul className="handoff-action-list">
+            {summary.repairActions.map((action) => (
+              <li key={`${action.priority}-${action.title}`}>
+                <strong>{action.title}</strong>
+                <span>{action.rationale}</span>
+                <small>
+                  {action.priority} priority - {action.ownerHint}
+                </small>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+      {summary.caveats.length > 0 ? (
+        <div>
+          <h4>Caveats retained</h4>
+          <ul className="compact-list">
+            {summary.caveats.map((caveat) => (
+              <li key={caveat}>{caveat}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+      {summary.assumptions.length > 0 ? (
+        <p className="helper-text">{summary.assumptions.join(" ")}</p>
+      ) : null}
+    </section>
+  );
+}
+
 export function LandingHero({
   loading = false,
   llmEnabled,
+  llmAvailable = true,
   onLlmEnabledChange,
 }: {
   loading?: boolean;
   llmEnabled: boolean;
+  llmAvailable?: boolean;
   onLlmEnabledChange: (enabled: boolean) => void;
 }) {
   return (
@@ -2454,6 +3693,7 @@ export function LandingHero({
             <input
               type="checkbox"
               checked={llmEnabled}
+              disabled={!llmAvailable}
               onChange={(event) => onLlmEnabledChange(event.target.checked)}
             />
             <span className="llm-toggle-copy">

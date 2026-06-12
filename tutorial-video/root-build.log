@@ -1,0 +1,35 @@
+
+> dashboard-copilot@0.1.0 build
+> next build && node scripts/prepare-sites-dist.mjs
+
+   ▲ Next.js 15.5.19
+   - Environments: .env.local
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully in 8.5s
+   Linting and checking validity of types ...
+   Collecting page data ...
+   Generating static pages (0/8) ...
+   Generating static pages (2/8) 
+   Generating static pages (4/8) 
+   Generating static pages (6/8) 
+ ✓ Generating static pages (8/8)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                 Size  First Load JS
+┌ ○ /                                    52.3 kB         155 kB
+├ ○ /_not-found                            994 B         104 kB
+├ ○ /about                                 131 B         103 kB
+├ ƒ /api/copilot                           131 B         103 kB
+├ ƒ /api/recommend                         131 B         103 kB
+└ ○ /icon.svg                                0 B            0 B
++ First Load JS shared by all             103 kB
+  ├ chunks/255-98a0bdaa30757bda.js       46.2 kB
+  ├ chunks/4bd1b696-c023c6e3521b1417.js  54.2 kB
+  └ other shared chunks (total)          2.17 kB
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

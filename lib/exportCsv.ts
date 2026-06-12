@@ -4,7 +4,10 @@ export function toCsv(rows: Record<string, unknown>[]): string {
     const text = neutralizeSpreadsheetFormula(value === null || value === undefined ? "" : String(value));
     return /[",\n\r]/.test(text) ? `"${text.replaceAll("\"", "\"\"")}"` : text;
   };
-  return [columns.join(","), ...rows.map((row) => columns.map((column) => escape(row[column])).join(","))].join("\n");
+  return [
+    columns.map(escape).join(","),
+    ...rows.map((row) => columns.map((column) => escape(row[column])).join(","))
+  ].join("\n");
 }
 
 export function downloadText(filename: string, content: string, type = "text/plain") {

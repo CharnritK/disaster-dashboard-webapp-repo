@@ -1,7 +1,12 @@
 import type { Dataset } from "@/types/dataset";
+import type { DecisionBrief } from "@/types/decision";
 import type { QualityCheckResult } from "@/types/quality";
+import { assessDecisionReadiness } from "./decisionContext";
 
-export function runQualityChecks(dataset: Dataset): QualityCheckResult[] {
+export function runQualityChecks(
+  dataset: Dataset,
+  decisionBrief?: DecisionBrief,
+): QualityCheckResult[] {
   const rows = dataset.data ?? [];
   const columns = dataset.columns ?? Object.keys(rows[0] ?? {});
   const results: QualityCheckResult[] = [];
@@ -45,7 +50,12 @@ export function runQualityChecks(dataset: Dataset): QualityCheckResult[] {
       severity: matchRate < 80 ? "high" : unmatched > 0 ? "medium" : "info",
       description: `${matchRate}% of records matched during harmonization. ${unmatched} records were unmatched.`,
       affectedRowCount: unmatched,
-      suggestedAction: matchRate < 80 ? "Review the join fields before using this dashboard." : "Proceed and keep join completeness visible in the dashboard."
+      suggestedAction: matchRate < 80 ? "Review the join fields before using this dashboard." : "Proceed and keep join completeness visible in the dashboard.",
+      decisionArea: "Response prioritization",
+      evidenceNeed: "Admin geography",
+      caveat: unmatched > 0
+        ? "Do not use joined rankings for response prioritization until unmatched records are reviewed."
+        : undefined
     });
   }
 
@@ -87,7 +97,10 @@ export function runQualityChecks(dataset: Dataset): QualityCheckResult[] {
     }
   }
 
-  return results.sort((a, b) => severityRank(b.severity) - severityRank(a.severity));
+  const sorted = results.sort((a, b) => severityRank(b.severity) - severityRank(a.severity));
+  return decisionBrief
+    ? assessDecisionReadiness(dataset, decisionBrief, sorted).qualityResults
+    : sorted;
 }
 
 function severityRank(severity: QualityCheckResult["severity"]) {

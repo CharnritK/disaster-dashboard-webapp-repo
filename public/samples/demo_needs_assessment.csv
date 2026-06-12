@@ -1,0 +1,5 @@
+assessment_id,assessment_date,admin_pcode,district_name,partner_org,site_type,people_assessed,households_assessed,priority_need,need_severity_score,response_gap_percent,latitude,longitude,notes
+A-001,2026-06-10,ADM001,North District,Relief Partner A,evacuation_center,642,151,water,78,46,14.921,100.512,Road access limited
+A-002,2026-06-10,ADM002,Central District,Relief Partner B,community_site,792,186,food,74,41,14.804,100.641,Market prices rising
+A-003,2026-06-11,ADM003,East District,Relief Partner C,clinic,388,92,shelter,61,33,14.739,100.721,Assessment coverage partial
+A-004,2026-06-11,ADM004,South District,Relief Partner A,school,510,121,health,67,38,14.612,100.494,Mobile team requested

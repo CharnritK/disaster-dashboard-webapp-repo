@@ -1,17 +1,21 @@
 "use client";
 
-import { useRef, useState } from "react";
-import type { Dataset } from "@/types/dataset";
+import { useEffect, useRef, useState } from "react";
+import type { DecisionHandoffAiMode, DecisionHandoffSummary } from "@/types/copilot";
+import type { Dataset, DatasetInputHints } from "@/types/dataset";
+import type { DecisionBrief, DecisionReadinessResult } from "@/types/decision";
 import type { AIRecommendationResponse, DashboardRecommendation, JoinRecommendation, QualityConcern } from "@/types/recommendations";
 import type { QualityCheckResult } from "@/types/quality";
 import type { TransformationStep } from "@/types/transformations";
 import type { WorkflowStep } from "@/lib/config";
-import { loadSampleDatasets, parseFile } from "@/lib/fileParsers";
+import { buildDeterministicDecisionHandoffSummary } from "@/lib/copilotHandoff";
+import { loadSampleDatasets, parseFile, type SampleDatasetKind } from "@/lib/fileParsers";
 import { profileDataset } from "@/lib/profiling";
-import { AIRecommendationRequestError, generateFallbackRecommendations, requestAIRecommendations } from "@/lib/recommendations";
+import { AIRecommendationRequestError, generateFallbackRecommendations, requestAIRecommendations, requestDecisionHandoffCopilotSummary } from "@/lib/recommendations";
 import { applyJoinRecommendations, prepareSingleDataset, selectJoinPlan } from "@/lib/harmonization";
 import { reconcileCleaningRecommendationsForDatasetColumns } from "@/lib/cleaningTransforms";
 import { runQualityChecks } from "@/lib/validation";
+import { assessDecisionReadiness, buildEvidenceCoverageSummary, createDefaultDecisionBrief, validateDecisionBrief } from "@/lib/decisionContext";
 import {
   generateDeterministicDashboardRecommendation,
   reconcileDashboardRecommendation
@@ -20,12 +24,14 @@ import { computeDashboardInsightFacts } from "@/lib/dashboardInsights";
 import { downloadText, toCsv } from "@/lib/exportCsv";
 import { exportElementAsPng } from "@/lib/exportPng";
 import { exportElementAsPdf } from "@/lib/exportPdf";
+import { buildDecisionHandoffPacket } from "@/lib/workflowExport";
 import {
   DashboardPreview,
   DashboardStep,
   ExportStep,
   LandingHero,
   Notice,
+  DecisionBriefStep,
   ProfileStep,
   RecommendationStep,
   StepIndicator,
@@ -34,6 +40,8 @@ import {
 } from "@/components/WorkflowComponents";
 
 type WorkflowState = {
+  decisionBrief: DecisionBrief;
+  decisionReadiness?: DecisionReadinessResult;
   datasets: Dataset[];
   profilesReady: boolean;
   aiRecommendations?: AIRecommendationResponse;
@@ -41,29 +49,40 @@ type WorkflowState = {
   preparedDataset?: Dataset;
   qualityResults: QualityCheckResult[];
   dashboardRecommendation?: DashboardRecommendation;
+  handoffSummary?: DecisionHandoffSummary;
   transformationLog: TransformationStep[];
   currentStep: WorkflowStep;
   warning?: string;
 };
 
 const initialState: WorkflowState = {
+  decisionBrief: createDefaultDecisionBrief(),
   datasets: [],
   profilesReady: false,
   qualityResults: [],
   transformationLog: [],
-  currentStep: "upload"
+  currentStep: "brief"
 };
+
+const copilotApiEnabled = process.env.NEXT_PUBLIC_COPILOT_API_ENABLED !== "false";
 
 export default function DashboardCopilotApp() {
   const [state, setState] = useState<WorkflowState>(initialState);
   const [errors, setErrors] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
-  const [llmEnabled, setLlmEnabled] = useState(true);
+  const [handoffLoading, setHandoffLoading] = useState(false);
+  const [llmEnabled, setLlmEnabled] = useState(copilotApiEnabled);
   const dashboardRef = useRef<HTMLDivElement>(null);
+  const workflowShellRef = useRef<HTMLDivElement>(null);
 
   const activeDataset = state.preparedDataset ?? state.datasets.find((dataset) => dataset.data?.length) ?? state.datasets[0];
   const joinRecommendations = state.aiRecommendations?.joinRecommendations ?? [];
   const joinPlan = selectJoinPlan(state.datasets, joinRecommendations);
+  const missingDecisionFields = validateDecisionBrief(state.decisionBrief);
+
+  useEffect(() => {
+    workflowShellRef.current?.scrollIntoView({ block: "start" });
+  }, [state.currentStep]);
 
   async function addFiles(files: FileList | null) {
     if (!files?.length) return;
@@ -79,8 +98,10 @@ export default function DashboardCopilotApp() {
         aiRecommendations: undefined,
         selectedJoinRecommendations: undefined,
         preparedDataset: undefined,
+        decisionReadiness: undefined,
         qualityResults: [],
         dashboardRecommendation: undefined,
+        handoffSummary: undefined,
         transformationLog: [],
         currentStep: "upload",
         warning: undefined
@@ -92,7 +113,7 @@ export default function DashboardCopilotApp() {
     }
   }
 
-  async function useSamples(kind: "single" | "multi") {
+  async function useSamples(kind: SampleDatasetKind) {
     setLoading(true);
     try {
       const datasets = await loadSampleDatasets(kind);
@@ -104,8 +125,10 @@ export default function DashboardCopilotApp() {
         aiRecommendations: undefined,
         selectedJoinRecommendations: undefined,
         preparedDataset: undefined,
+        decisionReadiness: undefined,
         qualityResults: [],
         dashboardRecommendation: undefined,
+        handoffSummary: undefined,
         transformationLog: [],
         currentStep: "upload",
         warning: undefined
@@ -128,13 +151,35 @@ export default function DashboardCopilotApp() {
         aiRecommendations: undefined,
         selectedJoinRecommendations: undefined,
         preparedDataset: undefined,
+        decisionReadiness: undefined,
         qualityResults: [],
         dashboardRecommendation: undefined,
+        handoffSummary: undefined,
         transformationLog: [],
         currentStep: "upload",
         warning: undefined
       };
     });
+  }
+
+  function updateDatasetInputHints(datasetId: string, inputHints: DatasetInputHints) {
+    setState((current) => ({
+      ...current,
+      datasets: current.datasets.map((dataset) =>
+        dataset.id === datasetId ? { ...dataset, inputHints } : dataset
+      ),
+      profilesReady: false,
+      aiRecommendations: undefined,
+      selectedJoinRecommendations: undefined,
+      preparedDataset: undefined,
+      decisionReadiness: undefined,
+      qualityResults: [],
+      dashboardRecommendation: undefined,
+      handoffSummary: undefined,
+      transformationLog: [],
+      currentStep: "upload",
+      warning: undefined
+    }));
   }
 
   function profileDatasets() {
@@ -147,8 +192,10 @@ export default function DashboardCopilotApp() {
       aiRecommendations: undefined,
       selectedJoinRecommendations: undefined,
       preparedDataset: undefined,
+      decisionReadiness: undefined,
       qualityResults: [],
       dashboardRecommendation: undefined,
+      handoffSummary: undefined,
       transformationLog: [],
       warning: undefined,
       currentStep: "profile"
@@ -167,9 +214,10 @@ export default function DashboardCopilotApp() {
       let warning: string | undefined;
       const context = {
         mode: profiled.filter((dataset) => dataset.data?.length).length > 1 ? "multi" as const : "single" as const,
-        profiles: profiled.map((dataset) => dataset.profile!)
+        profiles: profiled.map((dataset) => dataset.profile!),
+        decisionContext: state.decisionBrief
       };
-      if (llmEnabled) {
+      if (llmEnabled && copilotApiEnabled) {
         try {
           const ai = await requestAIRecommendations(context, true, "workflow");
           recommendations = mergeRecommendationResponse(fallback, ai, profiled);
@@ -183,7 +231,7 @@ export default function DashboardCopilotApp() {
           );
         }
       } else {
-        warning = "LLM recommendations are off, so deterministic recommendations are being used.";
+        warning = "AI is off. Deterministic profiling, evidence coverage, readiness checks, and dashboard recommendations remain available.";
       }
       setState((current) => ({
         ...current,
@@ -192,8 +240,10 @@ export default function DashboardCopilotApp() {
         aiRecommendations: recommendations,
         selectedJoinRecommendations: undefined,
         preparedDataset: undefined,
+        decisionReadiness: undefined,
         qualityResults: [],
         dashboardRecommendation: undefined,
+        handoffSummary: undefined,
         transformationLog: [],
         warning,
         currentStep: "recommend"
@@ -211,16 +261,23 @@ export default function DashboardCopilotApp() {
     if (joins.length > 0) {
       const result = applyJoinRecommendations(state.datasets, joins, cleaningRecommendations);
       const profiledPrepared = { ...result.dataset, profile: profileDataset(result.dataset) };
+      const readinessResult = assessDecisionReadiness(
+        profiledPrepared,
+        state.decisionBrief,
+        runQualityChecks(profiledPrepared)
+      );
       const qualityResults = withAiQualityConcerns(
-        runQualityChecks(profiledPrepared),
+        readinessResult.qualityResults,
         llmQualityConcerns(state.aiRecommendations)
       );
       setState((current) => ({
         ...current,
         selectedJoinRecommendations: result.appliedJoinRecommendations,
         preparedDataset: profiledPrepared,
+        decisionReadiness: readinessResult.readiness,
         qualityResults,
         dashboardRecommendation: undefined,
+        handoffSummary: undefined,
         currentStep: "validate",
         transformationLog: result.transformations
       }));
@@ -235,16 +292,23 @@ export default function DashboardCopilotApp() {
     const cleaningRecommendations = state.aiRecommendations?.cleaningRecommendations ?? [];
     const result = prepareSingleDataset(datasetToPrepare, cleaningRecommendations);
     const profiledPrepared = { ...result.dataset, profile: profileDataset(result.dataset) };
+    const readinessResult = assessDecisionReadiness(
+      profiledPrepared,
+      state.decisionBrief,
+      runQualityChecks(profiledPrepared)
+    );
     const qualityResults = withAiQualityConcerns(
-      runQualityChecks(profiledPrepared),
+      readinessResult.qualityResults,
       llmQualityConcerns(state.aiRecommendations)
     );
     setState((current) => ({
       ...current,
       preparedDataset: profiledPrepared,
       selectedJoinRecommendations: undefined,
+      decisionReadiness: readinessResult.readiness,
       qualityResults,
       dashboardRecommendation: undefined,
+      handoffSummary: undefined,
       currentStep: "validate",
       transformationLog: result.transformations
     }));
@@ -266,12 +330,17 @@ export default function DashboardCopilotApp() {
       ...fallbackBase,
       dashboardRecommendations: generateDeterministicDashboardRecommendation(
         preparedDataset,
-        { dashboardFacts }
+        {
+          dashboardFacts,
+          qualityResults: state.qualityResults,
+          transformationLog: state.transformationLog,
+        }
       )
     };
     let dashboardRecommendation = reconcileDashboardRecommendation(
       preparedDataset,
-      fallback.dashboardRecommendations
+      fallback.dashboardRecommendations,
+      { qualityResults: state.qualityResults }
     );
     let qualityResults = state.qualityResults;
     let warning: string | undefined;
@@ -279,10 +348,11 @@ export default function DashboardCopilotApp() {
     setLoading(true);
     try {
       try {
-        if (llmEnabled) {
+        if (llmEnabled && copilotApiEnabled) {
           const ai = await requestAIRecommendations(
             {
               mode: "single",
+              decisionContext: state.decisionBrief,
               profiles: [preparedDataset.profile!],
               dashboardFacts,
               qualitySummary: state.qualityResults.map((issue) => `${issue.severity}: ${issue.description}`),
@@ -304,19 +374,24 @@ export default function DashboardCopilotApp() {
             ...fallbackBase,
             dashboardRecommendations: generateDeterministicDashboardRecommendation(
               preparedDataset,
-              { dashboardFacts: updatedDashboardFacts }
+              {
+                dashboardFacts: updatedDashboardFacts,
+                qualityResults,
+                transformationLog: state.transformationLog,
+              }
             )
           };
           const recommendations = mergeRecommendationResponse(updatedFallback, ai, [preparedDataset]);
           dashboardRecommendation = reconcileDashboardRecommendation(
             preparedDataset,
-            recommendations.dashboardRecommendations
+            recommendations.dashboardRecommendations,
+            { qualityResults }
           );
           if (ai.source !== "llm") {
             warning = llmFallbackWarning(ai, "visualizations");
           }
         } else {
-          warning = "LLM recommendations are off, so deterministic visualizations are being used.";
+          warning = "AI is off. Deterministic profiling, evidence coverage, readiness checks, and dashboard recommendations remain available.";
         }
       } catch (error) {
         warning = llmFallbackWarning(
@@ -330,6 +405,7 @@ export default function DashboardCopilotApp() {
         preparedDataset,
         qualityResults,
         dashboardRecommendation,
+        handoffSummary: undefined,
         warning,
         currentStep: "dashboard"
       }));
@@ -344,7 +420,82 @@ export default function DashboardCopilotApp() {
   }
 
   function exportLog() {
-    downloadText("dashboard-copilot-transformation-log.json", JSON.stringify(state.transformationLog, null, 2), "application/json");
+    const datasets = state.datasets.length > 0
+      ? state.datasets
+      : state.preparedDataset
+        ? [state.preparedDataset]
+        : [];
+    const packet = buildDecisionHandoffPacket({
+      decisionBrief: state.decisionBrief,
+      evidenceCoverage: buildEvidenceCoverageSummary(datasets, state.decisionBrief),
+      decisionReadiness: state.decisionReadiness,
+      datasets,
+      selectedJoinRecommendations: state.selectedJoinRecommendations ?? [],
+      qualityResults: state.qualityResults,
+      transformationLog: state.transformationLog,
+      aiMode: currentAiMode(llmEnabled, state.aiRecommendations, state.warning),
+    });
+    downloadText(
+      "dashboard-copilot-decision-handoff-log.json",
+      JSON.stringify(packet, null, 2),
+      "application/json",
+    );
+  }
+
+  async function generateHandoffSummary() {
+    if (handoffLoading || !state.preparedDataset || !state.dashboardRecommendation) return;
+    setHandoffLoading(true);
+    try {
+      const datasets = state.datasets.length > 0
+        ? state.datasets
+        : [state.preparedDataset];
+      const evidenceCoverage = buildEvidenceCoverageSummary(datasets, state.decisionBrief);
+      const aiMode = currentAiMode(llmEnabled, state.aiRecommendations, state.warning);
+      const packet = buildDecisionHandoffPacket({
+        decisionBrief: state.decisionBrief,
+        evidenceCoverage,
+        decisionReadiness: state.decisionReadiness,
+        datasets,
+        selectedJoinRecommendations: state.selectedJoinRecommendations ?? [],
+        qualityResults: state.qualityResults,
+        transformationLog: state.transformationLog,
+        aiMode,
+      });
+      const dashboardFacts = computeDashboardInsightFacts(
+        state.preparedDataset,
+        state.qualityResults,
+        state.transformationLog,
+      );
+      const handoffContext = {
+        taskType: "decision_handoff_summary" as const,
+        decisionBrief: state.decisionBrief,
+        decisionReadiness: state.decisionReadiness,
+        evidenceCoverage,
+        qualitySummary: state.qualityResults
+          .filter((issue) => issue.status !== "pass")
+          .map(qualityIssueSummary),
+        transformationSummary: state.transformationLog.map((step) => step.description),
+        dashboardFacts,
+        aiMode,
+        reviewNotice: packet.reviewNotice,
+        limitations: packet.limitations,
+      };
+      const summary = copilotApiEnabled
+        ? await requestDecisionHandoffCopilotSummary(handoffContext, llmEnabled)
+        : buildDeterministicDecisionHandoffSummary(handoffContext);
+      setState((current) => ({
+        ...current,
+        handoffSummary: summary,
+      }));
+    } catch (error) {
+      setErrors([
+        error instanceof Error
+          ? error.message
+          : "Decision handoff summary could not be generated.",
+      ]);
+    } finally {
+      setHandoffLoading(false);
+    }
   }
 
   async function exportReport() {
@@ -360,6 +511,7 @@ export default function DashboardCopilotApp() {
           `Generated: ${new Date().toLocaleString()}`
         ],
         qualityResults: state.qualityResults,
+        decisionReadiness: state.decisionReadiness,
         transformationLog: state.transformationLog
       });
     } catch {
@@ -382,7 +534,8 @@ export default function DashboardCopilotApp() {
   }
 
   function canNavigateToStep(step: WorkflowStep) {
-    if (step === "upload") return true;
+    if (step === "brief") return true;
+    if (step === "upload") return missingDecisionFields.length === 0;
     if (step === "profile") return state.profilesReady;
     if (step === "recommend") return Boolean(state.aiRecommendations);
     if (step === "validate") return Boolean(state.preparedDataset);
@@ -397,15 +550,45 @@ export default function DashboardCopilotApp() {
   }
 
   function handleLlmEnabledChange(enabled: boolean) {
+    if (!copilotApiEnabled) {
+      setLlmEnabled(false);
+      setState((current) => ({
+        ...current,
+        warning: "AI is off. Deterministic profiling, evidence coverage, readiness checks, and dashboard recommendations remain available."
+      }));
+      return;
+    }
     setLlmEnabled(enabled);
     setState((current) => ({
       ...current,
       warning: enabled
         ? undefined
         : current.aiRecommendations?.source === "llm" || current.dashboardRecommendation
-          ? "AI is off for future calls. Existing generated recommendations remain until you rerun the workflow or change data."
-          : "AI is off, so deterministic recommendations will be used."
+          ? "AI is off. Deterministic profiling, evidence coverage, readiness checks, and dashboard recommendations remain available. Existing generated recommendations remain until you rerun the workflow or change data."
+          : "AI is off. Deterministic profiling, evidence coverage, readiness checks, and dashboard recommendations remain available."
     }));
+  }
+
+  function updateDecisionBrief(nextBrief: DecisionBrief) {
+    setState((current) => ({
+      ...current,
+      decisionBrief: nextBrief,
+      decisionReadiness: undefined,
+      aiRecommendations: undefined,
+      selectedJoinRecommendations: undefined,
+      preparedDataset: undefined,
+      qualityResults: [],
+      dashboardRecommendation: undefined,
+      handoffSummary: undefined,
+      transformationLog: [],
+      currentStep: "brief",
+      warning: undefined
+    }));
+  }
+
+  function proceedFromDecisionBrief() {
+    if (missingDecisionFields.length > 0) return;
+    setState((current) => ({ ...current, currentStep: "upload" }));
   }
 
   return (
@@ -413,20 +596,37 @@ export default function DashboardCopilotApp() {
       <LandingHero
         loading={loading}
         llmEnabled={llmEnabled}
+        llmAvailable={copilotApiEnabled}
         onLlmEnabledChange={handleLlmEnabledChange}
       />
-      <div className="app-shell">
+      <div className="app-shell" ref={workflowShellRef}>
         <StepIndicator currentStep={state.currentStep} canNavigateTo={canNavigateToStep} onNavigate={navigateToStep} />
         {errors.length > 0 && <Notice tone="error" items={errors} />}
         {state.warning && <Notice tone="warn" items={[state.warning]} />}
 
         <section className="workflow-grid">
           <div className="main-panel">
+            {state.currentStep === "brief" && (
+              <DecisionBriefStep
+                brief={state.decisionBrief}
+                missingFields={missingDecisionFields}
+                onChange={updateDecisionBrief}
+                onContinue={proceedFromDecisionBrief}
+              />
+            )}
             {state.currentStep === "upload" && (
-              <UploadStep datasets={state.datasets} onProfile={profileDatasets} onFiles={addFiles} onSamples={useSamples} onRemoveDataset={removeDataset} />
+              <UploadStep
+                datasets={state.datasets}
+                decisionBrief={state.decisionBrief}
+                onProfile={profileDatasets}
+                onFiles={addFiles}
+                onSamples={useSamples}
+                onRemoveDataset={removeDataset}
+                onUpdateDatasetInputHints={updateDatasetInputHints}
+              />
             )}
             {state.currentStep === "profile" && (
-              <ProfileStep datasets={state.datasets} isWorking={loading} onRecommend={requestRecommendations} />
+              <ProfileStep datasets={state.datasets} decisionBrief={state.decisionBrief} isWorking={loading} onRecommend={requestRecommendations} />
             )}
             {state.currentStep === "recommend" && state.aiRecommendations && (
               <RecommendationStep
@@ -442,6 +642,7 @@ export default function DashboardCopilotApp() {
                 dataset={state.preparedDataset}
                 joins={state.selectedJoinRecommendations}
                 quality={state.qualityResults}
+                decisionReadiness={state.decisionReadiness}
                 transformationLog={state.transformationLog}
                 isWorking={loading}
                 onProceed={generateDashboardFromValidation}
@@ -451,6 +652,7 @@ export default function DashboardCopilotApp() {
               <DashboardStep
                 refNode={dashboardRef}
                 dataset={state.preparedDataset}
+                decisionReadiness={state.decisionReadiness}
                 recommendation={state.dashboardRecommendation}
                 onExport={() => navigateToStep("export")}
               />
@@ -460,22 +662,28 @@ export default function DashboardCopilotApp() {
                 <ExportStep
                   ready={Boolean(state.preparedDataset)}
                   dashboardReady={Boolean(state.dashboardRecommendation)}
-                  logReady={state.transformationLog.length > 0}
+                  logReady={Boolean(state.preparedDataset)}
                   rowCount={state.preparedDataset.rowCount ?? state.preparedDataset.data?.length ?? 0}
                   chartCount={state.dashboardRecommendation.charts.length}
                   qualityIssueCount={state.qualityResults.filter((issue) => issue.status !== "pass").length}
+                  decisionReadiness={state.decisionReadiness}
+                  handoffSummary={state.handoffSummary}
+                  handoffLoading={handoffLoading}
                   transformationCount={state.transformationLog.length}
                   onCsv={exportCsv}
+                  onHandoffSummary={generateHandoffSummary}
                   onReport={exportReport}
                   onPng={exportPng}
                   onLog={exportLog}
                 />
-                <div className="export-render-target" aria-hidden="true">
+                <div className="export-render-target" aria-hidden="true" inert>
                   <DashboardPreview
                     refNode={dashboardRef}
                     dataset={state.preparedDataset}
+                    decisionReadiness={state.decisionReadiness}
                     recommendation={state.dashboardRecommendation}
                     expandInsights
+                    interactive={false}
                     showInsightLinks={false}
                   />
                 </div>
@@ -565,6 +773,28 @@ function llmQualityConcerns(recommendations?: AIRecommendationResponse) {
   return recommendations?.source === "llm" ? recommendations.qualityConcerns : undefined;
 }
 
+function currentAiMode(
+  llmEnabled: boolean,
+  recommendations?: AIRecommendationResponse,
+  warning?: string,
+): DecisionHandoffAiMode {
+  if (!llmEnabled) return "disabled";
+  if (recommendations?.source === "llm") return "llm";
+  if (recommendations?.fallbackReason || warning) return "fallback";
+  return "deterministic";
+}
+
+function qualityIssueSummary(issue: QualityCheckResult) {
+  return [
+    issue.severity,
+    issue.status,
+    issue.checkType,
+    issue.description,
+    issue.caveat,
+    issue.suggestedAction,
+  ].filter(Boolean).join(": ");
+}
+
 function qualitySeverityRank(severity: QualityCheckResult["severity"]) {
   return { info: 0, low: 1, medium: 2, high: 3 }[severity];
 }
@@ -580,6 +810,8 @@ function llmFallbackWarning(
   response: AIRecommendationResponse,
   outputLabel: "recommendations" | "visualizations"
 ) {
+  const genericUnavailable =
+    "AI recommendations were unavailable. The app used deterministic recommendations. Review joins and caveats before action.";
   if (response.fallbackReason === "app_rate_limit") {
     const retry = response.retryAfterSeconds
       ? ` Try again in about ${formatRetryAfter(response.retryAfterSeconds)}.`
@@ -605,25 +837,25 @@ function llmFallbackWarning(
     return `The recommendation request was too large for the app limits, so deterministic ${outputLabel} are being used.${fallbackDetail(response)}`;
   }
   if (response.fallbackReason === "request_timeout") {
-    return `The LLM request timed out, so deterministic ${outputLabel} are being used. Increase LLM_REQUEST_TIMEOUT_MS if this keeps happening.`;
+    return genericUnavailable;
   }
   if (response.fallbackReason === "network_error") {
-    return `The recommendation route could not reach the LLM provider, so deterministic ${outputLabel} are being used.`;
+    return genericUnavailable;
   }
   if (response.fallbackReason === "provider_unavailable") {
-    return `The recommendation service is unavailable, so deterministic ${outputLabel} are being used.${fallbackDetail(response)}`;
+    return genericUnavailable;
   }
   if (response.fallbackReason === "model_response_truncated") {
     const jsonLabel = outputLabel === "visualizations" ? "dashboard JSON" : "recommendation JSON";
     return `The LLM response was truncated before the ${jsonLabel} finished, so deterministic ${outputLabel} are being used. Increase LLM_MAX_COMPLETION_TOKENS and retry.`;
   }
   if (response.fallbackReason === "model_response_invalid") {
-    return `The LLM returned a response that did not match the dashboard schema, so deterministic ${outputLabel} are being used.`;
+    return `The LLM returned a response that did not match the dashboard format, so deterministic ${outputLabel} are being used.`;
   }
   if (outputLabel === "visualizations") {
-    return "LLM dashboard recommendations are unavailable, so deterministic visualizations are being used.";
+    return genericUnavailable;
   }
-  return "LLM recommendations are unavailable, so deterministic recommendations are being used.";
+  return genericUnavailable;
 }
 
 function formatRetryAfter(seconds: number) {

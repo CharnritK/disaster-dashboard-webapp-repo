@@ -1,0 +1,4 @@
+interface:
+  display_name: "Bootstrap Decision Support App"
+  short_description: "Start a scoped decision-support dashboard"
+  default_prompt: "Use $bootstrap-decision-support-app to adapt this project into a new decision-support dashboard for another response context."

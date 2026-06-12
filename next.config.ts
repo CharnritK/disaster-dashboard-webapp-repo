@@ -15,6 +15,7 @@ const contentSecurityPolicy = [
 ].join("; ");
 
 const nextConfig: NextConfig = {
+  distDir: "dist",
   poweredByHeader: false,
   async headers() {
     return [

@@ -7,6 +7,7 @@ import type {
 } from "@/types/recommendations";
 import type { TransformationStep } from "@/types/transformations";
 import { aggregateRows, fieldDisplayLabel, inferMetricAggregation, metricDisplayLabel, toNumber } from "./chartMetrics";
+import { findLocationFields, isCoordinateField } from "./locationFields";
 
 const MAX_FACTS = 14;
 
@@ -65,6 +66,8 @@ export function computeDashboardInsightFacts(
   if (dateFields[0]) {
     facts.push(...buildTrendFacts(rows, dateFields[0], primaryMetric));
   }
+
+  facts.push(...buildLocationCoverageFacts(dataset));
 
   const concentrationField = categoricalFields.find((field) => field !== primaryGroup);
   if (concentrationField) {
@@ -148,6 +151,35 @@ function buildGroupMetricFacts(
       metricField,
       groupField,
       confidence: 0.92,
+    },
+  ];
+}
+
+function buildLocationCoverageFacts(dataset: Dataset): DashboardInsightFact[] {
+  const location = findLocationFields(dataset);
+  if (!location.latitudeField || !location.longitudeField) return [];
+  const totalRows = dataset.data?.length ?? dataset.rowCount ?? 0;
+  const coverage = location.coordinateCoveragePercentage;
+  return [
+    {
+      id: "fact-location-coverage",
+      insightType: "coverage",
+      title: "Location coverage",
+      description:
+        location.validCoordinateRowCount > 0
+          ? `${location.validCoordinateRowCount.toLocaleString()} rows have usable latitude and longitude pairs.`
+          : "Latitude and longitude fields were detected, but no usable coordinate pairs were found.",
+      severity: coverage >= 80 ? "info" : coverage > 0 ? "medium" : "high",
+      evidence: [
+        `${fieldDisplayLabel(location.latitudeField)} + ${fieldDisplayLabel(location.longitudeField)}`,
+        `${coverage}% coordinate coverage`,
+        `${totalRows.toLocaleString()} total rows`,
+      ],
+      recommendedAction:
+        coverage >= 80
+          ? "Use the location view as a coverage check and keep precise-point privacy in mind before sharing."
+          : "Review missing or invalid coordinates before using the location view for response decisions.",
+      confidence: 0.9,
     },
   ];
 }
@@ -312,13 +344,14 @@ function buildQualityFacts(qualityResults: QualityCheckResult[]): DashboardInsig
     .slice(0, 2)
     .map((issue) => {
       const action = issue.suggestedAction ?? "Review this quality check before publishing.";
+      const evidence = issue.caveat ?? action;
       return {
         id: `fact-quality-${issue.id}`,
         insightType: "quality" as const,
         title: issue.checkType,
         description: issue.description,
         severity: issue.severity,
-        evidence: [action],
+        evidence: [evidence],
         recommendedAction: action,
         confidence: 0.9,
       };
@@ -448,10 +481,6 @@ function formatNumber(value: number) {
   return Number.isInteger(value)
     ? value.toLocaleString()
     : value.toLocaleString(undefined, { maximumFractionDigits: 1 });
-}
-
-function isCoordinateField(field: string) {
-  return /^(lat|latitude|lon|lng|longitude)$/i.test(field);
 }
 
 function slugify(value: string) {

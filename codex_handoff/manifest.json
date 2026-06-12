@@ -1,0 +1,26 @@
+{
+  "package": "dashboard-copilot-codex-handoff",
+  "version": "2026-06-11",
+  "target_branch": "001-decision-context-data-quality",
+  "objective": "Prepare Codex to build and validate Evidence-to-Dashboard Decision Packet for Dashboard Copilot showcase",
+  "goals": [
+    "GOAL_00_PREFLIGHT",
+    "GOAL_01_EVIDENCE_COVERAGE_CORE",
+    "GOAL_02_EVIDENCE_COVERAGE_UI",
+    "GOAL_03_SIMULATED_DEMO_DATA",
+    "GOAL_04_HANDOFF_PACKET_FALLBACKS",
+    "GOAL_05_ACCESSIBLE_NO_CODE_UX",
+    "GOAL_07_FINAL_RELEASE_PASS"
+  ],
+  "optional_goals": [
+    "GOAL_06_TEMPLATE_PACK_OPTIONAL"
+  ],
+  "required_validation": [
+    "npm run lint",
+    "npm run test",
+    "npm run build"
+  ],
+  "red_team_required_after_each_test": true,
+  "no_new_dependencies_by_default": true,
+  "handoff_readiness": "READY_WITH_ASSUMPTIONS"
+}

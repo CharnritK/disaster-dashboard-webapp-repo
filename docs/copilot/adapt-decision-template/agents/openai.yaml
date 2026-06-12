@@ -1,0 +1,4 @@
+interface:
+  display_name: "Adapt Decision Template"
+  short_description: "Add a new decision workflow safely"
+  default_prompt: "Use $adapt-decision-template to add a new decision template, data collection fields, readiness checks, and tests."

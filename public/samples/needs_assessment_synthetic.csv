@@ -1,0 +1,21 @@
+district_code,district_name,reported_at,affected_households,response_gap_percent,damage_severity,shelter_capacity,shelter_occupied,water_access_percent,data_source,notes
+D001,Ampawa,2026-01-01,120,15,3,200,120,92,synthetic,baseline
+D001,Ampawa,2026-01-15,150,20,4,200,145,88,synthetic,rising need
+D002,Bang Khonthi,2026-01-01,300,35,5,250,240,72,synthetic,high gap
+D002,Bang Khonthi,2026-01-15,280,25,4,250,230,77,synthetic,improving
+D003,Mueang,2026-01-01,90,10,2,300,80,95,synthetic,stable
+D003,Mueang,2026-01-15,110,12,2,300,95,94,synthetic,stable
+D004,Mae Klong,2026-01-01,450,55,5,180,190,60,synthetic,over capacity
+D004,Mae Klong,2026-01-15,470,130,5,180,210,58,synthetic,invalid percent for QA
+D005,Ban Phaeo,2026-01-01,50,8,1,150,40,98,synthetic,low need
+D005,Ban Phaeo,2026-01-15,-20,7,1,150,35,98,synthetic,negative count for QA
+D006,Krathum Baen,2026-01-01,210,22,3,220,150,82,synthetic,moderate
+D006,Krathum Baen,2026-01-15,230,24,3,220,165,80,synthetic,moderate
+D007,Phra Pradaeng,2026-01-01,180,18,3,210,120,85,synthetic,moderate
+D008,Lat Lum Kaeo,2026-01-01,75,,2,160,70,90,synthetic,missing response gap
+D009,Khlong Luang,2026-01-01,620,65,5,300,290,55,synthetic,outlier
+D010,Nong Suea,2026-01-01,130,16,2,190,110,87,synthetic,
+D011,Sai Noi,2026-01-01,160,19,3,200,130,83,synthetic,
+D012,Bang Yai,2026-01-01,140,17,2,180,115,86,synthetic,
+D013,Bang Kruai,2026-01-01,155,18,2,170,120,84,synthetic,
+D014,,2026-01-01,100,14,2,160,100,89,synthetic,missing district name

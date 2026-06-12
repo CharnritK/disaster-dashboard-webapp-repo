@@ -15,6 +15,7 @@
 
 # next.js
 /.next/
+/dist/
 /out/
 next-env.d.ts
 
