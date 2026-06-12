@@ -69,7 +69,7 @@ const defaultMaxOutputTokens = numberFromEnv("LLM_MAX_COMPLETION_TOKENS", 3_200,
 
 export const llmServerConfig = {
   enabled: booleanFromEnv("LLM_ENABLED", true),
-  apiKey: process.env.LLM_API_KEY,
+apiKey: process.env.LLM_API_KEY ?? process.env.OPENAI_API_KEY,
   provider: process.env.LLM_PROVIDER ?? "openai",
   model: process.env.LLM_MODEL ?? "gpt-5.4-mini",
   workflowTimeoutMs: numberFromEnv("LLM_WORKFLOW_REQUEST_TIMEOUT_MS", defaultLlmTimeoutMs, 1_000),

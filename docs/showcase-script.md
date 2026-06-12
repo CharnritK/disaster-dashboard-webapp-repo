@@ -1,5 +1,10 @@
 # Dashboard Copilot Showcase Script
 
+Related docs:
+
+- [Digital Public Good Guide](digital-public-good-guide.md)
+- [Codex Starter Prompts](codex-starter-prompts.md)
+
 ## 3-minute demo script
 
 1. Open `http://localhost:3000` and start on Step 1, `Select Decision Template`.

@@ -13,6 +13,12 @@ const resources = [
     description: "The open-sourced code behind Dashboard Copilot.",
   },
   {
+    title: "Public-Good Guide",
+    href: "https://github.com/datakind/disaster-dashboard-webapp-repo/blob/main/docs/digital-public-good-guide.md",
+    description:
+      "Plain-English project tutorial, scope, extension guidance, and technical appendix.",
+  },
+  {
     title: "License",
     href: "https://github.com/datakind/disaster-dashboard-webapp-repo?tab=Apache-2.0-1-ov-file#readme",
     description: "Open-source licensing for Dashboard Copilot.",

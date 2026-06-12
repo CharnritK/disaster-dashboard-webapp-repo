@@ -60,3 +60,6 @@ This handoff is implementation-ready for Codex, with assumptions:
 - Node/npm environment is available.
 - Codex can read and edit repo files.
 - Browser smoke testing is available locally or can be performed by the user.
+# Current Project Tutorial
+
+Start with [../docs/digital-public-good-guide.md](../docs/digital-public-good-guide.md) for the plain-English project overview, scope, extension guidance, starter Codex prompts, and technical appendix. Use [../docs/README.md](../docs/README.md) as the project documentation index.

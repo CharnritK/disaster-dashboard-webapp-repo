@@ -1,0 +1,395 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+}
+
+.video-root {
+  background:
+    linear-gradient(135deg, rgba(15, 118, 110, 0.1), rgba(37, 99, 235, 0.08)),
+    #f7f8f5;
+  color: #111827;
+  overflow: hidden;
+}
+
+.scene-shell {
+  padding: 72px 86px 80px;
+}
+
+.scene-header {
+  max-width: 1500px;
+}
+
+.scene-eyebrow {
+  color: #0f766e;
+  display: block;
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: 0;
+  margin-bottom: 18px;
+  text-transform: uppercase;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+.scene-header h1 {
+  color: #111827;
+  font-size: 78px;
+  font-weight: 850;
+  letter-spacing: 0;
+  line-height: 0.98;
+  max-width: 1500px;
+}
+
+.scene-body {
+  height: calc(100% - 180px);
+  margin-top: 44px;
+}
+
+.scene-subtitle {
+  color: #374151;
+  font-size: 34px;
+  line-height: 1.25;
+  max-width: 840px;
+}
+
+.opening-layout {
+  align-items: stretch;
+  display: grid;
+  gap: 44px;
+  grid-template-columns: 1.05fr 0.95fr;
+  height: 100%;
+}
+
+.opening-copy {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.opening-card-grid {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.metric-card,
+.business-row,
+.architecture-node,
+.module-row,
+.callout-card,
+.closing-row,
+.assertion-strip,
+.test-note,
+.closing-statement {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(17, 24, 39, 0.1);
+  border-radius: 8px;
+  box-shadow: 0 22px 48px rgba(17, 24, 39, 0.08);
+}
+
+.metric-card {
+  min-height: 150px;
+  padding: 28px;
+}
+
+.metric-card span,
+.business-row span,
+.architecture-node span,
+.callout-card span,
+.module-row span {
+  color: #0f766e;
+  display: block;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: 0;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+}
+
+.metric-card strong {
+  color: #111827;
+  display: block;
+  font-size: 30px;
+  line-height: 1.12;
+}
+
+.decision-chain {
+  align-self: center;
+  background: #111827;
+  border-radius: 8px;
+  color: #f9fafb;
+  display: grid;
+  gap: 18px;
+  padding: 36px;
+}
+
+.chain-item {
+  align-items: center;
+  border: 1px solid rgba(249, 250, 251, 0.18);
+  border-radius: 8px;
+  display: grid;
+  gap: 22px;
+  grid-template-columns: 82px 1fr;
+  padding: 26px;
+}
+
+.chain-item strong {
+  color: #f59e0b;
+  font-size: 30px;
+}
+
+.chain-item span {
+  font-size: 34px;
+  font-weight: 760;
+}
+
+.business-grid {
+  display: grid;
+  gap: 18px;
+  max-width: 1380px;
+}
+
+.business-row {
+  align-items: center;
+  display: grid;
+  gap: 32px;
+  grid-template-columns: 300px 1fr;
+  min-height: 104px;
+  padding: 26px 30px;
+}
+
+.business-row strong {
+  color: #111827;
+  font-size: 32px;
+  line-height: 1.18;
+}
+
+.assertion-strip {
+  border-left: 10px solid #d97706;
+  color: #1f2937;
+  font-size: 32px;
+  line-height: 1.22;
+  margin-top: 26px;
+  padding: 28px 34px;
+}
+
+.screenshot-layout {
+  align-items: stretch;
+  display: grid;
+  gap: 34px;
+  grid-template-columns: minmax(0, 1.2fr) 440px;
+  height: 100%;
+}
+
+.screenshot-frame {
+  background: #ffffff;
+  border: 10px solid #111827;
+  border-radius: 8px;
+  box-shadow: 0 26px 58px rgba(17, 24, 39, 0.18);
+  overflow: hidden;
+}
+
+.screenshot-frame.green {
+  border-color: #0f766e;
+}
+
+.screenshot-frame.blue {
+  border-color: #2563eb;
+}
+
+.screenshot-frame.amber {
+  border-color: #d97706;
+}
+
+.screenshot-frame.teal {
+  border-color: #0d9488;
+}
+
+.screenshot-frame.red {
+  border-color: #dc2626;
+}
+
+.callout-card {
+  align-self: end;
+  border-top: 10px solid #0f766e;
+  padding: 30px;
+}
+
+.callout-card.blue {
+  border-top-color: #2563eb;
+}
+
+.callout-card.amber {
+  border-top-color: #d97706;
+}
+
+.callout-card.teal {
+  border-top-color: #0d9488;
+}
+
+.callout-card.red {
+  border-top-color: #dc2626;
+}
+
+.callout-card p {
+  color: #1f2937;
+  font-size: 30px;
+  line-height: 1.2;
+}
+
+.architecture-grid {
+  display: grid;
+  gap: 22px;
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.architecture-node {
+  min-height: 420px;
+  padding: 30px;
+}
+
+.architecture-node h2 {
+  color: #111827;
+  font-size: 34px;
+  line-height: 1.05;
+  margin-bottom: 22px;
+}
+
+.architecture-node p {
+  color: #374151;
+  font-size: 26px;
+  line-height: 1.22;
+}
+
+.architecture-node small {
+  border-top: 1px solid rgba(17, 24, 39, 0.12);
+  color: #b45309;
+  display: block;
+  font-size: 22px;
+  font-weight: 780;
+  line-height: 1.2;
+  margin-top: 26px;
+  padding-top: 20px;
+}
+
+.risk-rules {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: repeat(3, 1fr);
+  margin-top: 30px;
+}
+
+.risk-rules span {
+  background: #111827;
+  border-radius: 8px;
+  color: #f9fafb;
+  font-size: 26px;
+  font-weight: 720;
+  line-height: 1.22;
+  padding: 26px;
+}
+
+.module-map {
+  display: grid;
+  gap: 16px;
+}
+
+.module-row {
+  align-items: center;
+  display: grid;
+  gap: 24px;
+  grid-template-columns: 170px 560px 1fr;
+  min-height: 100px;
+  padding: 22px 26px;
+}
+
+.module-row code,
+.test-note code {
+  background: #eef2ff;
+  border: 1px solid rgba(37, 99, 235, 0.16);
+  border-radius: 8px;
+  color: #1d4ed8;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-size: 22px;
+  line-height: 1.25;
+  padding: 12px 14px;
+}
+
+.module-row p {
+  color: #374151;
+  font-size: 26px;
+  line-height: 1.2;
+}
+
+.test-note {
+  border-left: 10px solid #2563eb;
+  color: #1f2937;
+  font-size: 28px;
+  line-height: 1.28;
+  margin-top: 24px;
+  padding: 24px 30px;
+}
+
+.closing-grid {
+  display: grid;
+  gap: 16px;
+  max-width: 1440px;
+}
+
+.closing-row {
+  align-items: center;
+  display: grid;
+  gap: 24px;
+  grid-template-columns: 92px 1fr;
+  min-height: 96px;
+  padding: 22px 28px;
+}
+
+.closing-row strong {
+  color: #d97706;
+  font-size: 32px;
+}
+
+.closing-row span {
+  color: #111827;
+  font-size: 31px;
+  font-weight: 760;
+  line-height: 1.14;
+}
+
+.closing-statement {
+  background: #111827;
+  border: 0;
+  color: #f9fafb;
+  font-size: 38px;
+  font-weight: 760;
+  line-height: 1.18;
+  margin-top: 28px;
+  padding: 32px 36px;
+}
+
+.timeline-track {
+  background: rgba(17, 24, 39, 0.16);
+  bottom: 0;
+  height: 12px;
+  left: 0;
+  position: absolute;
+  right: 0;
+}
+
+.timeline-fill {
+  background: linear-gradient(90deg, #0f766e, #d97706, #2563eb);
+  height: 100%;
+  transform-origin: left center;
+}

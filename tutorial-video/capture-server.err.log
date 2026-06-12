@@ -1,0 +1,129 @@
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Point\2026\projects\disaster-dashboard-webapp-repo\dist\routes-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Point\\2026\\projects\\disaster-dashboard-webapp-repo\\dist\\routes-manifest.json',
+  page: '/'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Point\2026\projects\disaster-dashboard-webapp-repo\dist\routes-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Point\\2026\\projects\\disaster-dashboard-webapp-repo\\dist\\routes-manifest.json',
+  page: '/'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Point\2026\projects\disaster-dashboard-webapp-repo\dist\routes-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Point\\2026\\projects\\disaster-dashboard-webapp-repo\\dist\\routes-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Point\2026\projects\disaster-dashboard-webapp-repo\dist\routes-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Point\\2026\\projects\\disaster-dashboard-webapp-repo\\dist\\routes-manifest.json'
+}
+[Error: ENOENT: no such file or directory, open 'C:\Point\2026\projects\disaster-dashboard-webapp-repo\dist\routes-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Point\\2026\\projects\\disaster-dashboard-webapp-repo\\dist\\routes-manifest.json',
+  page: '/'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Point\2026\projects\disaster-dashboard-webapp-repo\dist\server\pages-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Point\\2026\\projects\\disaster-dashboard-webapp-repo\\dist\\server\\pages-manifest.json'
+}
+[Error: ENOENT: no such file or directory, open 'C:\Point\2026\projects\disaster-dashboard-webapp-repo\dist\routes-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Point\\2026\\projects\\disaster-dashboard-webapp-repo\\dist\\routes-manifest.json',
+  page: '/'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Point\2026\projects\disaster-dashboard-webapp-repo\dist\server\pages-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Point\\2026\\projects\\disaster-dashboard-webapp-repo\\dist\\server\\pages-manifest.json'
+}
+[Error: ENOENT: no such file or directory, open 'C:\Point\2026\projects\disaster-dashboard-webapp-repo\dist\routes-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Point\\2026\\projects\\disaster-dashboard-webapp-repo\\dist\\routes-manifest.json'
+}
+[Error: ENOENT: no such file or directory, open 'C:\Point\2026\projects\disaster-dashboard-webapp-repo\dist\routes-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Point\\2026\\projects\\disaster-dashboard-webapp-repo\\dist\\routes-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Point\2026\projects\disaster-dashboard-webapp-repo\dist\server\app-paths-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Point\\2026\\projects\\disaster-dashboard-webapp-repo\\dist\\server\\app-paths-manifest.json',
+  page: '/'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Point\2026\projects\disaster-dashboard-webapp-repo\dist\server\pages-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Point\\2026\\projects\\disaster-dashboard-webapp-repo\\dist\\server\\pages-manifest.json'
+}
+[Error: ENOENT: no such file or directory, open 'C:\Point\2026\projects\disaster-dashboard-webapp-repo\dist\server\app-paths-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Point\\2026\\projects\\disaster-dashboard-webapp-repo\\dist\\server\\app-paths-manifest.json',
+  page: '/'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Point\2026\projects\disaster-dashboard-webapp-repo\dist\server\pages-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Point\\2026\\projects\\disaster-dashboard-webapp-repo\\dist\\server\\pages-manifest.json'
+}
+[Error: ENOENT: no such file or directory, open 'C:\Point\2026\projects\disaster-dashboard-webapp-repo\dist\routes-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Point\\2026\\projects\\disaster-dashboard-webapp-repo\\dist\\routes-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Point\2026\projects\disaster-dashboard-webapp-repo\dist\server\app-paths-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Point\\2026\\projects\\disaster-dashboard-webapp-repo\\dist\\server\\app-paths-manifest.json',
+  page: '/'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Point\2026\projects\disaster-dashboard-webapp-repo\dist\server\pages-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Point\\2026\\projects\\disaster-dashboard-webapp-repo\\dist\\server\\pages-manifest.json'
+}
+[Error: ENOENT: no such file or directory, open 'C:\Point\2026\projects\disaster-dashboard-webapp-repo\dist\server\app-paths-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Point\\2026\\projects\\disaster-dashboard-webapp-repo\\dist\\server\\app-paths-manifest.json',
+  page: '/'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Point\2026\projects\disaster-dashboard-webapp-repo\dist\routes-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Point\\2026\\projects\\disaster-dashboard-webapp-repo\\dist\\routes-manifest.json'
+}
+[Error: ENOENT: no such file or directory, open 'C:\Point\2026\projects\disaster-dashboard-webapp-repo\dist\routes-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Point\\2026\\projects\\disaster-dashboard-webapp-repo\\dist\\routes-manifest.json'
+}
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, rename 'C:\Point\2026\projects\disaster-dashboard-webapp-repo\dist\cache\webpack\client-development-fallback\0.pack.gz_' -> 'C:\Point\2026\projects\disaster-dashboard-webapp-repo\dist\cache\webpack\client-development-fallback\0.pack.gz'

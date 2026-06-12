@@ -2,6 +2,15 @@
 
 Recommendation-first prototype for turning humanitarian and disaster response datasets into transparent dashboards.
 
+## Project Documentation
+
+Start with these documents if you are reviewing, submitting, or adapting the project:
+
+- [Digital Public Good Guide](docs/digital-public-good-guide.md): plain-English overview, scope, extension guidance, starter prompts, and technical appendix.
+- [Codex Starter Prompts](docs/codex-starter-prompts.md): copy-ready prompts for adapting the project to new decision-support contexts.
+- [Showcase Script](docs/showcase-script.md): short demo path for explaining the workflow to a non-technical audience.
+- [Repo-local Codex Skills](docs/copilot/): skills for visualization standards, bootstrapping another decision-support app, and adapting decision templates.
+
 ## Run Locally
 
 Use Node.js `26.1.0` as pinned in `.tool-versions`, then install from the

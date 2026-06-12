@@ -39,3 +39,6 @@ Assumptions:
 - The repo structure still matches the provided context.
 - Package manager and test scripts should be verified from `package.json` before commands are run.
 - Storybook, Playwright, and axe dependencies may not exist yet; add only with approval or implement phase-1 tests using existing dependencies.
+# Current Project Tutorial
+
+Start with [../docs/digital-public-good-guide.md](../docs/digital-public-good-guide.md) for the plain-English project overview, scope, extension guidance, starter Codex prompts, and technical appendix. Use [../docs/README.md](../docs/README.md) as the project documentation index.
