@@ -31,7 +31,8 @@ Copy `.env.example` to `.env.local` for local development. The checked-in exampl
 Optional server-only environment variables:
 
 ```bash
-LLM_ENABLED=true
+LLM_ENABLED=false
+NEXT_PUBLIC_COPILOT_API_ENABLED=false
 LLM_API_KEY=
 LLM_PROVIDER=openai
 LLM_MODEL=
@@ -56,7 +57,7 @@ RECOMMEND_MAX_DASHBOARD_FACTS=14
 RECOMMEND_MAX_SUMMARY_ITEMS=8
 ```
 
-The browser never reads `LLM_API_KEY`. If the recommendation route cannot call an LLM, if `LLM_ENABLED=false`, or if a request exceeds the configured limits, the app falls back to deterministic recommendations.
+The browser never reads `LLM_API_KEY`. If the recommendation route cannot call an LLM, if `LLM_ENABLED=false`, or if a request exceeds the configured limits, the app falls back to deterministic recommendations. Static Codex Sites builds should keep `NEXT_PUBLIC_COPILOT_API_ENABLED=false` so the browser uses deterministic in-page recommendations instead of calling unavailable API routes.
 
 AI copilot calls are routed server-side by task. Workflow harmonization and quality repair guidance default to the mini model because those tasks are bounded and schema-heavy. Dashboard synthesis and decision handoff summaries default to the full-size model because they require more judgment across readiness, caveats, and stakeholder-facing narrative. `LLM_MODEL` is still supported as a backward-compatible fallback when a task-specific model variable is omitted; task-specific variables take precedence.
 

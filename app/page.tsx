@@ -8,6 +8,7 @@ import type { AIRecommendationResponse, DashboardRecommendation, JoinRecommendat
 import type { QualityCheckResult } from "@/types/quality";
 import type { TransformationStep } from "@/types/transformations";
 import type { WorkflowStep } from "@/lib/config";
+import { buildDeterministicDecisionHandoffSummary } from "@/lib/copilotHandoff";
 import { loadSampleDatasets, parseFile, type SampleDatasetKind } from "@/lib/fileParsers";
 import { profileDataset } from "@/lib/profiling";
 import { AIRecommendationRequestError, generateFallbackRecommendations, requestAIRecommendations, requestDecisionHandoffCopilotSummary } from "@/lib/recommendations";
@@ -63,12 +64,14 @@ const initialState: WorkflowState = {
   currentStep: "brief"
 };
 
+const copilotApiEnabled = process.env.NEXT_PUBLIC_COPILOT_API_ENABLED !== "false";
+
 export default function DashboardCopilotApp() {
   const [state, setState] = useState<WorkflowState>(initialState);
   const [errors, setErrors] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [handoffLoading, setHandoffLoading] = useState(false);
-  const [llmEnabled, setLlmEnabled] = useState(true);
+  const [llmEnabled, setLlmEnabled] = useState(copilotApiEnabled);
   const dashboardRef = useRef<HTMLDivElement>(null);
   const workflowShellRef = useRef<HTMLDivElement>(null);
 
@@ -214,7 +217,7 @@ export default function DashboardCopilotApp() {
         profiles: profiled.map((dataset) => dataset.profile!),
         decisionContext: state.decisionBrief
       };
-      if (llmEnabled) {
+      if (llmEnabled && copilotApiEnabled) {
         try {
           const ai = await requestAIRecommendations(context, true, "workflow");
           recommendations = mergeRecommendationResponse(fallback, ai, profiled);
@@ -345,7 +348,7 @@ export default function DashboardCopilotApp() {
     setLoading(true);
     try {
       try {
-        if (llmEnabled) {
+        if (llmEnabled && copilotApiEnabled) {
           const ai = await requestAIRecommendations(
             {
               mode: "single",
@@ -463,23 +466,23 @@ export default function DashboardCopilotApp() {
         state.qualityResults,
         state.transformationLog,
       );
-      const summary = await requestDecisionHandoffCopilotSummary(
-        {
-          taskType: "decision_handoff_summary",
-          decisionBrief: state.decisionBrief,
-          decisionReadiness: state.decisionReadiness,
-          evidenceCoverage,
-          qualitySummary: state.qualityResults
-            .filter((issue) => issue.status !== "pass")
-            .map(qualityIssueSummary),
-          transformationSummary: state.transformationLog.map((step) => step.description),
-          dashboardFacts,
-          aiMode,
-          reviewNotice: packet.reviewNotice,
-          limitations: packet.limitations,
-        },
-        llmEnabled,
-      );
+      const handoffContext = {
+        taskType: "decision_handoff_summary" as const,
+        decisionBrief: state.decisionBrief,
+        decisionReadiness: state.decisionReadiness,
+        evidenceCoverage,
+        qualitySummary: state.qualityResults
+          .filter((issue) => issue.status !== "pass")
+          .map(qualityIssueSummary),
+        transformationSummary: state.transformationLog.map((step) => step.description),
+        dashboardFacts,
+        aiMode,
+        reviewNotice: packet.reviewNotice,
+        limitations: packet.limitations,
+      };
+      const summary = copilotApiEnabled
+        ? await requestDecisionHandoffCopilotSummary(handoffContext, llmEnabled)
+        : buildDeterministicDecisionHandoffSummary(handoffContext);
       setState((current) => ({
         ...current,
         handoffSummary: summary,
@@ -547,6 +550,14 @@ export default function DashboardCopilotApp() {
   }
 
   function handleLlmEnabledChange(enabled: boolean) {
+    if (!copilotApiEnabled) {
+      setLlmEnabled(false);
+      setState((current) => ({
+        ...current,
+        warning: "AI is off. Deterministic profiling, evidence coverage, readiness checks, and dashboard recommendations remain available."
+      }));
+      return;
+    }
     setLlmEnabled(enabled);
     setState((current) => ({
       ...current,
@@ -585,6 +596,7 @@ export default function DashboardCopilotApp() {
       <LandingHero
         loading={loading}
         llmEnabled={llmEnabled}
+        llmAvailable={copilotApiEnabled}
         onLlmEnabledChange={handleLlmEnabledChange}
       />
       <div className="app-shell" ref={workflowShellRef}>

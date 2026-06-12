@@ -3668,10 +3668,12 @@ function HandoffSummaryPanel({ summary }: { summary: DecisionHandoffSummary }) {
 export function LandingHero({
   loading = false,
   llmEnabled,
+  llmAvailable = true,
   onLlmEnabledChange,
 }: {
   loading?: boolean;
   llmEnabled: boolean;
+  llmAvailable?: boolean;
   onLlmEnabledChange: (enabled: boolean) => void;
 }) {
   return (
@@ -3691,6 +3693,7 @@ export function LandingHero({
             <input
               type="checkbox"
               checked={llmEnabled}
+              disabled={!llmAvailable}
               onChange={(event) => onLlmEnabledChange(event.target.checked)}
             />
             <span className="llm-toggle-copy">
