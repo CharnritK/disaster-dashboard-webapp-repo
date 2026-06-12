@@ -1,5 +1,9 @@
 import type { Dataset } from "@/types/dataset";
 import type {
+  DecisionHandoffCopilotContext,
+  DecisionHandoffSummary,
+} from "@/types/copilot";
+import type {
   AIRecommendationResponse,
   QualityConcern,
   RecommendationScope,
@@ -78,6 +82,26 @@ export async function requestAIRecommendations(
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ ...context, useLlm, recommendationScope }),
+  });
+  if (!response.ok) {
+    const message = await responseErrorMessage(response);
+    throw new AIRecommendationRequestError(
+      message,
+      fallbackReasonForStatus(response.status),
+      retryAfterSeconds(response.headers.get("retry-after")),
+    );
+  }
+  return response.json();
+}
+
+export async function requestDecisionHandoffCopilotSummary(
+  context: DecisionHandoffCopilotContext,
+  useLlm = true,
+): Promise<DecisionHandoffSummary> {
+  const response = await fetch("/api/copilot", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ...context, useLlm }),
   });
   if (!response.ok) {
     const message = await responseErrorMessage(response);

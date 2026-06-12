@@ -19,6 +19,11 @@ export type DashboardInsightType =
 
 export type MetricAggregation = "sum" | "average" | "count";
 export type RecommendationScope = "workflow" | "dashboard";
+export type CopilotTaskType =
+  | "workflow_harmonization"
+  | "dashboard_synthesis"
+  | "quality_repair_guidance"
+  | "decision_handoff_summary";
 export type AnnotationTone = "neutral" | "success" | "warn" | "alert";
 export type MobileBehavior =
   | "auto"

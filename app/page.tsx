@@ -1,6 +1,7 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import type { DecisionHandoffAiMode, DecisionHandoffSummary } from "@/types/copilot";
 import type { Dataset, DatasetInputHints } from "@/types/dataset";
 import type { DecisionBrief, DecisionReadinessResult } from "@/types/decision";
 import type { AIRecommendationResponse, DashboardRecommendation, JoinRecommendation, QualityConcern } from "@/types/recommendations";
@@ -9,7 +10,7 @@ import type { TransformationStep } from "@/types/transformations";
 import type { WorkflowStep } from "@/lib/config";
 import { loadSampleDatasets, parseFile, type SampleDatasetKind } from "@/lib/fileParsers";
 import { profileDataset } from "@/lib/profiling";
-import { AIRecommendationRequestError, generateFallbackRecommendations, requestAIRecommendations } from "@/lib/recommendations";
+import { AIRecommendationRequestError, generateFallbackRecommendations, requestAIRecommendations, requestDecisionHandoffCopilotSummary } from "@/lib/recommendations";
 import { applyJoinRecommendations, prepareSingleDataset, selectJoinPlan } from "@/lib/harmonization";
 import { reconcileCleaningRecommendationsForDatasetColumns } from "@/lib/cleaningTransforms";
 import { runQualityChecks } from "@/lib/validation";
@@ -22,7 +23,7 @@ import { computeDashboardInsightFacts } from "@/lib/dashboardInsights";
 import { downloadText, toCsv } from "@/lib/exportCsv";
 import { exportElementAsPng } from "@/lib/exportPng";
 import { exportElementAsPdf } from "@/lib/exportPdf";
-import { buildDecisionHandoffPacket, type DecisionHandoffAiMode } from "@/lib/workflowExport";
+import { buildDecisionHandoffPacket } from "@/lib/workflowExport";
 import {
   DashboardPreview,
   DashboardStep,
@@ -47,6 +48,7 @@ type WorkflowState = {
   preparedDataset?: Dataset;
   qualityResults: QualityCheckResult[];
   dashboardRecommendation?: DashboardRecommendation;
+  handoffSummary?: DecisionHandoffSummary;
   transformationLog: TransformationStep[];
   currentStep: WorkflowStep;
   warning?: string;
@@ -65,13 +67,19 @@ export default function DashboardCopilotApp() {
   const [state, setState] = useState<WorkflowState>(initialState);
   const [errors, setErrors] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  const [handoffLoading, setHandoffLoading] = useState(false);
   const [llmEnabled, setLlmEnabled] = useState(true);
   const dashboardRef = useRef<HTMLDivElement>(null);
+  const workflowShellRef = useRef<HTMLDivElement>(null);
 
   const activeDataset = state.preparedDataset ?? state.datasets.find((dataset) => dataset.data?.length) ?? state.datasets[0];
   const joinRecommendations = state.aiRecommendations?.joinRecommendations ?? [];
   const joinPlan = selectJoinPlan(state.datasets, joinRecommendations);
   const missingDecisionFields = validateDecisionBrief(state.decisionBrief);
+
+  useEffect(() => {
+    workflowShellRef.current?.scrollIntoView({ block: "start" });
+  }, [state.currentStep]);
 
   async function addFiles(files: FileList | null) {
     if (!files?.length) return;
@@ -90,6 +98,7 @@ export default function DashboardCopilotApp() {
         decisionReadiness: undefined,
         qualityResults: [],
         dashboardRecommendation: undefined,
+        handoffSummary: undefined,
         transformationLog: [],
         currentStep: "upload",
         warning: undefined
@@ -116,6 +125,7 @@ export default function DashboardCopilotApp() {
         decisionReadiness: undefined,
         qualityResults: [],
         dashboardRecommendation: undefined,
+        handoffSummary: undefined,
         transformationLog: [],
         currentStep: "upload",
         warning: undefined
@@ -141,6 +151,7 @@ export default function DashboardCopilotApp() {
         decisionReadiness: undefined,
         qualityResults: [],
         dashboardRecommendation: undefined,
+        handoffSummary: undefined,
         transformationLog: [],
         currentStep: "upload",
         warning: undefined
@@ -161,6 +172,7 @@ export default function DashboardCopilotApp() {
       decisionReadiness: undefined,
       qualityResults: [],
       dashboardRecommendation: undefined,
+      handoffSummary: undefined,
       transformationLog: [],
       currentStep: "upload",
       warning: undefined
@@ -180,6 +192,7 @@ export default function DashboardCopilotApp() {
       decisionReadiness: undefined,
       qualityResults: [],
       dashboardRecommendation: undefined,
+      handoffSummary: undefined,
       transformationLog: [],
       warning: undefined,
       currentStep: "profile"
@@ -227,6 +240,7 @@ export default function DashboardCopilotApp() {
         decisionReadiness: undefined,
         qualityResults: [],
         dashboardRecommendation: undefined,
+        handoffSummary: undefined,
         transformationLog: [],
         warning,
         currentStep: "recommend"
@@ -260,6 +274,7 @@ export default function DashboardCopilotApp() {
         decisionReadiness: readinessResult.readiness,
         qualityResults,
         dashboardRecommendation: undefined,
+        handoffSummary: undefined,
         currentStep: "validate",
         transformationLog: result.transformations
       }));
@@ -290,6 +305,7 @@ export default function DashboardCopilotApp() {
       decisionReadiness: readinessResult.readiness,
       qualityResults,
       dashboardRecommendation: undefined,
+      handoffSummary: undefined,
       currentStep: "validate",
       transformationLog: result.transformations
     }));
@@ -386,6 +402,7 @@ export default function DashboardCopilotApp() {
         preparedDataset,
         qualityResults,
         dashboardRecommendation,
+        handoffSummary: undefined,
         warning,
         currentStep: "dashboard"
       }));
@@ -420,6 +437,62 @@ export default function DashboardCopilotApp() {
       JSON.stringify(packet, null, 2),
       "application/json",
     );
+  }
+
+  async function generateHandoffSummary() {
+    if (handoffLoading || !state.preparedDataset || !state.dashboardRecommendation) return;
+    setHandoffLoading(true);
+    try {
+      const datasets = state.datasets.length > 0
+        ? state.datasets
+        : [state.preparedDataset];
+      const evidenceCoverage = buildEvidenceCoverageSummary(datasets, state.decisionBrief);
+      const aiMode = currentAiMode(llmEnabled, state.aiRecommendations, state.warning);
+      const packet = buildDecisionHandoffPacket({
+        decisionBrief: state.decisionBrief,
+        evidenceCoverage,
+        decisionReadiness: state.decisionReadiness,
+        datasets,
+        selectedJoinRecommendations: state.selectedJoinRecommendations ?? [],
+        qualityResults: state.qualityResults,
+        transformationLog: state.transformationLog,
+        aiMode,
+      });
+      const dashboardFacts = computeDashboardInsightFacts(
+        state.preparedDataset,
+        state.qualityResults,
+        state.transformationLog,
+      );
+      const summary = await requestDecisionHandoffCopilotSummary(
+        {
+          taskType: "decision_handoff_summary",
+          decisionBrief: state.decisionBrief,
+          decisionReadiness: state.decisionReadiness,
+          evidenceCoverage,
+          qualitySummary: state.qualityResults
+            .filter((issue) => issue.status !== "pass")
+            .map(qualityIssueSummary),
+          transformationSummary: state.transformationLog.map((step) => step.description),
+          dashboardFacts,
+          aiMode,
+          reviewNotice: packet.reviewNotice,
+          limitations: packet.limitations,
+        },
+        llmEnabled,
+      );
+      setState((current) => ({
+        ...current,
+        handoffSummary: summary,
+      }));
+    } catch (error) {
+      setErrors([
+        error instanceof Error
+          ? error.message
+          : "Decision handoff summary could not be generated.",
+      ]);
+    } finally {
+      setHandoffLoading(false);
+    }
   }
 
   async function exportReport() {
@@ -495,6 +568,7 @@ export default function DashboardCopilotApp() {
       preparedDataset: undefined,
       qualityResults: [],
       dashboardRecommendation: undefined,
+      handoffSummary: undefined,
       transformationLog: [],
       currentStep: "brief",
       warning: undefined
@@ -513,7 +587,7 @@ export default function DashboardCopilotApp() {
         llmEnabled={llmEnabled}
         onLlmEnabledChange={handleLlmEnabledChange}
       />
-      <div className="app-shell">
+      <div className="app-shell" ref={workflowShellRef}>
         <StepIndicator currentStep={state.currentStep} canNavigateTo={canNavigateToStep} onNavigate={navigateToStep} />
         {errors.length > 0 && <Notice tone="error" items={errors} />}
         {state.warning && <Notice tone="warn" items={[state.warning]} />}
@@ -581,19 +655,23 @@ export default function DashboardCopilotApp() {
                   chartCount={state.dashboardRecommendation.charts.length}
                   qualityIssueCount={state.qualityResults.filter((issue) => issue.status !== "pass").length}
                   decisionReadiness={state.decisionReadiness}
+                  handoffSummary={state.handoffSummary}
+                  handoffLoading={handoffLoading}
                   transformationCount={state.transformationLog.length}
                   onCsv={exportCsv}
+                  onHandoffSummary={generateHandoffSummary}
                   onReport={exportReport}
                   onPng={exportPng}
                   onLog={exportLog}
                 />
-                <div className="export-render-target" aria-hidden="true">
+                <div className="export-render-target" aria-hidden="true" inert>
                   <DashboardPreview
                     refNode={dashboardRef}
                     dataset={state.preparedDataset}
                     decisionReadiness={state.decisionReadiness}
                     recommendation={state.dashboardRecommendation}
                     expandInsights
+                    interactive={false}
                     showInsightLinks={false}
                   />
                 </div>
@@ -692,6 +770,17 @@ function currentAiMode(
   if (recommendations?.source === "llm") return "llm";
   if (recommendations?.fallbackReason || warning) return "fallback";
   return "deterministic";
+}
+
+function qualityIssueSummary(issue: QualityCheckResult) {
+  return [
+    issue.severity,
+    issue.status,
+    issue.checkType,
+    issue.description,
+    issue.caveat,
+    issue.suggestedAction,
+  ].filter(Boolean).join(": ");
 }
 
 function qualitySeverityRank(severity: QualityCheckResult["severity"]) {

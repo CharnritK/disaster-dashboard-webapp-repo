@@ -173,6 +173,36 @@ export function buildSuggestedDataCollectionTemplate(
   };
 }
 
+export type DecisionMapDataGroup = {
+  evidenceNeed: string;
+  fields: SuggestedCollectionField[];
+};
+
+export function buildDecisionMapDataGroups(
+  brief: DecisionBrief,
+  template = buildSuggestedDataCollectionTemplate(brief),
+): DecisionMapDataGroup[] {
+  const selectedEvidence = new Set(brief.requiredEvidence.map(normalizeLabel));
+  const sourceConfigEvidence = new Set(["sourcequality", "reviewcontext"]);
+  const groups = brief.requiredEvidence.map((evidenceNeed) => ({
+    evidenceNeed,
+    fields: template.fields.filter(
+      (field) => normalizeLabel(field.evidenceNeed) === normalizeLabel(evidenceNeed),
+    ),
+  }));
+  const sharedFields = template.fields.filter((field) => {
+    const evidenceKey = normalizeLabel(field.evidenceNeed);
+    return !selectedEvidence.has(evidenceKey) && !sourceConfigEvidence.has(evidenceKey);
+  });
+
+  return [
+    ...groups,
+    ...(sharedFields.length > 0
+      ? [{ evidenceNeed: "Shared decision context", fields: sharedFields }]
+      : []),
+  ].filter((group) => group.fields.length > 0);
+}
+
 export function buildSuggestedCollectionTemplateRows(
   template: SuggestedDataCollectionTemplate,
 ): Record<string, string>[] {

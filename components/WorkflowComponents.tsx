@@ -1,8 +1,10 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import type {
   Dataset,
+  ColumnProfile,
+  ColumnTopValue,
   DatasetFormatAssessment,
   DatasetInputHints,
 } from "@/types/dataset";
@@ -12,6 +14,7 @@ import type {
   EvidenceCoverageSummary,
   SuggestedDataCollectionTemplate,
 } from "@/types/decision";
+import type { DecisionHandoffSummary } from "@/types/copilot";
 import type { SampleDatasetKind } from "@/lib/fileParsers";
 import type {
   AIRecommendationResponse,
@@ -31,6 +34,7 @@ import {
 import { runQualityChecks } from "@/lib/validation";
 import {
   buildEvidenceCoverageSummary,
+  buildDecisionMapDataGroups,
   buildSuggestedCollectionTemplateRows,
   buildSuggestedDataCollectionTemplate,
   evidenceCoverageStatusLabel,
@@ -91,14 +95,18 @@ export function StepIndicator({
               : "";
         const isCurrent = step === currentStep;
         const canNavigate = canNavigateTo(step) && !isCurrent;
+        const isUnavailable = !canNavigate && !isCurrent;
         return (
           <button
             type="button"
             className={["step", stateClass].filter(Boolean).join(" ")}
             key={step}
             aria-current={isCurrent ? "step" : undefined}
-            disabled={!canNavigate}
-            onClick={() => onNavigate(step)}
+            aria-disabled={isCurrent ? true : undefined}
+            disabled={isUnavailable}
+            onClick={() => {
+              if (canNavigate) onNavigate(step);
+            }}
           >
             <span className="step-index">{index + 1}</span>
             <span className="step-label">{STEP_LABELS[step]}</span>
@@ -152,6 +160,9 @@ export function DecisionBriefStep({
     onChange({ ...brief, [field]: value });
   };
   const collectionTemplate = buildSuggestedDataCollectionTemplate(brief);
+  const [isDecisionMapOpen, setIsDecisionMapOpen] = useState(false);
+  const decisionMapTitleId = useId();
+  const decisionMapDescriptionId = useId();
   return (
     <section className="workflow-step">
       <div className="section-heading">
@@ -173,12 +184,19 @@ export function DecisionBriefStep({
               </option>
             </select>
           </label>
-          <div>
+          <div className="template-summary">
             <h3>{RESPONSE_PRIORITIZATION_TEMPLATE.title}</h3>
             <p>{RESPONSE_PRIORITIZATION_TEMPLATE.description}</p>
             <p className="helper-text">
               Defaults are ready to run. Adjust the brief only where your decision differs.
             </p>
+            <button
+              type="button"
+              className="decision-map-trigger"
+              onClick={() => setIsDecisionMapOpen(true)}
+            >
+              View decision map
+            </button>
           </div>
         </div>
         <div className="brief-form-grid">
@@ -221,7 +239,7 @@ export function DecisionBriefStep({
           </label>
         </div>
         <fieldset className="evidence-fieldset">
-          <legend>Required evidence</legend>
+          <legend>Decision signals</legend>
           <div className="evidence-choice-grid">
             {RESPONSE_PRIORITIZATION_TEMPLATE.requiredEvidence.map((item) => (
               <label key={item} className="checkbox-row">
@@ -256,9 +274,176 @@ export function DecisionBriefStep({
             Use template and continue
           </button>
         </div>
+        {isDecisionMapOpen ? (
+          <DecisionMapDialog
+            brief={brief}
+            descriptionId={decisionMapDescriptionId}
+            template={collectionTemplate}
+            titleId={decisionMapTitleId}
+            onClose={() => setIsDecisionMapOpen(false)}
+          />
+        ) : null}
       </article>
     </section>
   );
+}
+
+function DecisionMapDialog({
+  brief,
+  descriptionId,
+  template,
+  titleId,
+  onClose,
+}: {
+  brief: DecisionBrief;
+  descriptionId: string;
+  template: SuggestedDataCollectionTemplate;
+  titleId: string;
+  onClose: () => void;
+}) {
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const dataGroups = buildDecisionMapDataGroups(brief, template);
+  const sourceConfigFields = template.fields.filter((field) =>
+    ["Source quality", "Review context"].includes(field.evidenceNeed)
+  );
+  const sourceConfigNotes = [
+    {
+      label: "Source",
+      value: sourceConfigFields.find((field) => field.evidenceNeed === "Source quality")?.description ??
+        "Record the agency, assessment, or system behind each observation.",
+    },
+    {
+      label: "Unit / scale",
+      value: "Capture the unit or scoring scale for each decision signal.",
+    },
+    {
+      label: "Date coverage",
+      value: `Align observations to ${brief.timeframe.toLowerCase() || "the selected timeframe"}.`,
+    },
+    {
+      label: "Join key",
+      value: "Use a stable administrative code across uploaded files.",
+    },
+    {
+      label: "Row meaning",
+      value: `Keep one row tied to one ${brief.geographyScope.toLowerCase() || "area"} observation.`,
+    },
+    {
+      label: "Caveats",
+      value: sourceConfigFields.find((field) => field.evidenceNeed === "Review context")?.description ??
+        "Keep known gaps, bias, and assumptions factual.",
+    },
+  ];
+
+  useEffect(() => {
+    closeButtonRef.current?.focus();
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", closeOnEscape);
+    return () => document.removeEventListener("keydown", closeOnEscape);
+  }, [onClose]);
+
+  return (
+    <div
+      className="decision-map-backdrop"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+    >
+      <section
+        aria-describedby={descriptionId}
+        aria-labelledby={titleId}
+        aria-modal="true"
+        className="decision-map-dialog"
+        role="dialog"
+      >
+        <div className="decision-map-dialog-header">
+          <div>
+            <p className="eyebrow">Decision map</p>
+            <h3 id={titleId}>Response-prioritization decision chain</h3>
+            <p id={descriptionId}>
+              Read-only view of the selected template, current action, required signals, data fields, and metadata checks.
+            </p>
+          </div>
+          <button
+            ref={closeButtonRef}
+            type="button"
+            className="decision-map-close"
+            aria-label="Close decision map"
+            onClick={onClose}
+          >
+            Close
+          </button>
+        </div>
+        <div className="decision-map-chain" aria-label="Decision chain">
+          <DecisionMapNode label="Decision question" value={brief.decisionQuestion || "Decision question needed"} />
+          <DecisionMapConnector />
+          <DecisionMapNode label="User action" value={brief.intendedAction || "Intended action needed"} />
+          <DecisionMapConnector />
+          <section className="decision-map-node decision-map-node-wide">
+            <span>Decision signals</span>
+            <div className="decision-map-signal-list">
+              {brief.requiredEvidence.length > 0 ? (
+                brief.requiredEvidence.map((signal) => (
+                  <strong key={signal}>{signal}</strong>
+                ))
+              ) : (
+                <strong>Decision signals needed</strong>
+              )}
+            </div>
+          </section>
+          <DecisionMapConnector />
+          <section className="decision-map-node decision-map-node-wide">
+            <span>Data required</span>
+            <div className="decision-map-data-grid">
+              {dataGroups.map((group) => (
+                <article className="decision-map-data-group" key={group.evidenceNeed}>
+                  <h4>{group.evidenceNeed}</h4>
+                  <ul>
+                    {group.fields.map((field) => (
+                      <li key={field.name}>
+                        <code>{field.name}</code>
+                        <span>
+                          {field.label} - {field.type}
+                          {field.required ? " - required" : " - optional"}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </article>
+              ))}
+            </div>
+          </section>
+          <DecisionMapConnector />
+          <section className="decision-map-node decision-map-node-wide">
+            <span>Source/config notes</span>
+            <div className="decision-map-note-grid">
+              {sourceConfigNotes.map((note) => (
+                <article key={note.label}>
+                  <strong>{note.label}</strong>
+                  <p>{note.value}</p>
+                </article>
+              ))}
+            </div>
+          </section>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function DecisionMapNode({ label, value }: { label: string; value: string }) {
+  return (
+    <section className="decision-map-node">
+      <span>{label}</span>
+      <strong>{value}</strong>
+    </section>
+  );
+}
+
+function DecisionMapConnector() {
+  return <div className="decision-map-connector" aria-hidden="true" />;
 }
 
 function SuggestedCollectionTemplatePreview({
@@ -590,6 +775,7 @@ function ProfileCard({ dataset }: { dataset: Dataset }) {
                 <th>Type</th>
                 <th>Missing</th>
                 <th>Unique</th>
+                <th>Stats</th>
                 <th>Samples</th>
               </tr>
             </thead>
@@ -605,13 +791,14 @@ function ProfileCard({ dataset }: { dataset: Dataset }) {
                   <td>{column.inferredType}</td>
                   <td>{column.missingPercentage}%</td>
                   <td>{column.uniqueCount}</td>
+                  <td>{columnStatsSummary(column)}</td>
                   <td>{column.sampleValues.join(", ")}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-        <DatasetPreview dataset={dataset} />
+        <DatasetPreview dataset={dataset} title="Profile sample data" />
       </details>
     </article>
   );
@@ -621,6 +808,35 @@ function formatFieldList(fields?: string[]) {
   return fields?.length
     ? fields.map((field) => fieldDisplayLabel(field)).join(", ")
     : "none detected";
+}
+
+function columnStatsSummary(column: ColumnProfile) {
+  const stats = column.descriptiveStats;
+  if (!stats || stats.nonMissingCount === 0) return "No values";
+  if (stats.numeric) {
+    const { min, max, mean, median } = stats.numeric;
+    return `Range ${formatNumber(min)}-${formatNumber(max)}; median ${formatNumber(median)}; mean ${formatNumber(mean)}`;
+  }
+  if (stats.date) {
+    const invalid = stats.date.invalidCount > 0
+      ? `; ${formatCount(stats.date.invalidCount, "invalid value")}`
+      : "";
+    return `${stats.date.earliest} to ${stats.date.latest}${invalid}`;
+  }
+  return `Top: ${formatTopValues(stats.topValues)}`;
+}
+
+function formatTopValues(values: ColumnTopValue[]) {
+  return values.length > 0
+    ? values
+        .slice(0, 3)
+        .map((item) => `${truncateText(item.value, 28)} (${formatCount(item.count, "row")}, ${formatPercentage(item.percentage)})`)
+        .join("; ")
+    : "none";
+}
+
+function truncateText(value: string, maxLength: number) {
+  return value.length > maxLength ? `${value.slice(0, maxLength - 3)}...` : value;
 }
 
 function AgentContextChecklist() {
@@ -687,6 +903,7 @@ function DatasetCard({
         {dataset.rowCount ?? 0} rows, {dataset.columnCount ?? 0} columns
       </p>
       <FormatAssessmentPanel assessment={dataset.formatAssessment} />
+      <DatasetPreview dataset={dataset} title="Parsed data preview" defaultOpen />
       <div className="dataset-hints-grid">
         <label>
           Suggested required data
@@ -1082,7 +1299,7 @@ export function ValidationStep({
           </button>
         </div>
       </article>
-      <DatasetPreview dataset={dataset} />
+      <DatasetPreview dataset={dataset} title="Final prepared data preview" defaultOpen />
       <TransformationLogPanel
         highlightTerms={logHighlightTerms}
         log={transformationLog}
@@ -1227,6 +1444,7 @@ export function DashboardPreview({
   decisionReadiness,
   recommendation,
   expandInsights = false,
+  interactive = true,
   showInsightLinks = true,
 }: {
   refNode: React.RefObject<HTMLDivElement | null>;
@@ -1234,6 +1452,7 @@ export function DashboardPreview({
   decisionReadiness?: DecisionReadinessResult;
   recommendation: DashboardRecommendation;
   expandInsights?: boolean;
+  interactive?: boolean;
   showInsightLinks?: boolean;
 }) {
   const [highlightedChartId, setHighlightedChartId] = useState<string>();
@@ -1259,7 +1478,7 @@ export function DashboardPreview({
         activeChartId={highlightedChartId}
         onInsightSelect={selectInsightChart}
         defaultOpen={expandInsights}
-        showChartLinks={showInsightLinks}
+        showChartLinks={showInsightLinks && interactive}
       />
       {chartSections.map((section) => {
         const hasFeaturedCard =
@@ -1288,6 +1507,7 @@ export function DashboardPreview({
                   chart={chart}
                   featured={section.id === "comparisons" && index === 0}
                   highlighted={chart.id === highlightedChartId}
+                  interactive={interactive}
                 />
               ))}
             </div>
@@ -1479,11 +1699,13 @@ function ChartPanel({
   chart,
   featured = false,
   highlighted = false,
+  interactive = true,
 }: {
   dataset: Dataset;
   chart: DashboardRecommendation["charts"][number];
   featured?: boolean;
   highlighted?: boolean;
+  interactive?: boolean;
 }) {
   const rows = dataset.data ?? [];
   const groupField = chart.groupByField ?? chart.xField;
@@ -1515,6 +1737,7 @@ function ChartPanel({
         groupField={groupField}
         metricField={metricField}
         aggregation={effectiveAggregation}
+        interactive={interactive}
       />
     ) : chart.chartType === "table" ? (
       <RankedTable dataset={dataset} chart={chart} />
@@ -1523,6 +1746,7 @@ function ChartPanel({
         grouped={grouped}
         metricLabel={metricLabel}
         title={chart.title}
+        interactive={interactive}
       />
     ) : chart.chartType === "line" ? (
       <LineChart
@@ -1530,6 +1754,7 @@ function ChartPanel({
         groupLabel={groupLabel}
         metricLabel={metricLabel}
         title={chart.title}
+        interactive={interactive}
       />
     ) : chart.chartType === "map" ? (
       <MapChart
@@ -1540,6 +1765,7 @@ function ChartPanel({
         metricField={metricField}
         metricLabel={metricLabel}
         title={chart.title}
+        interactive={interactive}
       />
     ) : chart.chartType === "area" ? (
       <AreaIntensityChart
@@ -1547,6 +1773,7 @@ function ChartPanel({
         groupLabel={groupLabel}
         metricLabel={metricLabel}
         title={chart.title}
+        interactive={interactive}
       />
     ) : chart.chartType === "scatter" ? (
       <ScatterChart
@@ -1555,15 +1782,17 @@ function ChartPanel({
         title={chart.title}
         xField={chart.xField}
         yField={chart.yField ?? metricField}
+        interactive={interactive}
       />
     ) : chart.chartType === "missingness" ? (
-      <MissingnessChart dataset={dataset} title={chart.title} />
+      <MissingnessChart dataset={dataset} title={chart.title} interactive={interactive} />
     ) : grouped.length === 0 ? (
       metricField ? (
         <SummaryChart
           dataset={dataset}
           metricField={metricField}
           aggregation={effectiveAggregation}
+          interactive={interactive}
         />
       ) : (
         <DatasetPreview dataset={dataset} />
@@ -1574,6 +1803,7 @@ function ChartPanel({
         groupLabel={groupLabel}
         metricLabel={metricLabel}
         title={chart.title}
+        interactive={interactive}
       />
     );
 
@@ -1596,16 +1826,19 @@ function ChartPanel({
 function BarChart({
   grouped,
   groupLabel,
+  interactive = true,
   metricLabel,
   title,
 }: {
   grouped: GroupedMetricValue[];
   groupLabel: string;
+  interactive?: boolean;
   metricLabel: string;
   title: string;
 }) {
   const visible = grouped.slice(0, 10);
   const max = Math.max(...visible.map((item) => item.value), 1);
+  const chartTabIndex = interactive ? 0 : -1;
   return (
     <div
       className="bars"
@@ -1619,7 +1852,7 @@ function BarChart({
           data-tooltip={chartValueDescription(item, metricLabel)}
           key={item.label}
           role="listitem"
-          tabIndex={0}
+          tabIndex={chartTabIndex}
         >
           <span title={item.label}>{item.label}</span>
           <div className="bar-track">
@@ -1643,15 +1876,18 @@ function BarChart({
 
 function PieChart({
   grouped,
+  interactive = true,
   metricLabel,
   title,
 }: {
   grouped: GroupedMetricValue[];
+  interactive?: boolean;
   metricLabel: string;
   title: string;
 }) {
   const chartId = useId();
   const [activeIndex, setActiveIndex] = useState<number>();
+  const chartTabIndex = interactive ? 0 : -1;
   const total = grouped.reduce((sum, item) => sum + item.value, 0);
   const visible = grouped.slice(0, 5);
   const otherValue = grouped
@@ -1740,7 +1976,7 @@ function PieChart({
               strokeDashoffset={item.dashOffset}
               strokeLinecap="butt"
               strokeWidth="30"
-              tabIndex={0}
+              tabIndex={chartTabIndex}
               transform="rotate(-90 100 100)"
             >
               <title>{chartValueDescription(item, metricLabel, total)}</title>
@@ -1792,7 +2028,7 @@ function PieChart({
             className="chart-mark"
             data-tooltip={chartValueDescription(item, metricLabel, total)}
             key={item.label}
-            tabIndex={0}
+            tabIndex={chartTabIndex}
           >
             <i style={{ background: item.color }} />
             <span>{item.label}</span>
@@ -1807,22 +2043,26 @@ function PieChart({
 function LineChart({
   grouped,
   groupLabel,
+  interactive = true,
   metricLabel,
   title,
 }: {
   grouped: GroupedMetricValue[];
   groupLabel: string;
+  interactive?: boolean;
   metricLabel: string;
   title: string;
 }) {
   const chartId = useId();
   const [activeIndex, setActiveIndex] = useState<number>();
+  const chartTabIndex = interactive ? 0 : -1;
   const points = grouped.slice().sort(compareChartLabels).slice(0, 14);
   if (points.length < 2) {
     return (
       <BarChart
         grouped={grouped}
         groupLabel={groupLabel}
+        interactive={interactive}
         metricLabel={metricLabel}
         title={title}
       />
@@ -1957,7 +2197,7 @@ function LineChart({
               onFocus={() => setActiveIndex(index)}
               onMouseEnter={() => setActiveIndex(index)}
               onMouseLeave={() => setActiveIndex(undefined)}
-              tabIndex={0}
+              tabIndex={chartTabIndex}
             >
               <circle
                 cx={point.x}
@@ -1993,18 +2233,21 @@ function LineChart({
 function ScatterChart({
   dataset,
   groupField,
+  interactive = true,
   title,
   xField,
   yField,
 }: {
   dataset: Dataset;
   groupField?: string;
+  interactive?: boolean;
   title: string;
   xField?: string;
   yField?: string;
 }) {
   const chartId = useId();
   const [activeIndex, setActiveIndex] = useState<number>();
+  const chartTabIndex = interactive ? 0 : -1;
   if (!xField || !yField || xField === yField) {
     return (
       <div className="mini-empty">
@@ -2142,7 +2385,7 @@ function ScatterChart({
               onFocus={() => setActiveIndex(index)}
               onMouseEnter={() => setActiveIndex(index)}
               onMouseLeave={() => setActiveIndex(undefined)}
-              tabIndex={0}
+              tabIndex={chartTabIndex}
             >
               <circle
                 cx={point.cx}
@@ -2204,6 +2447,7 @@ function ScatterChart({
 
 function MapChart({
   dataset,
+  interactive = true,
   latitudeField,
   longitudeField,
   labelField,
@@ -2212,6 +2456,7 @@ function MapChart({
   title,
 }: {
   dataset: Dataset;
+  interactive?: boolean;
   latitudeField?: string;
   longitudeField?: string;
   labelField?: string;
@@ -2221,6 +2466,7 @@ function MapChart({
 }) {
   const chartId = useId();
   const [activeIndex, setActiveIndex] = useState<number>();
+  const chartTabIndex = interactive ? 0 : -1;
   if (!latitudeField || !longitudeField) {
     return (
       <div className="mini-empty">
@@ -2352,7 +2598,7 @@ function MapChart({
               onFocus={() => setActiveIndex(index)}
               onMouseEnter={() => setActiveIndex(index)}
               onMouseLeave={() => setActiveIndex(undefined)}
-              tabIndex={0}
+              tabIndex={chartTabIndex}
             >
               <circle
                 cx={point.cx}
@@ -2419,16 +2665,19 @@ function MapChart({
 function AreaIntensityChart({
   grouped,
   groupLabel,
+  interactive = true,
   metricLabel,
   title,
 }: {
   grouped: GroupedMetricValue[];
   groupLabel: string;
+  interactive?: boolean;
   metricLabel: string;
   title: string;
 }) {
   const visible = grouped.slice(0, 12);
   const max = Math.max(...visible.map((item) => item.value), 1);
+  const chartTabIndex = interactive ? 0 : -1;
   if (visible.length === 0) {
     return (
       <div className="mini-empty">
@@ -2458,7 +2707,7 @@ function AreaIntensityChart({
                 intensity > 0.45 ? "rgba(0, 67, 135, 0.62)" : "#bdd1ff",
               color: intensity > 0.45 ? "white" : "#171717",
             }}
-            tabIndex={0}
+            tabIndex={chartTabIndex}
           >
             <span title={item.label}>{item.label}</span>
             <strong>{formatNumber(item.value)}</strong>
@@ -2476,11 +2725,14 @@ function AreaIntensityChart({
 
 function MissingnessChart({
   dataset,
+  interactive = true,
   title,
 }: {
   dataset: Dataset;
+  interactive?: boolean;
   title: string;
 }) {
+  const chartTabIndex = interactive ? 0 : -1;
   const totalRows =
     dataset.profile?.rowCount ?? dataset.rowCount ?? dataset.data?.length ?? 0;
   const columns = (dataset.profile?.columns ?? [])
@@ -2513,7 +2765,7 @@ function MissingnessChart({
             data-tooltip={description}
             key={column.columnName}
             role="listitem"
-            tabIndex={0}
+            tabIndex={chartTabIndex}
           >
             <span title={column.columnName}>{label}</span>
             <div className="bar-track">
@@ -2537,14 +2789,17 @@ function MissingnessChart({
 function SummaryChart({
   dataset,
   groupField,
+  interactive = true,
   metricField,
   aggregation,
 }: {
   dataset: Dataset;
   groupField?: string;
+  interactive?: boolean;
   metricField?: string;
   aggregation?: MetricAggregation;
 }) {
+  const chartTabIndex = interactive ? 0 : -1;
   const rows = dataset.data ?? [];
   const resolvedAggregation =
     aggregation ?? inferMetricAggregation(metricField);
@@ -2582,7 +2837,7 @@ function SummaryChart({
             : "Records"
         }: ${formatNumber(metricTotal)}`}
         role="listitem"
-        tabIndex={0}
+        tabIndex={chartTabIndex}
       >
         <span>
           {metricField
@@ -2597,7 +2852,7 @@ function SummaryChart({
           className="chart-mark"
           data-tooltip={`${metricDisplayLabel(metricField, "average")}: ${formatNumber(metricAverage)}`}
           role="listitem"
-          tabIndex={0}
+          tabIndex={chartTabIndex}
         >
           <span>{metricDisplayLabel(metricField, "average")}</span>
           <strong>{formatNumber(metricAverage)}</strong>
@@ -2609,7 +2864,7 @@ function SummaryChart({
           className="chart-mark"
           data-tooltip={`${fieldDisplayLabel(groupField)}: ${formatNumber(uniqueGroups)}`}
           role="listitem"
-          tabIndex={0}
+          tabIndex={chartTabIndex}
         >
           <span>{fieldDisplayLabel(groupField)}</span>
           <strong>{uniqueGroups}</strong>
@@ -2621,7 +2876,7 @@ function SummaryChart({
           className="chart-mark"
           data-tooltip={`Missing cells: ${formatNumber(missingCells)}`}
           role="listitem"
-          tabIndex={0}
+          tabIndex={chartTabIndex}
         >
           <span>Missing cells</span>
           <strong>{missingCells}</strong>
@@ -3025,18 +3280,38 @@ function truncateChartLabel(label: string, maxLength = 14) {
     : label;
 }
 
-function DatasetPreview({ dataset }: { dataset: Dataset }) {
-  const visibleColumnLimit = 12;
-  const rows = dataset.sampleRows ?? dataset.data?.slice(0, 5) ?? [];
-  const columns = dataset.columns ?? Object.keys(rows[0] ?? {});
-  const visibleColumns = columns.slice(0, visibleColumnLimit);
+function DatasetPreview({
+  dataset,
+  title = "Sample data",
+  defaultOpen = false,
+  rowLimit = 10,
+  columnLimit = 12,
+}: {
+  dataset: Dataset;
+  title?: string;
+  defaultOpen?: boolean;
+  rowLimit?: number;
+  columnLimit?: number;
+}) {
+  const allRows = dataset.data ?? dataset.sampleRows ?? [];
+  const rows = allRows.slice(0, rowLimit);
+  const columns = uniqueValues([
+    ...(dataset.columns ?? []),
+    ...Object.keys(rows[0] ?? {}),
+  ]);
+  const visibleColumns = selectVisiblePreviewColumns(
+    prioritizePreviewColumns(dataset, columns),
+    columnLimit,
+  );
+  const totalRowCount = dataset.rowCount ?? allRows.length;
   const hiddenColumnCount = Math.max(columns.length - visibleColumns.length, 0);
+  const hiddenRowCount = Math.max(totalRowCount - rows.length, 0);
   return (
-    <details className="card profile-accordion sample-data-card">
+    <details className="dataset-preview-panel sample-data-card" open={defaultOpen}>
       <summary>
-        <span>Sample data</span>
+        <span>{title}</span>
         <span className="accordion-meta">
-          {formatCount(rows.length, "row")},{" "}
+          {formatCount(totalRowCount, "row")},{" "}
           {formatCount(columns.length, "column")}
         </span>
       </summary>
@@ -3046,9 +3321,13 @@ function DatasetPreview({ dataset }: { dataset: Dataset }) {
         ) : (
           <>
             <p>
-              Showing {formatCount(visibleColumns.length, "column")}
+              Showing {formatCount(rows.length, "row")} and{" "}
+              {formatCount(visibleColumns.length, "column")}
+              {hiddenRowCount > 0
+                ? `, with ${formatCount(hiddenRowCount, "additional row")} available in exports`
+                : ""}
               {hiddenColumnCount > 0
-                ? `, with ${formatCount(hiddenColumnCount, "additional column")} available in exports.`
+                ? `${hiddenRowCount > 0 ? " and" : ", with"} ${formatCount(hiddenColumnCount, "additional column")} available in exports.`
                 : "."}
             </p>
             <div className="table-wrap">
@@ -3078,6 +3357,31 @@ function DatasetPreview({ dataset }: { dataset: Dataset }) {
       </div>
     </details>
   );
+}
+
+function prioritizePreviewColumns(dataset: Dataset, columns: string[]) {
+  const preferredColumns = [
+    dataset.inputHints?.joinField,
+    ...(dataset.profile?.potentialJoinFields ?? []),
+    dataset.inputHints?.primaryField,
+    dataset.inputHints?.timeField,
+    "__join_matched",
+    ...(dataset.profile?.potentialGeographicFields ?? []),
+    ...(dataset.profile?.potentialMetricFields ?? []),
+    ...columns,
+  ];
+  return uniqueValues(preferredColumns.filter((column): column is string => Boolean(column)))
+    .filter((column) => columns.includes(column));
+}
+
+function selectVisiblePreviewColumns(columns: string[], limit: number) {
+  if (columns.length <= limit) return columns;
+  const tailCount = Math.min(3, Math.floor(limit / 4));
+  const headCount = Math.max(limit - tailCount, 1);
+  return uniqueValues([
+    ...columns.slice(0, headCount),
+    ...columns.slice(-tailCount),
+  ]).slice(0, limit);
 }
 
 export function TransformationLogPanel({
@@ -3169,8 +3473,11 @@ export function ExportStep({
   chartCount,
   qualityIssueCount,
   decisionReadiness,
+  handoffSummary,
+  handoffLoading = false,
   transformationCount,
   onCsv,
+  onHandoffSummary,
   onReport,
   onPng,
   onLog,
@@ -3182,8 +3489,11 @@ export function ExportStep({
   chartCount: number;
   qualityIssueCount: number;
   decisionReadiness?: DecisionReadinessResult;
+  handoffSummary?: DecisionHandoffSummary;
+  handoffLoading?: boolean;
   transformationCount: number;
   onCsv: () => void;
+  onHandoffSummary: () => void;
   onReport: () => void;
   onPng: () => void;
   onLog: () => void;
@@ -3209,6 +3519,26 @@ export function ExportStep({
           <span>I reviewed the decision-readiness caveats before exporting.</span>
         </label>
       ) : null}
+      <article className="card handoff-copilot-card">
+        <div>
+          <p className="eyebrow">Decision handoff copilot</p>
+          <h3>Review summary</h3>
+          <p>
+            Generate a review-ready narrative from readiness, quality, transformation, and dashboard facts.
+          </p>
+        </div>
+        <button
+          type="button"
+          className="primary-action"
+          disabled={!dashboardReady || !exportReady || handoffLoading}
+          onClick={onHandoffSummary}
+        >
+          {handoffLoading ? "Generating handoff..." : "Generate handoff summary"}
+        </button>
+        {handoffSummary ? (
+          <HandoffSummaryPanel summary={handoffSummary} />
+        ) : null}
+      </article>
       <article className="card export-options-card">
         <div className="export-options-header">
           <p className="eyebrow">Available exports</p>
@@ -3275,6 +3605,62 @@ export function ExportStep({
           </button>
         </div>
       </article>
+    </section>
+  );
+}
+
+function HandoffSummaryPanel({ summary }: { summary: DecisionHandoffSummary }) {
+  return (
+    <section className="handoff-summary-panel" aria-label="Generated handoff summary">
+      <div className="handoff-summary-header">
+        <span className={`quality-pill ${summary.source === "llm" ? "success" : "warn"}`}>
+          {summary.source === "llm" ? "AI drafted" : "Deterministic fallback"}
+        </span>
+        {summary.fallbackReason ? (
+          <span className="helper-text">
+            Fallback reason: {summary.fallbackReason.replaceAll("_", " ")}
+          </span>
+        ) : null}
+      </div>
+      <div className="handoff-summary-grid">
+        <article>
+          <h4>Readiness</h4>
+          <p>{summary.readinessExplanation}</p>
+        </article>
+        <article>
+          <h4>Handoff narrative</h4>
+          <p>{summary.handoffNarrative}</p>
+        </article>
+      </div>
+      {summary.repairActions.length > 0 ? (
+        <div>
+          <h4>Repair priorities</h4>
+          <ul className="handoff-action-list">
+            {summary.repairActions.map((action) => (
+              <li key={`${action.priority}-${action.title}`}>
+                <strong>{action.title}</strong>
+                <span>{action.rationale}</span>
+                <small>
+                  {action.priority} priority - {action.ownerHint}
+                </small>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+      {summary.caveats.length > 0 ? (
+        <div>
+          <h4>Caveats retained</h4>
+          <ul className="compact-list">
+            {summary.caveats.map((caveat) => (
+              <li key={caveat}>{caveat}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+      {summary.assumptions.length > 0 ? (
+        <p className="helper-text">{summary.assumptions.join(" ")}</p>
+      ) : null}
     </section>
   );
 }

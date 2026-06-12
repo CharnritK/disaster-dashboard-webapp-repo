@@ -59,6 +59,37 @@ export type DatasetProfile = {
   potentialMetricFields: string[];
 };
 
+export type ColumnTopValue = {
+  value: string;
+  count: number;
+  percentage: number;
+};
+
+export type ColumnNumericStats = {
+  min: number;
+  max: number;
+  mean: number;
+  median: number;
+  q1: number;
+  q3: number;
+  negativeCount: number;
+  zeroCount: number;
+};
+
+export type ColumnDateStats = {
+  earliest: string;
+  latest: string;
+  validCount: number;
+  invalidCount: number;
+};
+
+export type ColumnDescriptiveStats = {
+  nonMissingCount: number;
+  topValues: ColumnTopValue[];
+  numeric?: ColumnNumericStats;
+  date?: ColumnDateStats;
+};
+
 export type ColumnProfile = {
   columnName: string;
   inferredType: "string" | "number" | "date" | "boolean" | "unknown";
@@ -66,6 +97,7 @@ export type ColumnProfile = {
   missingPercentage: number;
   uniqueCount: number;
   sampleValues: unknown[];
+  descriptiveStats?: ColumnDescriptiveStats;
   isPotentialJoinField: boolean;
   isPotentialGeographicField: boolean;
   isPotentialDemographicField: boolean;

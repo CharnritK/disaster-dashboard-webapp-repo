@@ -507,7 +507,7 @@ button:disabled {
   opacity: 0.45;
 }
 
-.step.active:disabled {
+.step.active[aria-disabled="true"] {
   cursor: default;
   opacity: 1;
 }
@@ -990,6 +990,190 @@ label {
   color: var(--muted);
   font-size: 0.88rem;
   margin-bottom: 0;
+}
+
+.template-summary {
+  display: grid;
+  gap: 8px;
+}
+
+.decision-map-trigger {
+  justify-self: start;
+  margin-top: 4px;
+}
+
+.decision-map-backdrop {
+  align-items: center;
+  background: rgba(23, 23, 23, 0.34);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  padding: 24px;
+  position: fixed;
+  z-index: 40;
+}
+
+.decision-map-dialog {
+  animation: panelIn 180ms var(--ease);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 28px 70px rgba(23, 23, 23, 0.22);
+  display: grid;
+  gap: 18px;
+  max-height: min(760px, calc(100vh - 48px));
+  max-width: 980px;
+  overflow: auto;
+  padding: 22px;
+  width: min(100%, 980px);
+}
+
+.decision-map-dialog-header {
+  align-items: flex-start;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  padding-bottom: 16px;
+}
+
+.decision-map-dialog-header h3 {
+  font-size: 1.34rem;
+  line-height: 1.2;
+  margin: 0;
+}
+
+.decision-map-dialog-header p:last-child {
+  color: var(--muted);
+  margin: 8px 0 0;
+}
+
+.decision-map-close {
+  flex: 0 0 auto;
+}
+
+.decision-map-chain {
+  display: grid;
+  gap: 10px;
+}
+
+.decision-map-node {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+}
+
+.decision-map-node > span {
+  color: var(--accent);
+  font-size: 0.74rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.decision-map-node > strong {
+  font-size: 1rem;
+  line-height: 1.35;
+}
+
+.decision-map-node-wide {
+  gap: 12px;
+}
+
+.decision-map-connector {
+  background: var(--line-strong);
+  height: 22px;
+  justify-self: center;
+  position: relative;
+  width: 1px;
+}
+
+.decision-map-connector::after {
+  border-bottom: 1px solid var(--line-strong);
+  border-right: 1px solid var(--line-strong);
+  bottom: 0;
+  content: "";
+  height: 7px;
+  left: 50%;
+  position: absolute;
+  transform: translateX(-50%) rotate(45deg);
+  width: 7px;
+}
+
+.decision-map-signal-list,
+.decision-map-data-grid,
+.decision-map-note-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.decision-map-signal-list {
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+}
+
+.decision-map-signal-list strong {
+  background: white;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  font-size: 0.86rem;
+  padding: 9px 10px;
+}
+
+.decision-map-data-grid {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.decision-map-data-group,
+.decision-map-note-grid article {
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 8px;
+  padding: 11px;
+}
+
+.decision-map-data-group h4 {
+  font-size: 0.92rem;
+  line-height: 1.25;
+  margin: 0;
+}
+
+.decision-map-data-group ul {
+  display: grid;
+  gap: 8px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.decision-map-data-group li {
+  display: grid;
+  gap: 4px;
+}
+
+.decision-map-data-group code {
+  color: var(--ink);
+  font-size: 0.82rem;
+  font-weight: 760;
+}
+
+.decision-map-data-group span,
+.decision-map-note-grid p {
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.decision-map-note-grid {
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+}
+
+.decision-map-note-grid strong {
+  font-size: 0.84rem;
 }
 
 .brief-form-grid {
@@ -1688,7 +1872,8 @@ textarea {
   margin-top: 12px;
 }
 
-.profile-card .sample-data-card {
+.profile-card .sample-data-card,
+.dataset-card .sample-data-card {
   margin-top: 12px;
 }
 
@@ -1709,10 +1894,16 @@ textarea {
   font-size: 0.74rem;
 }
 
+.dataset-preview-panel,
 .profile-accordion {
+  border: 1px solid var(--line);
+  border-radius: 8px;
   margin-top: 0;
+  min-width: 0;
+  padding: 12px;
 }
 
+.dataset-preview-panel summary,
 .profile-accordion summary {
   align-items: center;
   display: flex;
@@ -1721,10 +1912,12 @@ textarea {
   list-style: none;
 }
 
+.dataset-preview-panel summary::-webkit-details-marker,
 .profile-accordion summary::-webkit-details-marker {
   display: none;
 }
 
+.dataset-preview-panel summary::after,
 .profile-accordion summary::after {
   color: var(--muted);
   content: "+";
@@ -1735,8 +1928,17 @@ textarea {
   margin-left: 4px;
 }
 
+.dataset-preview-panel[open] summary::after,
 .profile-accordion[open] summary::after {
   content: "-";
+}
+
+.dataset-preview-panel .accordion-content {
+  padding-top: 12px;
+}
+
+.dataset-preview-panel .table-wrap {
+  margin-top: 10px;
 }
 
 .accordion-meta {
@@ -2532,6 +2734,81 @@ tr:last-child td {
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
 }
 
+.handoff-copilot-card {
+  align-items: start;
+  background: #ffffff;
+  display: grid;
+  gap: 16px;
+}
+
+.handoff-copilot-card h3,
+.handoff-copilot-card h4 {
+  margin: 0;
+}
+
+.handoff-copilot-card > div:first-child {
+  display: grid;
+  gap: 6px;
+}
+
+.handoff-copilot-card .primary-action {
+  justify-self: start;
+}
+
+.handoff-summary-panel {
+  border-top: 1px solid var(--line);
+  display: grid;
+  gap: 16px;
+  padding-top: 16px;
+}
+
+.handoff-summary-header {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.handoff-summary-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.handoff-summary-grid article,
+.handoff-action-list li {
+  background: #fbfbf8;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.handoff-action-list {
+  display: grid;
+  gap: 10px;
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+}
+
+.handoff-action-list li {
+  display: grid;
+  gap: 5px;
+}
+
+.handoff-action-list small {
+  color: var(--muted);
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.compact-list {
+  display: grid;
+  gap: 6px;
+  margin: 8px 0 0;
+  padding-left: 18px;
+}
+
 .export-options-card {
   background: linear-gradient(180deg, #ffffff 0%, #fbfbf8 100%);
   box-shadow: 0 14px 36px rgba(23, 23, 23, 0.06);
@@ -2855,6 +3132,24 @@ tr:last-child td {
 
   .collection-template-heading {
     display: grid;
+  }
+
+  .decision-map-backdrop {
+    align-items: stretch;
+    padding: 12px;
+  }
+
+  .decision-map-dialog {
+    max-height: calc(100vh - 24px);
+    padding: 16px;
+  }
+
+  .decision-map-dialog-header {
+    display: grid;
+  }
+
+  .decision-map-close {
+    width: 100%;
   }
 }
 

@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { isValidElement, type ReactElement } from "react";
 import type { Dataset } from "@/types/dataset";
 import { ChartFrame } from "@/components/charts/ChartFrame";
+import { POST as postCopilotRoute } from "@/app/api/copilot/route";
 import { assessExcelTableRows, parseCsv, parseFile, createTabularDataset, loadSampleDatasets } from "@/lib/fileParsers";
 import { profileDataset } from "@/lib/profiling";
 import { generateDeterministicJoinRecommendations } from "@/lib/deterministicJoinRecommendations";
@@ -15,11 +16,23 @@ import { checkRateLimit } from "@/lib/apiSecurity";
 import { positiveNumberFromConfig } from "@/lib/config";
 import { toCsv } from "@/lib/exportCsv";
 import { qualityLinesForPdf } from "@/lib/exportPdf";
-import { buildRecommendationRequestBody, requestStructuredRecommendations } from "@/lib/llmClient";
+import {
+  buildDecisionHandoffRequestBody,
+  buildRecommendationRequestBody,
+  requestDecisionHandoffSummary,
+  requestStructuredRecommendations,
+} from "@/lib/llmClient";
+import {
+  buildDeterministicDecisionHandoffSummary,
+  parseDecisionHandoffCopilotContext,
+  sanitizeDecisionHandoffSummary,
+} from "@/lib/copilotHandoff";
+import { copilotTaskForRecommendationScope, resolveLlmTaskConfig } from "@/lib/serverConfig";
 import { aggregateField, aggregateRows, fieldDisplayLabel, inferMetricAggregation, metricDisplayLabel } from "@/lib/chartMetrics";
 import {
   assessDecisionReadiness,
   buildEvidenceCoverageSummary,
+  buildDecisionMapDataGroups,
   evidenceCoverageStatusLabel,
   readinessStatusLabel,
   buildSuggestedCollectionTemplateRows,
@@ -33,6 +46,17 @@ import { findLocationFields } from "@/lib/locationFields";
 import { enforceVizPolicy } from "@/lib/vizPolicy";
 import { validateVizSpec } from "@/lib/vizSpecValidator";
 
+function copilotRouteRequest(body: unknown) {
+  return new Request("http://localhost/api/copilot", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "x-forwarded-for": `test-${crypto.randomUUID()}`,
+    },
+    body: JSON.stringify(body),
+  });
+}
+
 describe("data pipeline", () => {
   it("parses and profiles tabular CSV data", () => {
     const rows = parseCsv("district_code,total_population\nD01,100\nD02,\n");
@@ -42,6 +66,52 @@ describe("data pipeline", () => {
     expect(dataset.profile?.potentialJoinFields).toContain("district_code");
     expect(dataset.profile?.potentialMetricFields).toContain("total_population");
     expect(dataset.profile?.columns.find((column) => column.columnName === "total_population")?.missingCount).toBe(1);
+  });
+
+  it("profiles lean descriptive statistics for numeric, date, and categorical fields", () => {
+    const dataset = withProfile(createTabularDataset(
+      "needs.csv",
+      "csv",
+      "sample",
+      parseCsv([
+        "district_name,reported_at,severity_score",
+        "North,2026-01-01,10",
+        "North,2026-01-02,20",
+        "South,2026-01-03,30",
+        "South,2026-01-04,40",
+        "East,2026-01-05,50",
+        "East,2026-01-06,60",
+        "West,not-a-date,0",
+        ",2026-01-08,-10",
+      ].join("\n")),
+    ));
+    const district = dataset.profile?.columns.find((column) => column.columnName === "district_name");
+    const reportedAt = dataset.profile?.columns.find((column) => column.columnName === "reported_at");
+    const severity = dataset.profile?.columns.find((column) => column.columnName === "severity_score");
+
+    expect(district?.descriptiveStats?.nonMissingCount).toBe(7);
+    expect(district?.descriptiveStats?.topValues[0]).toEqual({
+      value: "North",
+      count: 2,
+      percentage: 25,
+    });
+    expect(reportedAt?.inferredType).toBe("date");
+    expect(reportedAt?.descriptiveStats?.date).toEqual({
+      earliest: "2026-01-01",
+      latest: "2026-01-08",
+      validCount: 7,
+      invalidCount: 1,
+    });
+    expect(severity?.descriptiveStats?.numeric).toEqual({
+      min: -10,
+      max: 60,
+      mean: 25,
+      median: 25,
+      q1: 7.5,
+      q3: 42.5,
+      negativeCount: 1,
+      zeroCount: 1,
+    });
   });
 
   it("keeps duplicate CSV headers and rejects empty uploaded tables", async () => {
@@ -333,6 +403,56 @@ describe("data pipeline", () => {
       "response_gap_percent",
       "data_source",
       "notes",
+    ]);
+    expect(fieldNames).not.toContain("severity_score");
+    expect(fieldNames).not.toContain("affected_population");
+    expect(fieldNames).not.toContain("current_capacity");
+  });
+
+  it("groups suggested data fields by decision signal for the decision map", () => {
+    const brief = createDefaultDecisionBrief();
+    const groups = buildDecisionMapDataGroups(brief);
+
+    expect(groups.map((group) => group.evidenceNeed)).toEqual([
+      "Admin geography",
+      "Need severity",
+      "Affected population",
+      "Response gap",
+      "Capacity signal",
+      "Shared decision context",
+    ]);
+    expect(groups.find((group) => group.evidenceNeed === "Admin geography")?.fields.map((field) => field.name)).toEqual([
+      "admin_area",
+      "admin_code",
+    ]);
+    expect(groups.find((group) => group.evidenceNeed === "Affected population")?.fields.map((field) => field.name)).toEqual([
+      "affected_population",
+      "population_denominator",
+    ]);
+    expect(groups.find((group) => group.evidenceNeed === "Shared decision context")?.fields.map((field) => field.name)).toEqual([
+      "observation_date",
+    ]);
+    expect(groups.flatMap((group) => group.fields.map((field) => field.name))).not.toContain("data_source");
+  });
+
+  it("updates decision map field groups when decision signals change", () => {
+    const brief = {
+      ...createDefaultDecisionBrief(),
+      requiredEvidence: ["Admin geography", "Response gap"],
+    };
+    const groups = buildDecisionMapDataGroups(brief);
+    const fieldNames = groups.flatMap((group) => group.fields.map((field) => field.name));
+
+    expect(groups.map((group) => group.evidenceNeed)).toEqual([
+      "Admin geography",
+      "Response gap",
+      "Shared decision context",
+    ]);
+    expect(fieldNames).toEqual([
+      "admin_area",
+      "admin_code",
+      "response_gap_percent",
+      "observation_date",
     ]);
     expect(fieldNames).not.toContain("severity_score");
     expect(fieldNames).not.toContain("affected_population");
@@ -869,50 +989,423 @@ describe("data pipeline", () => {
     expect("error" in rejected).toBe(true);
   });
 
-  it("builds strict OpenAI request bodies with storage and token controls", () => {
+  it("builds strict Responses API request bodies with task controls", () => {
     const profile = profileDataset(createTabularDataset("needs.csv", "csv", "sample", parseCsv("id,value\nA,1\n")));
     const body = buildRecommendationRequestBody({
       mode: "single",
       profiles: [profile]
     }, {
-      model: "gpt-4.1-mini",
-      maxCompletionTokens: 500,
+      maxOutputTokens: 500,
       safetyIdentifier: "anon_test"
     });
+    const schema = body.text.format.schema as any;
+    const userPayload = JSON.parse(body.input[1].content);
 
+    expect(body.model).toBe("gpt-5.5");
     expect(body.store).toBe(false);
-    expect(body.max_completion_tokens).toBe(500);
+    expect(body.max_output_tokens).toBe(500);
     expect(body.safety_identifier).toBe("anon_test");
-    expect(body.response_format.type).toBe("json_schema");
-    expect(body.response_format.json_schema.strict).toBe(true);
-    expect(body.messages[0].content).toContain("Dataset to Dashboard");
-    expect(body.messages[0].content).toContain("Return joinRecommendations and cleaningRecommendations as empty arrays.");
+    expect(body.reasoning.effort).toBe("medium");
+    expect(body.text.verbosity).toBe("medium");
+    expect(body.text.format.type).toBe("json_schema");
+    expect(body.text.format.strict).toBe(true);
+    expect(body.input[0].role).toBe("developer");
+    expect(body.input[0].content).toContain("Dataset to Dashboard");
+    expect(body.input[0].content).toContain("Return joinRecommendations and cleaningRecommendations as empty arrays.");
     expect(
-      body.response_format.json_schema.schema.properties.dashboardRecommendations.properties.charts.items.properties.aggregation.enum
+      schema.properties.dashboardRecommendations.properties.charts.items.properties.aggregation.enum
     ).toEqual(["sum", "average", "count"]);
     const chartProperties =
-      body.response_format.json_schema.schema.properties.dashboardRecommendations.properties.charts.items.properties;
+      schema.properties.dashboardRecommendations.properties.charts.items.properties;
     expect(chartProperties.chartType.enum).toEqual(["map", "area", "choropleth", "bar", "line", "pie", "scatter", "missingness", "table", "summary"]);
     expect(chartProperties.xField.type).toEqual(["string", "null"]);
     expect(chartProperties.metricField.type).toEqual(["string", "null"]);
     expect(
-      body.response_format.json_schema.schema.properties.dashboardRecommendations.properties.insights.items.properties.linkedChartId.type
+      schema.properties.dashboardRecommendations.properties.insights.items.properties.linkedChartId.type
     ).toEqual(["string", "null"]);
+    expect(userPayload.taskType).toBe("dashboard_synthesis");
+    expect(userPayload.recommendationScope).toBe("dashboard");
 
     const workflowBody = buildRecommendationRequestBody({
       mode: "single",
       profiles: [profile]
     }, {
-      model: "gpt-4.1-mini",
       recommendationScope: "workflow",
       safetyIdentifier: "anon_test"
     });
+    const workflowPayload = JSON.parse(workflowBody.input[1].content);
 
-    expect(workflowBody.max_completion_tokens).toBe(3200);
-    expect(workflowBody.messages[0].content).toContain("Profile to Harmonize");
-    expect(workflowBody.messages[0].content).toContain("two distinct datasets");
-    expect(workflowBody.messages[0].content).toContain("Do not spend tokens planning dashboard charts yet.");
-    expect(JSON.parse(workflowBody.messages[1].content).recommendationScope).toBe("workflow");
+    expect(workflowBody.model).toBe("gpt-5.4-mini");
+    expect(workflowBody.max_output_tokens).toBe(3200);
+    expect(workflowBody.reasoning.effort).toBe("low");
+    expect(workflowBody.text.verbosity).toBe("low");
+    expect(workflowBody.input[0].content).toContain("Profile to Harmonize");
+    expect(workflowBody.input[0].content).toContain("two distinct datasets");
+    expect(workflowBody.input[0].content).toContain("Do not spend tokens planning dashboard charts yet.");
+    expect(workflowPayload.taskType).toBe("workflow_harmonization");
+    expect(workflowPayload.recommendationScope).toBe("workflow");
+  });
+
+  it("routes copilot tasks to default models and respects model overrides", () => {
+    const env = (values: Record<string, string> = {}) => ({
+      NODE_ENV: "test",
+      ...values
+    }) as NodeJS.ProcessEnv;
+
+    expect(copilotTaskForRecommendationScope("workflow")).toBe("workflow_harmonization");
+    expect(copilotTaskForRecommendationScope("dashboard")).toBe("dashboard_synthesis");
+
+    expect(resolveLlmTaskConfig("workflow_harmonization", env()).model).toBe("gpt-5.4-mini");
+    expect(resolveLlmTaskConfig("dashboard_synthesis", env()).model).toBe("gpt-5.5");
+    expect(resolveLlmTaskConfig("quality_repair_guidance", env()).model).toBe("gpt-5.4-mini");
+    expect(resolveLlmTaskConfig("decision_handoff_summary", env()).model).toBe("gpt-5.5");
+    expect(resolveLlmTaskConfig("workflow_harmonization", env({ LLM_MODEL: "fallback-model" })).model).toBe("fallback-model");
+    expect(resolveLlmTaskConfig("dashboard_synthesis", env({ LLM_DASHBOARD_MODEL: "dashboard-model" })).model).toBe("dashboard-model");
+    expect(resolveLlmTaskConfig("quality_repair_guidance", env({ LLM_QUALITY_GUIDANCE_MODEL: "quality-model" })).model).toBe("quality-model");
+    expect(resolveLlmTaskConfig("decision_handoff_summary", env({ LLM_HANDOFF_MODEL: "handoff-model" })).model).toBe("handoff-model");
+  });
+
+  it("builds a strict handoff Responses API body with full-size model defaults", () => {
+    const context = {
+      taskType: "decision_handoff_summary" as const,
+      decisionBrief: createDefaultDecisionBrief(),
+      qualitySummary: ["Missing population denominator"],
+      transformationSummary: ["Trimmed whitespace in district names"],
+      aiMode: "llm" as const,
+      reviewNotice: "Outputs are review-only until blockers are corrected.",
+      limitations: ["Evidence coverage is incomplete."]
+    };
+    const body = buildDecisionHandoffRequestBody(context, {
+      safetyIdentifier: "anon_handoff"
+    });
+    const payload = JSON.parse(body.input[1].content);
+
+    expect(body.model).toBe("gpt-5.5");
+    expect(body.store).toBe(false);
+    expect(body.reasoning.effort).toBe("medium");
+    expect(body.text.verbosity).toBe("medium");
+    expect(body.text.format.name).toBe("dashboard_copilot_decision_handoff");
+    expect(body.text.format.strict).toBe(true);
+    expect(body.safety_identifier).toBe("anon_handoff");
+    expect(payload.taskType).toBe("decision_handoff_summary");
+    expect(payload.qualitySummary).toEqual(["Missing population denominator"]);
+  });
+
+  it("parses handoff copilot context without accepting raw rows", () => {
+    const brief = createDefaultDecisionBrief();
+    const invalidTask = parseDecisionHandoffCopilotContext({
+      taskType: "dashboard_synthesis",
+      decisionBrief: brief
+    }, {
+      maxStringLength: 8,
+      maxDashboardFacts: 1,
+      maxSummaryItems: 1
+    });
+    const rawRows = parseDecisionHandoffCopilotContext({
+      taskType: "decision_handoff_summary",
+      decisionBrief: brief,
+      rows: [{ household_id: "HH-1", private_note: "raw row should not pass" }]
+    }, {
+      maxStringLength: 8,
+      maxDashboardFacts: 1,
+      maxSummaryItems: 1
+    });
+    const parsed = parseDecisionHandoffCopilotContext({
+      taskType: "decision_handoff_summary",
+      decisionBrief: {
+        ...brief,
+        decisionQuestion: "abcdefghi",
+        requiredEvidence: ["location severity signal", "unused second"]
+      },
+      qualitySummary: ["abcdefghi", "second item"],
+      transformationSummary: ["trim whitespace"],
+      dashboardFacts: [
+        {
+          id: "long-fact",
+          insightType: "coverage",
+          title: "abcdefghi",
+          description: "jklmnopqr",
+          severity: "high",
+          evidence: ["stuvwxyz"],
+          confidence: 0.9
+        },
+        {
+          id: "dropped",
+          insightType: "quality",
+          title: "Dropped",
+          description: "Dropped",
+          severity: "info",
+          evidence: ["Dropped"],
+          confidence: 0.5
+        }
+      ],
+      aiMode: "llm",
+      limitations: ["abcdefghi", "second limit"]
+    }, {
+      maxStringLength: 5,
+      maxDashboardFacts: 1,
+      maxSummaryItems: 1
+    });
+
+    expect(invalidTask).toEqual({ error: "Unsupported copilot task type." });
+    expect(rawRows).toEqual({ error: "Copilot handoff requests cannot include raw row data." });
+    expect("error" in parsed).toBe(false);
+    if ("error" in parsed) throw new Error(parsed.error);
+    expect(parsed.decisionBrief.decisionQuestion).toBe("abcde");
+    expect(parsed.decisionBrief.requiredEvidence).toEqual(["locat", "unuse"]);
+    expect(parsed.qualitySummary).toEqual(["abcde"]);
+    expect(parsed.dashboardFacts).toHaveLength(1);
+    expect(parsed.dashboardFacts?.[0].title).toBe("abcde");
+    expect(parsed.dashboardFacts?.[0].evidence).toEqual(["stuvw"]);
+    expect(parsed.limitations).toEqual(["abcde"]);
+  });
+
+  it("rejects invalid copilot task types and raw rows at the route boundary", async () => {
+    const brief = createDefaultDecisionBrief();
+    const invalidTask = await postCopilotRoute(copilotRouteRequest({
+      taskType: "dashboard_synthesis",
+      decisionBrief: brief
+    }));
+    const rawRows = await postCopilotRoute(copilotRouteRequest({
+      taskType: "decision_handoff_summary",
+      decisionBrief: brief,
+      data: [{ household_id: "HH-1" }]
+    }));
+
+    await expect(invalidTask.json()).resolves.toEqual({ error: "Unsupported copilot task type." });
+    await expect(rawRows.json()).resolves.toEqual({ error: "Copilot handoff requests cannot include raw row data." });
+    expect(invalidTask.status).toBe(400);
+    expect(rawRows.status).toBe(400);
+  });
+
+  it("returns deterministic handoff summaries from /api/copilot when LLM use is disabled", async () => {
+    const response = await postCopilotRoute(copilotRouteRequest({
+      taskType: "decision_handoff_summary",
+      useLlm: false,
+      decisionBrief: createDefaultDecisionBrief(),
+      decisionReadiness: {
+        status: "decision_unsafe",
+        title: "Not safe for action yet",
+        summary: "Population denominator evidence is missing.",
+        caveats: ["Population denominator is missing."],
+        blockerCount: 1,
+        reviewCount: 0,
+        requiredEvidenceCovered: [],
+        requiredEvidenceMissing: ["Population denominator"]
+      },
+      qualitySummary: ["high: Missing population denominator"],
+      transformationSummary: ["Trimmed whitespace in district names"],
+      aiMode: "disabled",
+      reviewNotice: "Outputs are review-only until blockers are corrected.",
+      limitations: ["Decision owner has not accepted the caveat."]
+    }));
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.source).toBe("deterministic");
+    expect(body.handoffNarrative).toContain("review-only");
+    expect(body.caveats).toEqual(expect.arrayContaining([
+      "Population denominator is missing.",
+      "Decision owner has not accepted the caveat."
+    ]));
+  });
+
+  it("falls back deterministically for handoff summaries when the LLM is unavailable", async () => {
+    const context = {
+      taskType: "decision_handoff_summary" as const,
+      decisionBrief: createDefaultDecisionBrief(),
+      decisionReadiness: {
+        status: "decision_unsafe" as const,
+        title: "Not safe for action yet",
+        summary: "Required population denominator evidence is missing.",
+        caveats: ["Population denominator is missing."],
+        blockerCount: 1,
+        reviewCount: 0,
+        requiredEvidenceCovered: [],
+        requiredEvidenceMissing: ["Population denominator"]
+      },
+      evidenceCoverage: {
+        coveredCount: 0,
+        ambiguousCount: 0,
+        missingCount: 1,
+        items: [{
+          evidenceNeed: "Population denominator",
+          status: "missing" as const,
+          candidates: [],
+          caveat: "No population field found.",
+          nextAction: "Add a verified population baseline."
+        }]
+      },
+      qualitySummary: ["high: Missing population denominator"],
+      transformationSummary: ["Trimmed whitespace in district names"],
+      aiMode: "disabled" as const,
+      reviewNotice: "Outputs are review-only until blockers are corrected.",
+      limitations: ["Decision owner has not accepted the caveat."]
+    };
+    const fallback = buildDeterministicDecisionHandoffSummary(context);
+
+    const missingKey = await requestDecisionHandoffSummary(context, fallback, {
+      provider: "openai",
+      model: "gpt-5.5"
+    });
+    const unsupportedProvider = await requestDecisionHandoffSummary(context, fallback, {
+      provider: "other",
+      model: "gpt-5.5",
+      apiKey: "test-key"
+    });
+
+    expect(fallback.source).toBe("deterministic");
+    expect(fallback.handoffNarrative).toContain("review-only");
+    expect(fallback.caveats).toEqual(expect.arrayContaining([
+      "Outputs are review-only until blockers are corrected or explicitly accepted by a decision owner."
+    ]));
+    expect(missingKey.fallbackReason).toBe("missing_api_key");
+    expect(unsupportedProvider.fallbackReason).toBe("unsupported_provider");
+  });
+
+  it("preserves readiness caveats and review-only language in sanitized handoff output", () => {
+    const fallback = buildDeterministicDecisionHandoffSummary({
+      taskType: "decision_handoff_summary",
+      decisionBrief: createDefaultDecisionBrief(),
+      decisionReadiness: {
+        status: "decision_unsafe",
+        title: "Not safe for action yet",
+        summary: "A blocker remains.",
+        caveats: ["Owner has not accepted the evidence caveat."],
+        blockerCount: 1,
+        reviewCount: 0,
+        requiredEvidenceCovered: [],
+        requiredEvidenceMissing: ["Population denominator"]
+      },
+      qualitySummary: ["high: blocker remains"],
+      transformationSummary: [],
+      aiMode: "llm",
+      reviewNotice: "Outputs are review-only until blockers are corrected.",
+      limitations: ["Decision owner has not accepted the caveat."]
+    });
+    const sanitized = sanitizeDecisionHandoffSummary({
+      readinessExplanation: "The export still has one blocker.",
+      repairActions: [{
+        title: "Confirm denominator",
+        rationale: "Population coverage is not confirmed.",
+        priority: "high",
+        ownerHint: "Assessment lead"
+      }],
+      handoffNarrative: "Use this as a draft handoff for the response lead.",
+      caveats: ["Model caveat"],
+      assumptions: ["Model assumption"]
+    }, fallback);
+
+    expect(sanitized.source).toBe("llm");
+    expect(sanitized.handoffNarrative).toContain("review-only");
+    expect(sanitized.caveats).toEqual(expect.arrayContaining([
+      "Model caveat",
+      "Owner has not accepted the evidence caveat.",
+      "Decision owner has not accepted the caveat."
+    ]));
+    expect(sanitized.assumptions).toEqual(expect.arrayContaining([
+      "No raw uploaded rows were sent to the copilot route.",
+      "Deterministic readiness remains authoritative for action safety."
+    ]));
+  });
+
+  it("requests handoff summaries from the Responses API and sanitizes returned JSON", async () => {
+    const context = {
+      taskType: "decision_handoff_summary" as const,
+      decisionBrief: createDefaultDecisionBrief(),
+      qualitySummary: [],
+      transformationSummary: [],
+      aiMode: "llm" as const
+    };
+    const fallback = buildDeterministicDecisionHandoffSummary(context);
+    const fetchMock = vi.fn(async (_input: RequestInfo | URL, _init?: RequestInit) => Response.json({
+      status: "completed",
+      output_text: JSON.stringify({
+        readinessExplanation: "Ready for review with one caveat.",
+        repairActions: [{
+          title: "Review caveat",
+          rationale: "Decision owner should accept the caveat.",
+          priority: "medium",
+          ownerHint: "Response lead"
+        }],
+        handoffNarrative: "Stakeholder-facing handoff narrative.",
+        caveats: ["Review the caveat."],
+        assumptions: ["Based on derived summaries."]
+      })
+    }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    try {
+      const response = await requestDecisionHandoffSummary(context, fallback, {
+        provider: "openai",
+        apiKey: "test-key",
+        model: "gpt-5.5",
+        timeoutMs: 1000
+      });
+      const request = fetchMock.mock.calls[0];
+      const requestBody = JSON.parse(String(request[1]?.body));
+
+      expect(request[0]).toBe("https://api.openai.com/v1/responses");
+      expect(requestBody.store).toBe(false);
+      expect(requestBody.model).toBe("gpt-5.5");
+      expect(requestBody.text.format.name).toBe("dashboard_copilot_decision_handoff");
+      expect(response.source).toBe("llm");
+      expect(response.readinessExplanation).toBe("Ready for review with one caveat.");
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it("falls back on provider failures, timeouts, invalid JSON, and unavailable models", async () => {
+    const profile = profileDataset(createTabularDataset("needs.csv", "csv", "sample", parseCsv("id,value\nA,1\n")));
+    const fallback = {
+      source: "deterministic" as const,
+      summary: "Fallback",
+      recommendedPath: { title: "Use fallback", rationale: "Valid deterministic fallback", confidence: 0.5, actions: ["Accept"] },
+      assumptions: ["fallback"]
+    };
+
+    vi.stubGlobal("fetch", vi.fn(async () => {
+      const error = new Error("aborted");
+      error.name = "AbortError";
+      throw error;
+    }));
+    const timeoutResponse = await requestStructuredRecommendations({ mode: "single", profiles: [profile] }, fallback, {
+      provider: "openai",
+      model: "gpt-5.5",
+      apiKey: "test-key",
+      timeoutMs: 1
+    });
+    vi.unstubAllGlobals();
+
+    vi.stubGlobal("fetch", vi.fn(async () => new Response("{", { status: 200 })));
+    const invalidJsonResponse = await requestStructuredRecommendations({ mode: "single", profiles: [profile] }, fallback, {
+      provider: "openai",
+      model: "gpt-5.5",
+      apiKey: "test-key",
+      timeoutMs: 1000
+    });
+    vi.unstubAllGlobals();
+
+    vi.stubGlobal("fetch", vi.fn(async () => Response.json({ error: { message: "model unavailable" } }, { status: 404 })));
+    const unavailableModelResponse = await requestStructuredRecommendations({ mode: "single", profiles: [profile] }, fallback, {
+      provider: "openai",
+      model: "missing-model",
+      apiKey: "test-key",
+      timeoutMs: 1000
+    });
+    vi.unstubAllGlobals();
+
+    const unsupportedProviderResponse = await requestStructuredRecommendations({ mode: "single", profiles: [profile] }, fallback, {
+      provider: "unsupported",
+      model: "gpt-5.5",
+      apiKey: "test-key"
+    });
+
+    expect(timeoutResponse.fallbackReason).toBe("request_timeout");
+    expect(invalidJsonResponse.fallbackReason).toBe("model_response_invalid");
+    expect(unavailableModelResponse.fallbackReason).toBe("provider_unavailable");
+    expect(unsupportedProviderResponse.fallbackReason).toBe("unsupported_provider");
   });
 
   it("marks provider rate-limit fallbacks for clearer UI warnings", async () => {
@@ -1005,12 +1498,9 @@ describe("data pipeline", () => {
     };
 
     vi.stubGlobal("fetch", vi.fn(async () => Response.json({
-      choices: [
-        {
-          finish_reason: "length",
-          message: { content: "{\"summary\":\"unfinished\"" }
-        }
-      ]
+      status: "incomplete",
+      incomplete_details: { reason: "max_output_tokens" },
+      output_text: "{\"summary\":\"unfinished\""
     })));
 
     try {
@@ -1416,6 +1906,28 @@ describe("data pipeline", () => {
     expect(latitude?.sampleValues).toEqual([]);
     expect(longitude?.sampleValues).toEqual([]);
     expect(needsScore?.sampleValues).toEqual(["78", "66"]);
+  });
+
+  it("keeps local descriptive statistics out of minimized recommendation profiles", () => {
+    const dataset = withProfile(createTabularDataset(
+      "needs.csv",
+      "csv",
+      "sample",
+      parseCsv("district_name,needs_score\nNorth,78\nSouth,66\nNorth,84\n")
+    ));
+    const [profile] = minimizeProfiles([dataset.profile!]);
+    const sourceColumn = dataset.profile?.columns.find((column) => column.columnName === "needs_score");
+    const minimizedColumn = profile.columns.find((column) => column.columnName === "needs_score") as Record<string, unknown>;
+
+    expect(sourceColumn?.descriptiveStats?.numeric?.max).toBe(84);
+    expect(minimizedColumn.descriptiveStats).toBeUndefined();
+    expect(Object.keys(minimizedColumn)).toEqual([
+      "columnName",
+      "inferredType",
+      "missingPercentage",
+      "uniqueCount",
+      "sampleValues",
+    ]);
   });
 
   it("sanitizes dataset input hints in minimized recommendation profiles", () => {

@@ -14,7 +14,12 @@ import {
 import { cleaningRecommendationsForProfiles } from "@/lib/cleaningTransforms";
 import { requestStructuredRecommendations } from "@/lib/llmClient";
 import { parseWorkflowContext } from "@/lib/recommendationSchema";
-import { llmServerConfig, recommendationApiConfig } from "@/lib/serverConfig";
+import {
+  copilotTaskForRecommendationScope,
+  llmServerConfig,
+  recommendationApiConfig,
+  resolveLlmTaskConfig,
+} from "@/lib/serverConfig";
 
 export async function POST(request: Request) {
   try {
@@ -52,6 +57,9 @@ export async function POST(request: Request) {
     const fallback = generateServerFallback(parsed);
     const useLlm = !isRecord(body) || body.useLlm !== false;
     const recommendationScope = parseRecommendationScope(body);
+    const taskConfig = resolveLlmTaskConfig(
+      copilotTaskForRecommendationScope(recommendationScope),
+    );
     if (!useLlm || !llmServerConfig.enabled) {
       return jsonNoStore(fallback);
     }
@@ -59,10 +67,13 @@ export async function POST(request: Request) {
     const recommendations = await requestStructuredRecommendations(parsed, fallback, {
       apiKey: llmServerConfig.apiKey,
       provider: llmServerConfig.provider,
-      model: llmServerConfig.model,
-      timeoutMs: timeoutForRecommendationScope(recommendationScope),
-      maxCompletionTokens: llmServerConfig.maxCompletionTokens,
+      model: taskConfig.model,
+      timeoutMs: taskConfig.timeoutMs,
+      maxOutputTokens: taskConfig.maxOutputTokens,
       recommendationScope,
+      reasoningEffort: taskConfig.reasoningEffort,
+      verbosity: taskConfig.verbosity,
+      taskType: taskConfig.taskType,
       safetyIdentifier: anonymousSafetyIdentifier(clientKey)
     });
     return jsonNoStore(recommendations);
@@ -139,12 +150,6 @@ function parseRecommendationScope(body: unknown): RecommendationScope {
   return isRecord(body) && body.recommendationScope === "workflow"
     ? "workflow"
     : "dashboard";
-}
-
-function timeoutForRecommendationScope(scope: RecommendationScope) {
-  return scope === "workflow"
-    ? llmServerConfig.workflowTimeoutMs
-    : llmServerConfig.dashboardTimeoutMs;
 }
 
 function jsonNoStore(body: unknown, init?: ResponseInit) {

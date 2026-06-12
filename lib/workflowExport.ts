@@ -4,12 +4,11 @@ import type {
   DecisionReadinessResult,
   EvidenceCoverageSummary,
 } from "@/types/decision";
+import type { DecisionHandoffAiMode } from "@/types/copilot";
 import type { JoinRecommendation } from "@/types/recommendations";
 import type { QualityCheckResult } from "@/types/quality";
 import type { TransformationStep } from "@/types/transformations";
 import { readinessStatusLabel } from "./decisionContext";
-
-export type DecisionHandoffAiMode = "llm" | "deterministic" | "disabled" | "fallback";
 
 export type DecisionHandoffPacketInput = {
   generatedAt?: string;
