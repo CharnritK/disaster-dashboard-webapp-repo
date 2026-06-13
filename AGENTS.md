@@ -20,17 +20,28 @@ Do not casually add persistence, authentication, background jobs, external brows
 
 Use the `@/` alias for repo-root imports.
 
+## Current Plan And Archive
+
+The current implementation plan is `specs/001-decision-context-data-quality/plan.md`.
+
+The current controlled-beta handoff package is `plan/final_handoff_package/`.
+Use it for release status, validation evidence, review gates, and future task
+orchestration. Older Codex handoff prompt packs belong under `plan/archive/`
+and are historical reference only; do not treat archived prompt packs as the
+active product plan.
+
 ## User Workflow
 
 The app flow is:
 
-1. Upload CSV/XLSX files or load bundled samples.
-2. Profile datasets.
-3. Generate harmonization recommendations.
-4. Accept or adjust joins and safe cleaning transforms.
-5. Validate prepared data.
-6. Generate dashboard recommendations.
-7. Export CSV, PNG, PDF report, or transformation log JSON.
+1. Select a decision template and review suggested collection fields.
+2. Upload CSV/XLSX files or load bundled samples.
+3. Profile datasets and evidence coverage.
+4. Generate harmonization recommendations.
+5. Accept or adjust joins and safe cleaning transforms.
+6. Validate prepared data and decision readiness.
+7. Generate dashboard recommendations.
+8. Export CSV, PNG, PDF report, transformation log JSON, decision handoff log, or project kit.
 
 Keep this workflow understandable. Do not hide quality caveats or make AI output look authoritative without deterministic validation.
 
@@ -40,15 +51,19 @@ Important modules:
 
 - `lib/fileParsers.ts`: CSV/XLSX parsing, upload validation, sample loading, duplicate header handling, primitive value coercion.
 - `lib/profiling.ts`: dataset profiling and inferred field roles.
+- `lib/decisionContext.ts`: decision templates, suggested collection fields, and deterministic readiness checks.
 - `lib/deterministicJoinRecommendations.ts`: deterministic join suggestions.
 - `lib/harmonization.ts`: joins, multi-dataset join plans, safe cleaning, transformation logging.
 - `lib/cleaningTransforms.ts`: allowed row-preserving cleaning transforms.
 - `lib/validation.ts`: quality checks.
 - `lib/dashboardRecommendations.ts`: deterministic dashboard recommendation generation and LLM recommendation reconciliation.
 - `lib/dashboardInsights.ts`: fact generation for chart/insight support.
+- `lib/vizPolicy.ts` and `lib/vizRules/`: deterministic chart, map, caveat, denominator, and accessibility guardrails.
 - `lib/chartMetrics.ts`: aggregation and display-label logic.
 - `lib/recommendationSchema.ts`: request validation, minimized profile payloads, model response sanitization.
 - `lib/llmClient.ts`: server-side LLM request construction and fallback handling.
+- `lib/copilotHandoff.ts`: server-side decision handoff summary construction and fallback handling.
+- `lib/workflowExport.ts`: review-ready project kit export assembly.
 - `lib/apiSecurity.ts`: request body limits, anonymous rate limiting, safety identifiers.
 
 Only use these cleaning transform types unless the task explicitly expands the contract:
@@ -82,9 +97,14 @@ Server-only recommendation config lives in `lib/serverConfig.ts`. Key optional e
 - `LLM_API_KEY`
 - `LLM_PROVIDER`
 - `LLM_MODEL`
+- `LLM_WORKFLOW_MODEL`
+- `LLM_DASHBOARD_MODEL`
+- `LLM_QUALITY_GUIDANCE_MODEL`
+- `LLM_HANDOFF_MODEL`
 - `LLM_REQUEST_TIMEOUT_MS`
 - `LLM_WORKFLOW_REQUEST_TIMEOUT_MS`
 - `LLM_DASHBOARD_REQUEST_TIMEOUT_MS`
+- `LLM_HANDOFF_REQUEST_TIMEOUT_MS`
 - `LLM_MAX_COMPLETION_TOKENS`
 - `MAX_UPLOAD_SIZE_MB`
 - `RECOMMEND_REQUEST_MAX_BYTES`
@@ -96,8 +116,11 @@ Server-only recommendation config lives in `lib/serverConfig.ts`. Key optional e
 - `RECOMMEND_MAX_STRING_LENGTH`
 - `RECOMMEND_MAX_DASHBOARD_FACTS`
 - `RECOMMEND_MAX_SUMMARY_ITEMS`
+- `NEXT_PUBLIC_COPILOT_API_ENABLED`
 
-Do not commit `.env`, `.env.local`, or secrets. There is currently no `.env.example`.
+Do not commit `.env`, `.env.local`, or secrets. `.env.example` is checked in
+with deterministic-safe defaults; copy it to `.env.local` for local use and
+enable AI only intentionally.
 
 ## Security And Runtime Headers
 

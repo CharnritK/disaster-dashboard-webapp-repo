@@ -12,6 +12,7 @@ Start with these documents if you are reviewing, submitting, or adapting the pro
 - [Codex Starter Prompts](docs/codex-starter-prompts.md): copy-ready prompts for adapting the project to new decision-support contexts.
 - [Showcase Script](docs/showcase-script.md): short demo path for explaining the workflow to a non-technical audience.
 - [Repo-local Codex Skills](docs/copilot/): skills for visualization standards, bootstrapping another decision-support app, and adapting decision templates.
+- [Final Handoff Package](plan/final_handoff_package/README.md): current controlled-beta handoff, validation evidence, review gates, and archive index for older Codex handoffs.
 
 ## Run Locally
 

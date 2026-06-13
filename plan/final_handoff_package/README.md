@@ -33,27 +33,34 @@ Current P0/P1 repo-local implementation evidence is recorded in `08_QA_RELEASE_C
 | File | Purpose |
 |---|---|
 | `00_EXECUTIVE_HANDOFF.md` | Decision-ready summary and immediate next build scope |
-| `01_PRODUCT_WORKFLOW_SPEC.md` | Analyst/non-technical user workflow and product behavior |
-| `02_TECHNICAL_BUILD_SPEC.md` | Frontend, backend, AI, data, scaling, and architecture handoff |
-| `03_ROADMAP_BACKLOG.md` | P0/P1/P2 roadmap and milestone sequencing |
 | `04_CODEX_MASTER_PROMPT.md` | Copy-ready master prompt for Codex orchestration |
-| `05_CODEX_SUBAGENT_TASKS.md` | Sub-agent plan, task cards, prompts, and context boundaries |
-| `06_TEST_VALIDATION_PLAN.md` | Test matrix, commands, acceptance checks, manual smoke plan |
-| `07_SAFETY_GOVERNANCE.md` | Safety, privacy, AI, and human-review guardrails |
 | `08_QA_RELEASE_CLOSEOUT.md` | Review gates, stop conditions, release-readiness checklist |
 | `09_IMPLEMENTATION_STATUS_TRACKER.md` | Tracker template for builder progress |
-| `codex_task_cards.json` | Machine-readable task cards |
 | `validation_matrix.json` | Machine-readable validation checklist |
-| `source_report.md` | Source repo-state report from this conversation |
-| `source_roadmap_spec.md` | Source roadmap/spec from this conversation |
+| `manifest.json` | Machine-readable package status and production-v1 contract |
+| `FINAL_HANDOFF_PACKAGE.md` | Consolidated full package, including product/workflow spec, technical build spec, roadmap, validation plan, safety governance, and sub-agent task guidance |
+
+## Assimilated archive inputs
+
+The older root-level prompt packs have been assimilated into the current docs,
+code, tests, and handoff package. They are archived for audit/history only:
+
+| Archived source | Current authoritative surface |
+|---|---|
+| `codex_handoff/` | `plan/final_handoff_package/08_QA_RELEASE_CLOSEOUT.md`, `plan/final_handoff_package/09_IMPLEMENTATION_STATUS_TRACKER.md`, `validation_matrix.json`, `docs/showcase-script.md`, `docs/digital-public-good-guide.md`, and the implemented app/tests |
+| `codex_final_handoffs_disaster_dashboard/` | `docs/visualization-policy.md`, `docs/copilot/dataviz-disaster-dashboard/`, `lib/vizPolicy.ts`, `lib/vizRules/`, `components/charts/ChartFrame.ts`, public synthetic samples, and Vitest coverage |
+
+Archive location: `plan/archive/2026-06-13-codex-handoffs/`.
 
 ## First use
 
 1. Read `00_EXECUTIVE_HANDOFF.md`.
-2. Open `04_CODEX_MASTER_PROMPT.md` and paste it into Codex.
-3. Assign one sub-agent task at a time from `05_CODEX_SUBAGENT_TASKS.md`.
-4. Require every sub-agent to return the response format specified in the task.
-5. Re-run validation gates in `06_TEST_VALIDATION_PLAN.md` before merging.
+2. Check `08_QA_RELEASE_CLOSEOUT.md`, `09_IMPLEMENTATION_STATUS_TRACKER.md`,
+   and `validation_matrix.json` for current evidence and open review gates.
+3. Use `04_CODEX_MASTER_PROMPT.md` for future bounded Codex work.
+4. Use `FINAL_HANDOFF_PACKAGE.md` when you need the consolidated product,
+   technical, roadmap, validation, safety, and orchestration sections.
+5. Re-run the relevant validation gates before merging or releasing.
 
 ## Non-negotiable constraints
 
