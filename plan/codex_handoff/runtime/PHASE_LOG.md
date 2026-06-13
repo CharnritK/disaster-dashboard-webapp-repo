@@ -168,3 +168,18 @@ Do not include secrets or real PII.
   - Handoff log checks: includes `evidenceCoverage`, `datasetLineage`, `reviewNotice`; AI assistance mode recorded as `disabled`; dataset lineage count 3.
   - Risky quality sample: PASS, `demo_quality_risk` loads, validation reaches `Not safe for action yet`, and dashboard generation remains available for review.
   - Dev server stopped after smoke check.
+
+### GOAL_06 - Optional disaster decision template pack
+- Files changed: `types/decision.ts`, `lib/decisionContext.ts`, `lib/recommendationSchema.ts`, `components/WorkflowComponents.tsx`, `tests/dataPipeline.test.ts`.
+- Added `service_gap_monitoring` and `preparedness_risk_screening` templates while keeping `response_prioritization` as default.
+- Template selector now resets the decision brief to selected template defaults.
+- Suggested collection templates update with service availability, hazard exposure, vulnerability, population denominator, and preparedness capacity fields.
+- Recommendation request sanitization accepts supported template IDs and safely omits unsupported IDs.
+- Test evidence: `npm run test -- tests/dataPipeline.test.ts` PASS, 80 tests; `npm run lint` PASS.
+- Browser smoke: PASS on `http://127.0.0.1:3000`; verified service gap template selection, service gap sample path to export, and `dashboard-copilot-project-kit.json` download with `service_gap_monitoring` context.
+
+### P1 closeout additions
+- Project kit export added without new dependencies, persistence, auto-send, or external upload.
+- Visualization policy documented in `docs/visualization-policy.md` and linked from README/docs.
+- Accessibility baseline strengthened with chart screen-reader/mobile behavior test and role/label-based browser smoke.
+- Remaining release gates are external reviews: product/domain, AI/privacy, export safety, accessibility/no-code, and release owner approval.

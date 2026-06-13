@@ -37,9 +37,11 @@ import {
   buildDecisionMapDataGroups,
   buildSuggestedCollectionTemplateRows,
   buildSuggestedDataCollectionTemplate,
+  createDecisionBriefFromTemplate,
+  DECISION_TEMPLATES,
   evidenceCoverageStatusLabel,
+  getUseCaseTemplate,
   readinessStatusLabel,
-  RESPONSE_PRIORITIZATION_TEMPLATE,
 } from "@/lib/decisionContext";
 import { downloadText, toCsv } from "@/lib/exportCsv";
 import {
@@ -160,6 +162,7 @@ export function DecisionBriefStep({
     onChange({ ...brief, [field]: value });
   };
   const collectionTemplate = buildSuggestedDataCollectionTemplate(brief);
+  const selectedTemplate = getUseCaseTemplate(brief.useCaseId);
   const [isDecisionMapOpen, setIsDecisionMapOpen] = useState(false);
   const decisionMapTitleId = useId();
   const decisionMapDescriptionId = useId();
@@ -176,17 +179,19 @@ export function DecisionBriefStep({
             <select
               value={brief.useCaseId}
               onChange={(event) =>
-                updateField("useCaseId", event.target.value as DecisionBrief["useCaseId"])
+                onChange(createDecisionBriefFromTemplate(event.target.value as DecisionBrief["useCaseId"]))
               }
             >
-              <option value={RESPONSE_PRIORITIZATION_TEMPLATE.id}>
-                {RESPONSE_PRIORITIZATION_TEMPLATE.title}
-              </option>
+              {DECISION_TEMPLATES.map((template) => (
+                <option key={template.id} value={template.id}>
+                  {template.title}
+                </option>
+              ))}
             </select>
           </label>
           <div className="template-summary">
-            <h3>{RESPONSE_PRIORITIZATION_TEMPLATE.title}</h3>
-            <p>{RESPONSE_PRIORITIZATION_TEMPLATE.description}</p>
+            <h3>{selectedTemplate.title}</h3>
+            <p>{selectedTemplate.description}</p>
             <p className="helper-text">
               Defaults are ready to run. Adjust the brief only where your decision differs.
             </p>
@@ -241,7 +246,7 @@ export function DecisionBriefStep({
         <fieldset className="evidence-fieldset">
           <legend>Decision signals</legend>
           <div className="evidence-choice-grid">
-            {RESPONSE_PRIORITIZATION_TEMPLATE.requiredEvidence.map((item) => (
+            {selectedTemplate.requiredEvidence.map((item) => (
               <label key={item} className="checkbox-row">
                 <input
                   type="checkbox"
@@ -577,6 +582,14 @@ export function UploadStep({
               Use risky quality sample
               <span>invalid values and missing evidence</span>
             </button>
+            <button onClick={() => onSamples("service-gap")}>
+              Use service gap sample
+              <span>availability + gap + capacity</span>
+            </button>
+            <button onClick={() => onSamples("preparedness-risk")}>
+              Use preparedness sample
+              <span>hazard + vulnerability + capacity</span>
+            </button>
           </div>
         </div>
       ) : (
@@ -599,6 +612,12 @@ export function UploadStep({
             </button>
             <button onClick={() => onSamples("quality-risk")}>
               Use risky quality sample
+            </button>
+            <button onClick={() => onSamples("service-gap")}>
+              Use service gap sample
+            </button>
+            <button onClick={() => onSamples("preparedness-risk")}>
+              Use preparedness sample
             </button>
           </div>
           <AgentContextChecklist />
@@ -3482,6 +3501,7 @@ export function ExportStep({
   onReport,
   onPng,
   onLog,
+  onProjectKit,
 }: {
   ready: boolean;
   dashboardReady: boolean;
@@ -3498,6 +3518,7 @@ export function ExportStep({
   onReport: () => void;
   onPng: () => void;
   onLog: () => void;
+  onProjectKit: () => void;
 }) {
   const [acknowledged, setAcknowledged] = useState(false);
   const needsAcknowledgement =
@@ -3571,6 +3592,20 @@ export function ExportStep({
               {transformationCount > 0
                 ? `${formatCount(transformationCount, "recorded step")} available.`
                 : "No transformation steps were recorded."}
+            </span>
+          </button>
+          <button
+            className="export-option"
+            disabled={!dashboardReady || !ready || !exportReady}
+            onClick={onProjectKit}
+          >
+            <span className="export-option-type">KIT</span>
+            <span className="export-option-label">Project kit</span>
+            <span className="export-option-meta">
+              Downloads a JSON kit with README text, prepared CSV, schema, chart config, and handoff log.
+            </span>
+            <span className="export-option-detail">
+              Built for second-pass review without saving data in the app.
             </span>
           </button>
           <button

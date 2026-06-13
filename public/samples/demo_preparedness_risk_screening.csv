@@ -1,0 +1,5 @@
+admin_area,admin_code,observation_date,hazard_exposure_score,vulnerability_score,population_denominator,preparedness_capacity_score,data_source,notes
+Coastal North,D11,2026-06-01,88,76,18400,35,Synthetic preparedness review,Evacuation route needs review
+River Bend,D12,2026-06-01,73,69,9200,44,Synthetic preparedness review,Warehouse stock below target
+Highland East,D13,2026-06-01,52,58,6400,62,Synthetic preparedness review,Community volunteers trained
+Metro West,D14,2026-06-01,64,43,22600,71,Synthetic preparedness review,Shelter capacity documented

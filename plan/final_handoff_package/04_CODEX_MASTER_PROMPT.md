@@ -9,20 +9,24 @@ Repository:
 CharnritK/disaster-dashboard-webapp-repo
 
 Mission:
-Move the Dashboard Copilot disaster-management decision-support prototype toward the approved target state. Implement only the assigned task. Preserve safety, privacy, deterministic fallback, and session-only operation.
+Move the Dashboard Copilot disaster-management decision-support product toward the approved production v1 controlled-beta target state. Implement only the assigned task. Preserve safety, privacy, deterministic fallback, and session-only operation.
 
 Primary product frame:
-This is a humanitarian / disaster-management decision-support prototype. It helps practitioners turn fragmented CSV/XLSX data into a reviewable decision-support package. It starts from a decision, keeps uncertainty visible, preserves deterministic fallback, and must never make AI appear to approve operational decisions.
+This is a humanitarian / disaster-management decision-support product for controlled beta, not a demo showcase. Production v1 is non-sensitive, session-only disaster-response decision support. Response prioritization is the approved primary workflow. Service gap monitoring and preparedness risk screening are beta workflows until domain-reviewed. The workflow starts from a decision, keeps uncertainty visible, preserves deterministic fallback, and must never make AI appear to approve operational decisions.
 
 Non-negotiable constraints:
 - Do not add auth, accounts, project persistence, background jobs, scheduled refresh, storage, or live operational pipelines.
 - Do not add auto-send, auto-escalation, or auto-approval.
 - Do not send full uploaded rows to LLM routes or providers.
 - Preserve session-only operation unless explicitly approved.
+- Keep deterministic mode as the default launch posture.
+- Enable AI only after safety/privacy review closes or is explicitly deferred by the named owner.
 - Preserve deterministic fallback when AI is disabled, unavailable, rate-limited, times out, or returns invalid output.
 - Keep visible caveats and review gates in workflow, dashboard, exports, and handoff summaries.
 - Treat AI as assistance for explanation, summarization, harmonization guidance, and handoff language only.
 - Prefer synthetic/public data. Do not add PII, credentials, partner-private data, or sensitive operational data.
+- Treat the demo path as onboarding/proof, not production readiness.
+- Keep public launch blocked until product, domain, safety/privacy, export, accessibility, release, and support owners are named and their gates are closed or explicitly deferred.
 - Do not introduce a new package manager.
 - Keep deterministic logic in `lib/`; keep decision types in `types/`; keep tests in Vitest.
 

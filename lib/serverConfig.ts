@@ -26,7 +26,7 @@ function numberFromEnv(name: string, fallback: number, min = 0) {
   return Number.isFinite(value) ? Math.max(min, value) : fallback;
 }
 
-function booleanFromEnv(name: string, fallback: boolean) {
+export function booleanFromEnv(name: string, fallback: boolean) {
   const raw = process.env[name];
   if (!raw) return fallback;
   return !["0", "false", "off", "no"].includes(raw.trim().toLowerCase());
@@ -68,8 +68,8 @@ const defaultLlmTimeoutMs = numberFromEnv("LLM_REQUEST_TIMEOUT_MS", 15_000, 1_00
 const defaultMaxOutputTokens = numberFromEnv("LLM_MAX_COMPLETION_TOKENS", 3_200, 100);
 
 export const llmServerConfig = {
-  enabled: booleanFromEnv("LLM_ENABLED", true),
-apiKey: process.env.LLM_API_KEY ?? process.env.OPENAI_API_KEY,
+  enabled: booleanFromEnv("LLM_ENABLED", false),
+  apiKey: process.env.LLM_API_KEY ?? process.env.OPENAI_API_KEY,
   provider: process.env.LLM_PROVIDER ?? "openai",
   model: process.env.LLM_MODEL ?? "gpt-5.4-mini",
   workflowTimeoutMs: numberFromEnv("LLM_WORKFLOW_REQUEST_TIMEOUT_MS", defaultLlmTimeoutMs, 1_000),

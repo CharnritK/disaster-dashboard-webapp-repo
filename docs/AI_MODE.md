@@ -4,7 +4,7 @@
 
 The AI workflow uses `/api/recommend` for workflow and dashboard recommendations and `/api/copilot` for decision handoff summaries. Status checks use `/api/recommend/status`. Provider calls remain server-side for all AI routes.
 
-Set `LLM_ENABLED=false` explicitly for deterministic-only demos, local no-key review, and deployments where AI should remain off. Do not rely on an unset `LLM_ENABLED` value as an explicit opt-out.
+Deterministic mode is the default launch posture. Unset `LLM_ENABLED` and `NEXT_PUBLIC_COPILOT_API_ENABLED` values keep AI mode off. Set both to `true` only after the target environment has passed safety/privacy review or that gate has been explicitly deferred by the named owner.
 
 AI mode is server-side. The browser calls the app's own routes, then those
 routes call the configured LLM provider:
@@ -16,7 +16,7 @@ The browser must never receive `LLM_API_KEY` or provider credentials.
 
 ## Local Development
 
-Use `.env.local` for local runs:
+Use `.env.local` for reviewed AI-mode local runs:
 
 ```bash
 LLM_ENABLED=true
@@ -65,7 +65,7 @@ Local `.env.local` values are not the production runtime configuration for a
 Codex Site. In Codex, open Sites, select this project, and add the same values
 as hosted environment variables or secrets. Store API keys as secrets.
 
-Production values when enabling AI:
+Production values when enabling AI after safety/privacy review:
 
 ```bash
 LLM_ENABLED=true
@@ -78,7 +78,7 @@ LLM_HANDOFF_MODEL=gpt-5.5
 LLM_API_KEY=sk-...
 ```
 
-For deterministic-only production deployments, set `LLM_ENABLED=false` and keep `NEXT_PUBLIC_COPILOT_API_ENABLED=false`.
+For controlled-beta production deployments, keep `LLM_ENABLED=false` and `NEXT_PUBLIC_COPILOT_API_ENABLED=false` unless AI has been explicitly approved for that environment.
 
 For static Codex Sites builds without runtime API routes, keep
 `NEXT_PUBLIC_COPILOT_API_ENABLED=false` so the browser uses deterministic

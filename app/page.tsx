@@ -24,7 +24,7 @@ import { computeDashboardInsightFacts } from "@/lib/dashboardInsights";
 import { downloadText, toCsv } from "@/lib/exportCsv";
 import { exportElementAsPng } from "@/lib/exportPng";
 import { exportElementAsPdf } from "@/lib/exportPdf";
-import { buildDecisionHandoffPacket } from "@/lib/workflowExport";
+import { buildDashboardProjectKit, buildDecisionHandoffPacket } from "@/lib/workflowExport";
 import {
   DashboardPreview,
   DashboardStep,
@@ -64,7 +64,7 @@ const initialState: WorkflowState = {
   currentStep: "brief"
 };
 
-const copilotApiEnabled = process.env.NEXT_PUBLIC_COPILOT_API_ENABLED !== "false";
+const copilotApiEnabled = process.env.NEXT_PUBLIC_COPILOT_API_ENABLED === "true";
 
 export default function DashboardCopilotApp() {
   const [state, setState] = useState<WorkflowState>(initialState);
@@ -443,6 +443,32 @@ export default function DashboardCopilotApp() {
     );
   }
 
+  function exportProjectKit() {
+    if (!state.preparedDataset || !state.dashboardRecommendation) return;
+    const datasets = state.datasets.length > 0
+      ? state.datasets
+      : [state.preparedDataset];
+    const kit = buildDashboardProjectKit({
+      decisionBrief: state.decisionBrief,
+      evidenceCoverage: buildEvidenceCoverageSummary(datasets, state.decisionBrief),
+      decisionReadiness: state.decisionReadiness,
+      datasets,
+      preparedDataset: state.preparedDataset,
+      dashboardRecommendation: state.dashboardRecommendation,
+      selectedJoinRecommendations: state.selectedJoinRecommendations ?? [],
+      qualityResults: state.qualityResults,
+      transformationLog: state.transformationLog,
+      aiMode: currentAiMode(llmEnabled, state.aiRecommendations, state.warning),
+      aiFallbackReason: state.aiRecommendations?.fallbackReason,
+      aiFallbackMessage: state.aiRecommendations?.fallbackMessage,
+    });
+    downloadText(
+      "dashboard-copilot-project-kit.json",
+      JSON.stringify(kit, null, 2),
+      "application/json",
+    );
+  }
+
   async function generateHandoffSummary() {
     if (handoffLoading || !state.preparedDataset || !state.dashboardRecommendation) return;
     setHandoffLoading(true);
@@ -678,6 +704,7 @@ export default function DashboardCopilotApp() {
                   onReport={exportReport}
                   onPng={exportPng}
                   onLog={exportLog}
+                  onProjectKit={exportProjectKit}
                 />
                 <div className="export-render-target" aria-hidden="true" inert>
                   <DashboardPreview

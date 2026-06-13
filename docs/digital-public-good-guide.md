@@ -4,9 +4,11 @@
 
 Dashboard Copilot helps humanitarian teams turn messy CSV or Excel files into a reviewable decision-support package.
 
+Production v1 is a controlled beta for non-sensitive, session-only disaster-response decision support. Response prioritization is the approved primary workflow. Service gap monitoring and preparedness risk screening are beta workflows until domain review closes or is explicitly deferred.
+
 It does not try to replace analysts, operational leads, or accountability processes. Its job is narrower and more useful: start with the response decision, check whether the available data can support that decision, prepare the data safely, recommend a first dashboard, and export the evidence, caveats, and transformation history.
 
-The strongest framing is not "a dashboard generator." It is AI-assisted data standardization and weekly situation reporting for faster, safer operational decisions.
+The strongest framing is not "a dashboard generator." It is deterministic, decision-first data preparation and situation-reporting support for faster, safer operational review. AI is optional and remains off by default until safety/privacy review approves it for the target environment.
 
 ## Who This Is For
 
@@ -37,24 +39,24 @@ The workflow keeps uncertainty visible. If the data is incomplete, risky, or not
 
 ## What Is In Scope
 
-The current prototype supports:
+The current controlled-beta product supports:
 
 - Session-only file upload and sample data loading.
 - CSV and Excel parsing.
 - Dataset profiling.
-- Decision-context checks for response prioritization.
+- Decision-context checks for response prioritization, service gap monitoring, and preparedness risk screening.
 - Suggested data collection templates.
 - Deterministic join and dashboard recommendations.
 - Safe, row-preserving cleaning transforms.
 - Quality checks and decision-readiness labels.
-- Optional AI recommendations with deterministic fallback.
-- Exportable CSV, PNG, PDF, transformation log, and decision handoff outputs.
+- Optional AI recommendations with deterministic fallback, disabled by default for launch.
+- Exportable CSV, PNG, PDF, transformation log, decision handoff, and project-kit outputs.
 
 The intended use is a reviewable first pass: a prepared dataset, a dashboard draft, and a clear list of caveats that another person can inspect.
 
 ## What Is Not In Scope
 
-The current prototype does not provide:
+The current controlled-beta product does not provide:
 
 - User accounts or authentication.
 - Saved projects or long-term storage.
@@ -68,7 +70,7 @@ Those features may be useful later, but adding them changes the product contract
 
 ## How AI Is Used
 
-AI is optional. The app must still work when AI is disabled, unavailable, rate limited, or returns invalid output.
+AI is optional and off by default. The app must still work when AI is disabled, unavailable, rate limited, or returns invalid output.
 
 When AI is enabled, the server sends minimized dataset profile, readiness, quality, transformation, and dashboard-fact summaries, not full uploaded rows. The app still relies on deterministic checks for safety-sensitive labels such as data readiness.
 
@@ -78,9 +80,15 @@ The right mental model is: AI can help explain, summarize, and recommend. It sho
 
 Good extensions should preserve the decision-first workflow.
 
+Current decision templates:
+
+- Response prioritization: approved primary workflow for controlled beta.
+- Service gap monitoring: beta workflow; requires domain review before production reliance.
+- Preparedness risk screening: beta workflow; requires domain review before production reliance.
+
 Best next extensions:
 
-- Add new decision templates, such as shelter prioritization, public health outreach, or infrastructure damage triage.
+- Add more domain-reviewed templates, such as shelter prioritization, public health outreach, or infrastructure damage triage.
 - Add more sample datasets for realistic demos.
 - Improve the exported handoff package for teams that need a second pass in another dashboard tool.
 - Add clearer review language for non-technical stakeholders.
@@ -114,7 +122,7 @@ Create a deterministic data collection template for [decision/use case]. It shou
 ### Improve The Public Demo
 
 ```text
-Improve the demo path for Dashboard Copilot so a non-technical colleague can understand the value in under five minutes. Keep the claims honest: this is decision support, not automatic operational approval. Update documentation or sample data only unless code changes are clearly necessary.
+Improve the onboarding demo path for Dashboard Copilot so a non-technical colleague can understand the value in under five minutes. Keep the claims honest: the demo proves workflow value, but production readiness still depends on named product, domain, safety/privacy, export, accessibility, release, and support owners closing or explicitly deferring their gates. Update documentation or sample data only unless code changes are clearly necessary.
 ```
 
 ### Review For Digital Public Good Submission

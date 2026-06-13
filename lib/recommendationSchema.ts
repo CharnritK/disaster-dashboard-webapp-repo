@@ -12,6 +12,7 @@ import type {
   WorkflowContext
 } from "@/types/recommendations";
 import { isCleaningTransformType } from "./cleaningTransforms";
+import { isUseCaseTemplateId } from "./decisionContext";
 import { isCoordinateField } from "./locationFields";
 
 const allowedModes = new Set(["single", "multi"]);
@@ -447,7 +448,7 @@ function parseDecisionContext(
   limits: WorkflowContextLimits,
 ): DecisionBrief | undefined {
   if (!isRecord(input)) return undefined;
-  if (input.useCaseId !== "response_prioritization") return undefined;
+  if (!isUseCaseTemplateId(input.useCaseId)) return undefined;
   const requiredEvidence = stringArray(
     input.requiredEvidence,
     limits.maxStringLength,
@@ -457,7 +458,7 @@ function parseDecisionContext(
     .filter(Boolean)
     .slice(0, MAX_DECISION_EVIDENCE_ITEMS);
   return {
-    useCaseId: "response_prioritization",
+    useCaseId: input.useCaseId,
     decisionQuestion: stringOr(input.decisionQuestion, "", limits.maxStringLength),
     intendedAction: stringOr(input.intendedAction, "", limits.maxStringLength),
     decisionMaker: stringOr(input.decisionMaker, "", limits.maxStringLength),

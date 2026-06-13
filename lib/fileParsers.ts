@@ -7,7 +7,13 @@ import type {
 } from "@/types/dataset";
 
 export type ParseResult = { dataset?: Dataset; error?: string };
-export type SampleDatasetKind = "single" | "multi" | "fragmented" | "quality-risk";
+export type SampleDatasetKind =
+  | "single"
+  | "multi"
+  | "fragmented"
+  | "quality-risk"
+  | "service-gap"
+  | "preparedness-risk";
 type ExcelRow = unknown[];
 type ExcelSheet = { sheet: string; data: ExcelRow[] };
 
@@ -388,6 +394,8 @@ export async function loadSampleDatasets(kind: SampleDatasetKind): Promise<Datas
       "demo_service_capacity.csv",
     ],
     "quality-risk": ["demo_quality_risk.csv"],
+    "service-gap": ["demo_service_gap_monitoring.csv"],
+    "preparedness-risk": ["demo_preparedness_risk_screening.csv"],
   };
 
   return Promise.all(

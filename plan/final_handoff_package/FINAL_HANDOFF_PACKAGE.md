@@ -4,11 +4,14 @@
 
 Repository: `CharnritK/disaster-dashboard-webapp-repo`  
 Created: 2026-06-12  
-Readiness: `READY_WITH_ASSUMPTIONS`
+Updated: 2026-06-13
+Readiness: `PASS_WITH_REVIEW_REQUIRED`
 
 ## What this package is
 
-This is the final build and coding handoff package for moving the disaster-management / humanitarian decision-support prototype toward its target state.
+This is the final build and coding handoff package for moving the disaster-management / humanitarian decision-support product toward controlled beta.
+
+Production v1 is a controlled beta for non-sensitive, session-only disaster-response decision support. Response prioritization is the approved primary workflow. Service gap monitoring and preparedness risk screening are beta until domain-reviewed.
 
 It consolidates:
 
@@ -18,12 +21,14 @@ It consolidates:
 - P0/P1/P2 roadmap.
 - Codex sub-agent execution model.
 - Copy-ready Codex prompts.
-- Validation and release checklists.
+- Validation and release checklists, including recorded P0 command evidence.
 - Safety, privacy, and governance gates.
 
 ## What this package is not
 
-This package does not implement code, modify repository files, deploy the app, run tests, or approve operational disaster-response decisions.
+This package does not deploy the app or approve operational disaster-response decisions.
+
+Current P0/P1 repo-local implementation evidence is recorded in `08_QA_RELEASE_CLOSEOUT.md`, `09_IMPLEMENTATION_STATUS_TRACKER.md`, and `validation_matrix.json`. Controlled-beta release remains blocked until product, domain, safety/privacy, export, accessibility, release, and support owners are named and their gates are closed or explicitly deferred. Public launch remains blocked.
 
 ## Package contents
 
@@ -58,6 +63,7 @@ This package does not implement code, modify repository files, deploy the app, r
 - Do not send full uploaded rows to an LLM route or provider.
 - Preserve session-only operation unless the project owner explicitly approves a larger architecture change.
 - Preserve deterministic fallback when AI is disabled, unavailable, rate-limited, times out, or returns invalid output.
+- Keep deterministic mode as the default launch posture; enable AI only after safety/privacy review.
 - Keep caveats and human review gates visible in workflow, dashboard, exports, and handoff summaries.
 - Treat AI as explanation/summarization/handoff assistance, not final readiness authority.
 
@@ -72,22 +78,24 @@ This package does not implement code, modify repository files, deploy the app, r
 
 ## Product diagnosis
 
-The repo is a disaster-management / humanitarian decision-support prototype. Its strongest product frame is not “generic dashboard generator”; it is a decision-first workflow that helps analysts convert fragmented CSV/XLSX datasets into a reviewable decision-support package.
+The repo is a disaster-management / humanitarian decision-support product moving from prototype/demo proof into controlled beta. Its strongest product frame is not “generic dashboard generator”; it is a decision-first workflow that helps analysts convert fragmented CSV/XLSX datasets into a reviewable decision-support package.
 
 The product should help a practitioner answer: “Is this data good enough to support a near-term disaster response decision, and what caveats must a human reviewer understand before action?”
 
 ## Target state
 
-A narrow, credible vNext should support one excellent practitioner workflow before platform expansion:
+A narrow, credible production v1 should support one excellent practitioner workflow before platform expansion:
 
 - One analyst.
 - One decision-first flow.
-- CSV/XLSX upload or synthetic sample data.
+- Non-sensitive CSV/XLSX upload or synthetic sample data.
 - Evidence coverage and readiness checks.
 - Human-reviewable join and preparation steps.
 - Dashboard recommendation with visible caveats.
 - Exportable handoff package for second-pass review.
-- Optional AI assistance with deterministic fallback.
+- Deterministic mode by default; optional AI only after safety/privacy review.
+
+Service gap monitoring and preparedness risk screening are implemented as beta workflows. They should not be treated as approved production workflows until domain review closes or is explicitly deferred.
 
 ## Recommended vNext
 
@@ -99,15 +107,16 @@ A narrow, credible vNext should support one excellent practitioner workflow befo
 | Output | Dashboard, prepared CSV, PDF/PNG, transformation log, decision handoff JSON |
 | Decision | Which affected areas/groups should receive first response |
 | Safety gate | Human review required before operational action |
+| Launch posture | Controlled beta; deterministic mode default |
 | AI role | Summarization, explanation, harmonization guidance, handoff language |
-| AI non-role | Final readiness authority or operational approval |
+| AI non-role | Final readiness authority, operational approval, or launch prerequisite |
 
 ## Build priorities
 
-1. Make the current response-prioritization workflow fully credible and demo-ready.
+1. Make the current response-prioritization workflow fully credible for controlled beta.
 2. Strengthen safety-critical tests: fallback, no full-row LLM transmission, export caveats, unsafe readiness, visualization policy.
 3. Improve handoff exports and non-technical user clarity.
-4. Add one new template only after current workflow passes gates.
+4. Keep service gap and preparedness workflows beta until domain-reviewed.
 
 ## Explicit non-goals
 
@@ -124,15 +133,15 @@ Do not build next:
 - LLM routes that receive raw uploaded rows.
 - PII or partner-private data examples.
 
-## Readiness verdict
+## Readiness Verdict
 
-`READY_WITH_ASSUMPTIONS`
+`PASS_WITH_REVIEW_REQUIRED`
 
-This package is ready as a handoff artifact. It is not a claim that code was implemented or tests passed. A builder must run the validation commands and complete review gates before merging.
+P0/P1 repo-local implementation evidence and local validation gates are recorded. Controlled-beta release remains blocked until named product, domain/practitioner, safety/privacy, export, accessibility, release, and support owners close or explicitly defer their gates. Public launch remains blocked.
 
 ## Immediate next action
 
-Have the repo owner approve the P0 scope in `03_ROADMAP_BACKLOG.md`, then hand `04_CODEX_MASTER_PROMPT.md` plus one task card from `05_CODEX_SUBAGENT_TASKS.md` to Codex.
+Name the required gate owners, then have each owner review the completed P0/P1 scope in `09_IMPLEMENTATION_STATUS_TRACKER.md`. Close or explicitly defer the remaining gates before controlled-beta release; do not treat the demo as public-launch approval.
 
 
 ---
@@ -384,20 +393,24 @@ Repository:
 CharnritK/disaster-dashboard-webapp-repo
 
 Mission:
-Move the Dashboard Copilot disaster-management decision-support prototype toward the approved target state. Implement only the assigned task. Preserve safety, privacy, deterministic fallback, and session-only operation.
+Move the Dashboard Copilot disaster-management decision-support product toward the approved production v1 controlled-beta target state. Implement only the assigned task. Preserve safety, privacy, deterministic fallback, and session-only operation.
 
 Primary product frame:
-This is a humanitarian / disaster-management decision-support prototype. It helps practitioners turn fragmented CSV/XLSX data into a reviewable decision-support package. It starts from a decision, keeps uncertainty visible, preserves deterministic fallback, and must never make AI appear to approve operational decisions.
+This is a humanitarian / disaster-management decision-support product for controlled beta, not a demo showcase. Production v1 is non-sensitive, session-only disaster-response decision support. Response prioritization is the approved primary workflow. Service gap monitoring and preparedness risk screening are beta workflows until domain-reviewed. The workflow starts from a decision, keeps uncertainty visible, preserves deterministic fallback, and must never make AI appear to approve operational decisions.
 
 Non-negotiable constraints:
 - Do not add auth, accounts, project persistence, background jobs, scheduled refresh, storage, or live operational pipelines.
 - Do not add auto-send, auto-escalation, or auto-approval.
 - Do not send full uploaded rows to LLM routes or providers.
 - Preserve session-only operation unless explicitly approved.
+- Keep deterministic mode as the default launch posture.
+- Enable AI only after safety/privacy review closes or is explicitly deferred by the named owner.
 - Preserve deterministic fallback when AI is disabled, unavailable, rate-limited, times out, or returns invalid output.
 - Keep visible caveats and review gates in workflow, dashboard, exports, and handoff summaries.
 - Treat AI as assistance for explanation, summarization, harmonization guidance, and handoff language only.
 - Prefer synthetic/public data. Do not add PII, credentials, partner-private data, or sensitive operational data.
+- Treat the demo path as onboarding/proof, not production readiness.
+- Keep public launch blocked until product, domain, safety/privacy, export, accessibility, release, and support owners are named and their gates are closed or explicitly deferred.
 - Do not introduce a new package manager.
 - Keep deterministic logic in `lib/`; keep decision types in `types/`; keep tests in Vitest.
 
@@ -1051,51 +1064,83 @@ Stop and request review if:
 
 `PASS_WITH_REVIEW_REQUIRED` for documentation handoff.
 
-`NOT_READY_FOR_RELEASE` until implementation tasks, validation commands, and review gates are completed.
+`PASS_WITH_REVIEW_REQUIRED` for P0 implementation evidence recorded on 2026-06-12 and P1 repo-local evidence refreshed on 2026-06-13.
+
+`NOT_READY_FOR_RELEASE` until product, domain, safety/privacy, export, accessibility, release, and support owner gates are completed or explicitly deferred.
 
 ## Scope reviewed
 
-This closeout covers the build handoff package, not repository execution. It does not assert that code was changed or tests passed.
+This closeout covers the build handoff package and recorded P0/P1 repository execution evidence. It does not assert that external product, domain, safety/privacy, export, accessibility, release, or support approvals are complete.
+
+Production v1 is a controlled beta for non-sensitive, session-only disaster-response decision support. Response prioritization is the approved primary workflow. Service gap monitoring and preparedness risk screening remain beta until domain review closes or is explicitly deferred. Deterministic mode is the default launch posture; AI should remain disabled until safety/privacy review approves it for the target environment.
 
 ## Critical issues to resolve before merge/release
 
 | ID | Issue | Severity | Why it matters | Required fix |
 |---|---|---|---|---|
-| Q-01 | Test results not recorded in package | High | Cannot prove implementation safety | Run and record validation commands |
-| Q-02 | AI fallback visibility may need UI improvement | Medium | Analysts need transparency | Implement P0-01 |
-| Q-03 | Full-row LLM regression tests need confirmation | High | Privacy boundary is core contract | Implement P0-02 |
-| Q-04 | Export caveat parity must be verified | High | Handoff can imply false confidence | Implement P0-03 |
-| Q-05 | Accessibility baseline is incomplete | Medium | Public-good reuse and usability | Implement P1-03 or manual baseline |
+| Q-01 | Test results not recorded in package | High | Cannot prove implementation safety | Resolved 2026-06-12; see execution evidence |
+| Q-02 | AI fallback visibility may need UI improvement | Medium | Analysts need transparency | Resolved 2026-06-12; AI-off notice browser-smoked and fallback mode precedence patched |
+| Q-03 | Full-row LLM regression tests need confirmation | High | Privacy boundary is core contract | Resolved 2026-06-12; recommendation and copilot routes reject raw row arrays |
+| Q-04 | Export caveat parity must be verified | High | Handoff can imply false confidence | Resolved 2026-06-12; JSON/PDF tests and export smoke updated |
+| Q-05 | Accessibility baseline is incomplete | Medium | Public-good reuse and usability | Resolved for repo-local baseline 2026-06-13; RG-05 human accessibility review still required |
 
 ## Release readiness checklist
 
 - [ ] P0 scope approved by product owner.
-- [ ] No new auth/persistence/background/live-pipeline features.
-- [ ] No operational auto-approval/send/escalation.
-- [ ] No full uploaded rows sent to LLM.
-- [ ] Deterministic fallback works.
-- [ ] AI disabled path works.
-- [ ] Invalid model output fallback works.
-- [ ] Risky quality sample produces review/unsafe language.
-- [ ] Export contains caveats and AI mode.
-- [ ] Formula injection protection still tested.
-- [ ] Visualization policy still tested.
-- [ ] Manual browser smoke test passed.
-- [ ] `npm run lint` recorded.
-- [ ] `npm run test` recorded.
-- [ ] `npm run build` recorded.
-- [ ] README/docs updated.
+- [ ] Response-prioritization workflow approved for controlled beta by product owner.
+- [ ] Service gap and preparedness beta status accepted by product/domain owner.
+- [x] No new auth/persistence/background/live-pipeline features.
+- [x] No operational auto-approval/send/escalation.
+- [x] No full uploaded rows sent to LLM.
+- [x] Deterministic fallback works.
+- [x] AI disabled path works.
+- [x] Invalid model output fallback works.
+- [x] Risky quality sample produces review/unsafe language.
+- [x] Export contains caveats and AI mode.
+- [x] Formula injection protection still tested.
+- [x] Visualization policy still tested.
+- [x] Manual browser smoke test passed.
+- [x] `npm run lint` recorded.
+- [x] `npm run test` recorded.
+- [x] `npm run build` recorded.
+- [x] README/docs updated.
 - [ ] Safety/privacy review passed.
+- [ ] Export/handoff semantics review passed.
+- [ ] Accessibility/no-code review passed.
 - [ ] Domain/practitioner review passed.
+- [ ] Release owner approved controlled-beta release.
+- [ ] Support owner named and beta support path documented.
+
+## Execution evidence
+
+Recorded on 2026-06-12:
+
+- `npm ci`: passed; 108 packages installed, 0 vulnerabilities reported.
+- `npm run test`: passed; 1 test file, 73 tests.
+- `npm run lint`: passed; TypeScript no-emit gate completed.
+- `npm run build`: passed; Next.js production build and `scripts/prepare-sites-dist.mjs` completed.
+- Browser smoke: passed on `http://127.0.0.1:3000` with AI off through template, fragmented sample load, profile, harmonize, accept recommendation, dashboard, export cards, and deterministic handoff summary.
+
+Refreshed on 2026-06-13:
+
+- `git diff --check`: passed.
+- `npm ci`: passed; 108 packages installed, 0 vulnerabilities reported.
+- `npm run test`: passed; 1 test file, 81 tests after adding deterministic-default AI env coverage.
+- `npm run lint`: passed; TypeScript no-emit gate completed.
+- `npm run build`: passed on rerun after stopping a hung local Next build process; Next.js production build and `scripts/prepare-sites-dist.mjs` completed.
+- P1 targeted validation: `npm run test -- tests/dataPipeline.test.ts` passed; 1 test file, 80 tests.
+- P1 browser smoke: passed on `http://127.0.0.1:3000` through service gap template selection, service gap sample data, profile, harmonize, prepare dataset, dashboard, export, and `dashboard-copilot-project-kit.json` download.
+- Production-v1 contract refresh: `npm run lint`, `npm run test`, and `npm run build` passed after changing AI defaults to deterministic unless explicitly enabled. Short-lived production HTTP smoke returned 200 for `/` and `/api/recommend/status`; local `.env.local` now has `LLM_ENABLED=false` and `NEXT_PUBLIC_COPILOT_API_ENABLED=false`, so the status endpoint reports `llmEnabled=false` while preserving the local key.
 
 ## Open questions
 
 | ID | Question | Owner | Needed by | Impact if unresolved |
 |---|---|---|---|---|
-| OQ-01 | Is one additional template approved for vNext or deferred? | Product owner | Before P1 | Prevents scope creep |
+| OQ-01 | Is one additional template approved for vNext or deferred? | Product owner | Before release review | Implemented as repo-local template pack; product owner still needs to approve final scope |
 | OQ-02 | Which exact sample data should be demo default? | Product owner / analyst | Before demo | Keeps story coherent |
-| OQ-03 | Is accessibility tooling dependency allowed? | Repo maintainer | Before P1-03 | Determines test approach |
-| OQ-04 | Should project kit export be zip or multi-file downloads? | Product owner / frontend | Before P1-01 | Affects dependencies and UX |
+| OQ-03 | Is accessibility tooling dependency allowed? | Repo maintainer | Before future automated a11y | No dependency added; baseline uses existing unit/browser checks |
+| OQ-04 | Should project kit export be zip or multi-file downloads? | Product owner / frontend | Before release review | Implemented as dependency-free JSON kit; owner can request zip later |
+| OQ-05 | Who owns beta support intake, triage, and escalation? | Support owner / product owner | Before controlled beta | Public or partner beta should not start without a named support path |
 
 ## Final response format for builders
 
@@ -1121,14 +1166,15 @@ Use this file during execution.
 
 | Task ID | Owner | Status | PR/Branch | Tests | Review gate | Notes |
 |---|---|---|---|---|---|---|
-| P0-01 | Frontend UX + Safety/AI | Not started |  |  | RG-03 | AI fallback notice |
-| P0-02 | Safety/AI + Test/QA | Not started |  |  | RG-03 | No full rows to LLM |
-| P0-03 | Export/Handoff + QA | Not started |  |  | RG-04 | Caveat parity |
-| P0-04 | Backend Pipeline + QA | Not started |  |  | RG-02/RG-04 | Unsafe readiness tests |
-| P0-05 | Docs + UX | Not started |  |  | RG-02 | Demo copy cleanup |
-| P1-01 | Export/Handoff | Deferred |  |  | RG-04 | Project kit export |
-| P1-02 | Product + Backend + Docs | Deferred |  |  | RG-01/RG-02 | New template |
-| P1-03 | UX + QA | Deferred |  |  | RG-05 | Accessibility baseline |
+| P0-01 | Frontend UX + Safety/AI | Done | `001-decision-context-data-quality` | `npm run test`, `npm run lint`, `npm run build`, browser smoke | RG-03 needs reviewer | AI-off deterministic notice visible; fallback mode now takes precedence when later AI calls fall back |
+| P0-02 | Safety/AI + Test/QA | Done | `001-decision-context-data-quality` | `npm run test`, `npm run lint`, `npm run build` | RG-03 needs reviewer | `/api/recommend` and `/api/copilot` reject raw `rows`/`data`/`sampleRows` payloads |
+| P0-03 | Export/Handoff + QA | Done | `001-decision-context-data-quality` | `npm run test`, `npm run lint`, `npm run build`, browser smoke | RG-04 needs reviewer | Handoff lineage uses `rowCount`/`columnCount`; PDF readiness includes unsafe review-only language; export smoke passed |
+| P0-04 | Backend Pipeline + QA | Done | `001-decision-context-data-quality` | `npm run test`, `npm run lint`, `npm run build` | RG-02/RG-04 need reviewer | Risky-quality sample and missing evidence remain decision-unsafe/regression-tested |
+| P0-05 | Docs + UX | Done | `001-decision-context-data-quality` | Browser smoke | RG-02 needs reviewer | Main demo click path works on `127.0.0.1:3000`; Continue control hardened with explicit button type |
+| P1-01 | Export/Handoff | Done | `001-decision-context-data-quality` | `npm run test`, `npm run lint`, browser smoke | RG-04 needs reviewer | Project kit JSON export includes README text, prepared CSV, schema, dashboard config, handoff log, and transformation log |
+| P1-02 | Product + Backend + Docs | Done | `001-decision-context-data-quality` | `npm run test`, `npm run lint`, browser smoke | RG-01/RG-02 need reviewer | Template pack now includes response prioritization, service gap monitoring, preparedness risk screening, and safe synthetic samples |
+| P1-03 | UX + QA | Done | `001-decision-context-data-quality` | `npm run test`, `npm run lint`, browser smoke | RG-05 needs reviewer | Chart summaries/mobile behavior are unit-tested; browser smoke used role/label selectors through export |
+| P1-04 | Docs | Done | `001-decision-context-data-quality` | `git diff --check` | RG-02/RG-05 need reviewer | Visualization policy doc added for map, rate, denominator, caveat, and accessibility guardrails |
 
 ## Status values
 
@@ -1139,6 +1185,34 @@ Use this file during execution.
 - Needs review
 - Done
 - Deferred
+
+## Execution evidence — 2026-06-12
+
+- `npm ci`: passed; 108 packages installed, 0 vulnerabilities reported.
+- `npm run test`: passed; 1 test file, 73 tests.
+- `npm run lint`: passed; TypeScript no-emit gate completed.
+- `npm run build`: passed; Next.js production build and `scripts/prepare-sites-dist.mjs` completed.
+- Browser smoke: passed on `http://127.0.0.1:3000` with AI off. Verified template continuation, fragmented demo data load, profiling/evidence coverage, harmonization, join acceptance, ready-for-review dashboard, export cards, and deterministic handoff summary.
+
+## Execution evidence — 2026-06-13
+
+- `git diff --check`: passed.
+- `npm ci`: passed; 108 packages installed, 0 vulnerabilities reported.
+- `npm run test`: passed; 1 test file, 80 tests.
+- `npm run lint`: passed; TypeScript no-emit gate completed.
+- `npm run build`: passed on rerun after stopping a hung local Next build process; Next.js production build and `scripts/prepare-sites-dist.mjs` completed.
+- P1 targeted validation: `npm run test -- tests/dataPipeline.test.ts` passed; 1 test file, 80 tests.
+- P1 browser smoke: passed on `http://127.0.0.1:3000` through service gap template selection, service gap sample data, profile, harmonize, prepare dataset, dashboard, export, and `dashboard-copilot-project-kit.json` download.
+
+## Review gates still required
+
+- RG-01 Product owner: confirm controlled-beta scope, response-prioritization primary workflow, and beta status for service gap/preparedness workflows.
+- RG-02 Domain/practitioner: confirm disaster-response language, caveats, and workflow assumptions.
+- RG-03 Safety/privacy: confirm deterministic-default posture, AI-off launch mode, no-row AI boundary, and fallback behavior.
+- RG-04 Export/handoff: confirm PDF/JSON/project-kit semantics do not imply operational approval.
+- RG-05 Accessibility/no-code: human smoke tester should confirm keyboard and assistive-technology usability.
+- RG-06 Release: repo maintainer/release owner should approve controlled-beta merge/release.
+- RG-07 Support: name owner for beta support intake, triage, and escalation before controlled-beta users are invited.
 
 ## Blocker format
 

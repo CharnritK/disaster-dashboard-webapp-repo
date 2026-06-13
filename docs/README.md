@@ -6,8 +6,9 @@ This folder holds the project-facing documentation for Dashboard Copilot.
 
 - [Digital Public Good Guide](digital-public-good-guide.md): the main plain-English tutorial for colleagues, reviewers, and reuse partners. It explains what the project does, what is in scope, what is out of scope, how it can be extended, and the technical appendix.
 - [AI Mode Configuration](AI_MODE.md): server-side AI setup, route behavior, task-specific model variables, and deterministic fallback.
+- [Visualization Policy](visualization-policy.md): chart, map, denominator, caveat, and accessibility guardrails enforced by the app.
 - [Codex Starter Prompts](codex-starter-prompts.md): reusable prompts for extending, reviewing, or adapting the project with Codex.
-- [Showcase Script](showcase-script.md): a short demo flow for presenting the project.
+- [Showcase Script](showcase-script.md): an onboarding/proof flow for presenting the project without treating the demo as launch approval.
 
 ## Codex Skills
 
