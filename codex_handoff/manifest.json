@@ -2,7 +2,7 @@
   "package": "dashboard-copilot-codex-handoff",
   "version": "2026-06-11",
   "target_branch": "001-decision-context-data-quality",
-  "objective": "Prepare Codex to build and validate Evidence-to-Dashboard Decision Packet for Dashboard Copilot showcase",
+  "objective": "Prepare Codex to build and validate the controlled-beta Evidence-to-Dashboard Decision Packet for Dashboard Copilot",
   "goals": [
     "GOAL_00_PREFLIGHT",
     "GOAL_01_EVIDENCE_COVERAGE_CORE",
@@ -15,6 +15,9 @@
   "optional_goals": [
     "GOAL_06_TEMPLATE_PACK_OPTIONAL"
   ],
+  "completed_optional_goals": [
+    "GOAL_06_TEMPLATE_PACK_OPTIONAL"
+  ],
   "required_validation": [
     "npm run lint",
     "npm run test",
@@ -22,5 +25,16 @@
   ],
   "red_team_required_after_each_test": true,
   "no_new_dependencies_by_default": true,
-  "handoff_readiness": "READY_WITH_ASSUMPTIONS"
+  "handoff_readiness": "PASS_WITH_REVIEW_REQUIRED",
+  "production_v1_contract": {
+    "launch_mode": "controlled_beta",
+    "data_scope": "non-sensitive session-only disaster-response decision support",
+    "primary_workflow": "response_prioritization",
+    "beta_workflows": [
+      "service_gap_monitoring",
+      "preparedness_risk_screening"
+    ],
+    "default_ai_posture": "deterministic_mode",
+    "public_launch_status": "blocked_until_named_owners_close_or_defer_gates"
+  }
 }

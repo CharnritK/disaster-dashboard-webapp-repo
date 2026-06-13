@@ -27,7 +27,7 @@ import {
   parseDecisionHandoffCopilotContext,
   sanitizeDecisionHandoffSummary,
 } from "@/lib/copilotHandoff";
-import { copilotTaskForRecommendationScope, resolveLlmTaskConfig } from "@/lib/serverConfig";
+import { booleanFromEnv, copilotTaskForRecommendationScope, resolveLlmTaskConfig } from "@/lib/serverConfig";
 import { aggregateField, aggregateRows, fieldDisplayLabel, inferMetricAggregation, metricDisplayLabel } from "@/lib/chartMetrics";
 import {
   assessDecisionReadiness,
@@ -37,10 +37,12 @@ import {
   readinessStatusLabel,
   buildSuggestedCollectionTemplateRows,
   buildSuggestedDataCollectionTemplate,
+  createDecisionBriefFromTemplate,
   createDefaultDecisionBrief,
+  DECISION_TEMPLATES,
   validateDecisionBrief,
 } from "@/lib/decisionContext";
-import { buildDecisionHandoffPacket } from "@/lib/workflowExport";
+import { buildDashboardProjectKit, buildDecisionHandoffPacket } from "@/lib/workflowExport";
 import { generateFallbackRecommendations, requestAIRecommendations } from "@/lib/recommendations";
 import { findLocationFields } from "@/lib/locationFields";
 import { enforceVizPolicy } from "@/lib/vizPolicy";
@@ -358,6 +360,96 @@ describe("data pipeline", () => {
     ]);
   });
 
+  it("supports all disaster decision templates with valid defaults", () => {
+    expect(DECISION_TEMPLATES.map((template) => template.id)).toEqual([
+      "response_prioritization",
+      "service_gap_monitoring",
+      "preparedness_risk_screening",
+    ]);
+
+    for (const template of DECISION_TEMPLATES) {
+      const brief = createDecisionBriefFromTemplate(template.id);
+
+      expect(validateDecisionBrief(brief)).toEqual([]);
+      expect(brief.useCaseId).toBe(template.id);
+      expect(brief.requiredEvidence).toEqual(template.requiredEvidence);
+      expect(brief.decisionQuestion).toBeTruthy();
+      expect(brief.intendedAction).toBeTruthy();
+    }
+
+    expect(createDefaultDecisionBrief().useCaseId).toBe("response_prioritization");
+  });
+
+  it("updates collection fields by disaster decision template", () => {
+    const serviceGapTemplate = buildSuggestedDataCollectionTemplate(
+      createDecisionBriefFromTemplate("service_gap_monitoring"),
+    );
+    const preparednessTemplate = buildSuggestedDataCollectionTemplate(
+      createDecisionBriefFromTemplate("preparedness_risk_screening"),
+    );
+
+    expect(serviceGapTemplate.fields.map((field) => field.name)).toEqual(
+      expect.arrayContaining([
+        "severity_score",
+        "service_availability_score",
+        "response_gap_percent",
+        "current_capacity",
+      ]),
+    );
+    expect(serviceGapTemplate.fields.map((field) => field.name)).not.toContain("affected_population");
+    expect(preparednessTemplate.fields.map((field) => field.name)).toEqual(
+      expect.arrayContaining([
+        "hazard_exposure_score",
+        "vulnerability_score",
+        "population_denominator",
+        "preparedness_capacity_score",
+      ]),
+    );
+    expect(
+      preparednessTemplate.fields.find((field) => field.name === "population_denominator"),
+    ).toEqual(expect.objectContaining({ required: true }));
+    expect(preparednessTemplate.fields.map((field) => field.name)).not.toContain("response_gap_percent");
+  });
+
+  it("sanitizes all supported disaster decision template IDs in recommendation requests", () => {
+    const profile = profileDataset(createTabularDataset("needs.csv", "csv", "sample", parseCsv("id,value\nA,1\n")));
+
+    for (const template of DECISION_TEMPLATES) {
+      const parsed = parseWorkflowContext({
+        mode: "single",
+        decisionContext: createDecisionBriefFromTemplate(template.id),
+        profiles: [profile],
+      });
+
+      expect(parsed).not.toHaveProperty("error");
+      if ("error" in parsed) throw new Error(parsed.error);
+      expect(parsed.decisionContext?.useCaseId).toBe(template.id);
+      expect(parsed.decisionContext?.requiredEvidence).toEqual(template.requiredEvidence);
+    }
+  });
+
+  it("omits unsupported decision template IDs from recommendation requests", () => {
+    const parsed = parseWorkflowContext({
+      mode: "single",
+      decisionContext: {
+        useCaseId: "field_hospital_routing",
+        decisionQuestion: "Where should field hospitals go?",
+        intendedAction: "Prioritize locations.",
+        decisionMaker: "Operations lead",
+        geographyScope: "Districts",
+        timeframe: "Next 72 hours",
+        requiredEvidence: ["Admin geography"],
+      },
+      profiles: [
+        profileDataset(createTabularDataset("needs.csv", "csv", "sample", parseCsv("id,value\nA,1\n"))),
+      ],
+    });
+
+    expect(parsed).not.toHaveProperty("error");
+    if ("error" in parsed) throw new Error(parsed.error);
+    expect(parsed.decisionContext).toBeUndefined();
+  });
+
   it("populates a suggested data collection template from the decision brief", () => {
     const brief = createDefaultDecisionBrief();
     const template = buildSuggestedDataCollectionTemplate(brief);
@@ -609,6 +701,8 @@ describe("data pipeline", () => {
 
     const fragmented = await loadSampleDatasets("fragmented");
     const risky = await loadSampleDatasets("quality-risk");
+    const serviceGap = await loadSampleDatasets("service-gap");
+    const preparedness = await loadSampleDatasets("preparedness-risk");
 
     expect(fragmented.map((dataset) => dataset.originalFilename)).toEqual([
       "demo_needs_assessment.csv",
@@ -618,6 +712,8 @@ describe("data pipeline", () => {
     expect(risky).toHaveLength(1);
     expect(risky[0].originalFilename).toBe("demo_quality_risk.csv");
     expect(risky[0].data?.some((row) => row.response_gap_percent === 125)).toBe(true);
+    expect(serviceGap[0].originalFilename).toBe("demo_service_gap_monitoring.csv");
+    expect(preparedness[0].originalFilename).toBe("demo_preparedness_risk_screening.csv");
 
     vi.stubGlobal("fetch", originalFetch);
   });
@@ -650,6 +746,30 @@ describe("data pipeline", () => {
     expect(candidateDatasetNames).toEqual(
       new Set(["demo_needs_assessment", "demo_population_baseline", "demo_service_capacity"])
     );
+  });
+
+  it("service gap and preparedness samples cover their template evidence", () => {
+    const serviceGap = withProfile(createTabularDataset(
+      "demo_service_gap_monitoring.csv",
+      "csv",
+      "sample",
+      parseCsv(readFileSync("public/samples/demo_service_gap_monitoring.csv", "utf8")),
+    ));
+    const preparedness = withProfile(createTabularDataset(
+      "demo_preparedness_risk_screening.csv",
+      "csv",
+      "sample",
+      parseCsv(readFileSync("public/samples/demo_preparedness_risk_screening.csv", "utf8")),
+    ));
+    const serviceBrief = createDecisionBriefFromTemplate("service_gap_monitoring");
+    const preparednessBrief = createDecisionBriefFromTemplate("preparedness_risk_screening");
+    const serviceCoverage = buildEvidenceCoverageSummary([serviceGap], serviceBrief);
+    const preparednessCoverage = buildEvidenceCoverageSummary([preparedness], preparednessBrief);
+
+    expect(serviceCoverage.missingCount).toBe(0);
+    expect(serviceCoverage.items.map((item) => item.evidenceNeed)).toEqual(serviceBrief.requiredEvidence);
+    expect(preparednessCoverage.missingCount).toBe(0);
+    expect(preparednessCoverage.items.map((item) => item.evidenceNeed)).toEqual(preparednessBrief.requiredEvidence);
   });
 
   it("quality-risk sample triggers invalid decision values and decision unsafe readiness", () => {
@@ -700,7 +820,8 @@ describe("data pipeline", () => {
       expect.objectContaining({
         name: "demo_needs_assessment",
         sourceType: "sample",
-        rows: 1,
+        rowCount: 1,
+        columnCount: 5,
         fields: expect.arrayContaining(["admin_pcode", "people_assessed"]),
       }),
     ]);
@@ -755,6 +876,55 @@ describe("data pipeline", () => {
         expect.stringContaining("review-only"),
       ])
     );
+  });
+
+  it("builds a project kit with README text, schema, config, and formula-neutralized CSV", () => {
+    const dataset = withProfile(createTabularDataset(
+      "prepared.csv",
+      "csv",
+      "sample",
+      parseCsv("district_name,needs_score,notes\nNorth,78,=SUM(A1:A2)\nSouth,64,Reviewed\n"),
+    ));
+    const brief = createDefaultDecisionBrief();
+    const qualityResults = runQualityChecks(dataset, brief);
+    const { readiness } = assessDecisionReadiness(dataset, brief, qualityResults);
+    const dashboardRecommendation = generateDeterministicDashboardRecommendation(dataset, {
+      qualityResults,
+    });
+    const kit = buildDashboardProjectKit({
+      generatedAt: "2026-06-13T00:00:00.000Z",
+      decisionBrief: brief,
+      evidenceCoverage: buildEvidenceCoverageSummary([dataset], brief),
+      decisionReadiness: readiness,
+      datasets: [dataset],
+      preparedDataset: dataset,
+      dashboardRecommendation,
+      selectedJoinRecommendations: [],
+      qualityResults,
+      transformationLog: [],
+      aiMode: "deterministic",
+    });
+
+    expect(kit.packageType).toBe("dashboard_copilot_project_kit");
+    expect(kit.manifest.files).toEqual(
+      expect.arrayContaining([
+        "README.md",
+        "prepared-data.csv",
+        "decision-handoff-log.json",
+        "dashboard-config.json",
+        "prepared-data-schema.json",
+        "transformation-log.json",
+      ]),
+    );
+    expect(kit.readme).toContain("Review Required");
+    expect(kit.preparedDataSchema.fields.map((field) => field.name)).toEqual([
+      "district_name",
+      "needs_score",
+      "notes",
+    ]);
+    expect(kit.files["prepared-data.csv"]).toContain("'=SUM(A1:A2)");
+    expect(JSON.parse(kit.files["dashboard-config.json"]).charts.length).toBeGreaterThan(0);
+    expect(JSON.parse(kit.files["decision-handoff-log.json"]).reviewNotice).toContain("review");
   });
 
   it("flags missing response-prioritization evidence as decision readiness findings", () => {
@@ -1063,6 +1233,23 @@ describe("data pipeline", () => {
     expect(resolveLlmTaskConfig("dashboard_synthesis", env({ LLM_DASHBOARD_MODEL: "dashboard-model" })).model).toBe("dashboard-model");
     expect(resolveLlmTaskConfig("quality_repair_guidance", env({ LLM_QUALITY_GUIDANCE_MODEL: "quality-model" })).model).toBe("quality-model");
     expect(resolveLlmTaskConfig("decision_handoff_summary", env({ LLM_HANDOFF_MODEL: "handoff-model" })).model).toBe("handoff-model");
+  });
+
+  it("defaults AI environment switches to deterministic mode unless explicitly enabled", () => {
+    const envName = `TEST_AI_SWITCH_${crypto.randomUUID().replaceAll("-", "_")}`;
+
+    expect(booleanFromEnv(envName, false)).toBe(false);
+
+    vi.stubEnv(envName, "true");
+    expect(booleanFromEnv(envName, false)).toBe(true);
+
+    vi.stubEnv(envName, "false");
+    expect(booleanFromEnv(envName, false)).toBe(false);
+
+    vi.stubEnv(envName, "0");
+    expect(booleanFromEnv(envName, false)).toBe(false);
+
+    vi.unstubAllEnvs();
   });
 
   it("builds a strict handoff Responses API body with full-size model defaults", () => {
@@ -1609,6 +1796,28 @@ describe("data pipeline", () => {
     expect(next.screenReaderSummary).toContain("Share by district");
     expect(validateVizSpec(next)).toEqual([]);
     expect(chart.chartType).toBe("pie");
+  });
+
+  it("adds screen-reader summaries and mobile behavior to deterministic chart recommendations", () => {
+    const dataset = withProfile(createTabularDataset(
+      "synthetic-needs.csv",
+      "csv",
+      "sample",
+      parseCsv([
+        "district_name,reported_at,affected_households,response_gap_percent",
+        "North,2026-01-01,10,20",
+        "South,2026-01-02,20,40",
+        "East,2026-01-03,30,60",
+      ].join("\n")),
+    ));
+    const recommendation = generateDeterministicDashboardRecommendation(dataset);
+
+    expect(recommendation.charts.length).toBeGreaterThan(0);
+    for (const chart of recommendation.charts) {
+      expect(chart.screenReaderSummary).toContain(chart.title);
+      expect(chart.mobileBehavior).toBeTruthy();
+      expect(validateVizSpec(chart).filter((issue) => issue.severity === "error")).toEqual([]);
+    }
   });
 
   it("blocks invalid part-to-whole, one-point trends, and raw-count choropleths", () => {

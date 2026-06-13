@@ -10,33 +10,108 @@ import type {
   SuggestedCollectionField,
   SuggestedDataCollectionTemplate,
   UseCaseTemplate,
+  UseCaseTemplateId,
 } from "@/types/decision";
 import type { QualityCheckResult } from "@/types/quality";
 
-export const RESPONSE_PRIORITIZATION_TEMPLATE: UseCaseTemplate = {
-  id: "response_prioritization",
-  title: "Response prioritization",
-  description:
-    "Rank areas or groups for near-term response based on need, affected population, severity, response gap, and available capacity.",
-  requiredEvidence: [
-    "Admin geography",
-    "Need severity",
-    "Affected population",
-    "Response gap",
-    "Capacity signal",
-  ],
-};
-
-export function createDefaultDecisionBrief(): DecisionBrief {
-  return {
-    useCaseId: "response_prioritization",
+const DECISION_TEMPLATE_DEFAULTS: Record<
+  UseCaseTemplateId,
+  Omit<DecisionBrief, "useCaseId" | "requiredEvidence">
+> = {
+  response_prioritization: {
     decisionQuestion: "Which affected districts should receive first response?",
     intendedAction: "Prioritize response teams for the next distribution cycle.",
     decisionMaker: "Emergency operations lead",
     geographyScope: "Affected districts",
     timeframe: "Next 72 hours",
-    requiredEvidence: [...RESPONSE_PRIORITIZATION_TEMPLATE.requiredEvidence],
+  },
+  service_gap_monitoring: {
+    decisionQuestion: "Where are service gaps largest for affected communities?",
+    intendedAction: "Prioritize service-gap follow-up and partner coordination.",
+    decisionMaker: "Humanitarian coordination lead",
+    geographyScope: "Affected communities",
+    timeframe: "Current response period",
+  },
+  preparedness_risk_screening: {
+    decisionQuestion: "Which areas need preparedness attention before the next hazard event?",
+    intendedAction: "Prioritize preparedness support and readiness checks.",
+    decisionMaker: "Preparedness planning lead",
+    geographyScope: "At-risk areas",
+    timeframe: "Before the next hazard event",
+  },
+};
+
+export const DECISION_TEMPLATES: UseCaseTemplate[] = [
+  {
+    id: "response_prioritization",
+    title: "Response prioritization",
+    description:
+      "Rank areas or groups for near-term response based on need, affected population, severity, response gap, and available capacity.",
+    requiredEvidence: [
+      "Admin geography",
+      "Need severity",
+      "Affected population",
+      "Response gap",
+      "Capacity signal",
+    ],
+  },
+  {
+    id: "service_gap_monitoring",
+    title: "Service gap monitoring",
+    description:
+      "Identify where affected communities have the largest unmet service needs relative to available response capacity.",
+    requiredEvidence: [
+      "Admin geography",
+      "Need severity",
+      "Service availability",
+      "Response gap",
+      "Capacity signal",
+    ],
+  },
+  {
+    id: "preparedness_risk_screening",
+    title: "Preparedness risk screening",
+    description:
+      "Screen areas for hazard exposure, vulnerability, population scale, and preparedness capacity before the next event.",
+    requiredEvidence: [
+      "Admin geography",
+      "Hazard exposure",
+      "Vulnerability",
+      "Population denominator",
+      "Preparedness capacity",
+    ],
+  },
+];
+
+export const RESPONSE_PRIORITIZATION_TEMPLATE = DECISION_TEMPLATES[0];
+
+export function isUseCaseTemplateId(value: unknown): value is UseCaseTemplateId {
+  return (
+    typeof value === "string" &&
+    DECISION_TEMPLATES.some((template) => template.id === value)
+  );
+}
+
+export function getUseCaseTemplate(useCaseId: UseCaseTemplateId): UseCaseTemplate {
+  return (
+    DECISION_TEMPLATES.find((template) => template.id === useCaseId) ??
+    RESPONSE_PRIORITIZATION_TEMPLATE
+  );
+}
+
+export function createDecisionBriefFromTemplate(
+  useCaseId: UseCaseTemplateId,
+): DecisionBrief {
+  const template = getUseCaseTemplate(useCaseId);
+  return {
+    useCaseId: template.id,
+    ...DECISION_TEMPLATE_DEFAULTS[template.id],
+    requiredEvidence: [...template.requiredEvidence],
   };
+}
+
+export function createDefaultDecisionBrief(): DecisionBrief {
+  return createDecisionBriefFromTemplate("response_prioritization");
 }
 
 export function buildSuggestedDataCollectionTemplate(
@@ -128,6 +203,19 @@ export function buildSuggestedDataCollectionTemplate(
     });
   }
 
+  if (hasEvidence("Service availability")) {
+    fields.push({
+      name: "service_availability_score",
+      label: "Service availability score",
+      type: "number",
+      required: true,
+      evidenceNeed: "Service availability",
+      description: "Comparable score for service presence, coverage, or functionality.",
+      example: "68",
+      caveat: "Use one service availability scale consistently across areas.",
+    });
+  }
+
   if (hasEvidence("Capacity signal")) {
     fields.push({
       name: "current_capacity",
@@ -138,6 +226,58 @@ export function buildSuggestedDataCollectionTemplate(
       description: "Available response capacity, service points, staff, stock, or coverage.",
       example: "12",
       caveat: "Capacity should use a consistent unit across areas.",
+    });
+  }
+
+  if (hasEvidence("Hazard exposure")) {
+    fields.push({
+      name: "hazard_exposure_score",
+      label: "Hazard exposure score",
+      type: "number",
+      required: true,
+      evidenceNeed: "Hazard exposure",
+      description: "Comparable score for expected exposure to the relevant hazard.",
+      example: "74",
+      caveat: "Exposure scores should use a consistent hazard scenario.",
+    });
+  }
+
+  if (hasEvidence("Vulnerability")) {
+    fields.push({
+      name: "vulnerability_score",
+      label: "Vulnerability score",
+      type: "number",
+      required: true,
+      evidenceNeed: "Vulnerability",
+      description: "Comparable score for vulnerability, sensitivity, or limited coping capacity.",
+      example: "81",
+      caveat: "Vulnerability indicators should be documented for reviewer interpretation.",
+    });
+  }
+
+  if (hasEvidence("Population denominator")) {
+    fields.push({
+      name: "population_denominator",
+      label: "Population denominator",
+      type: "integer",
+      required: true,
+      evidenceNeed: "Population denominator",
+      description: "Total population or households used to compare risk across areas.",
+      example: "5000",
+      caveat: "Denominators make cross-area preparedness comparisons safer.",
+    });
+  }
+
+  if (hasEvidence("Preparedness capacity")) {
+    fields.push({
+      name: "preparedness_capacity_score",
+      label: "Preparedness capacity score",
+      type: "number",
+      required: true,
+      evidenceNeed: "Preparedness capacity",
+      description: "Comparable score for readiness resources, stock, plans, or response capacity.",
+      example: "42",
+      caveat: "Capacity should use a consistent unit or scoring method across areas.",
     });
   }
 
@@ -163,7 +303,7 @@ export function buildSuggestedDataCollectionTemplate(
   );
 
   return {
-    title: "Suggested response-prioritization data collection template",
+    title: `Suggested ${slugify(getUseCaseTemplate(brief.useCaseId).title)} data collection template`,
     decisionQuestion: brief.decisionQuestion,
     intendedAction: brief.intendedAction,
     decisionMaker: brief.decisionMaker,
@@ -279,11 +419,66 @@ const RESPONSE_PRIORITIZATION_EVIDENCE: EvidenceRule[] = [
     nextAction:
       "Add or combine a capacity, facility, staff, stock, service, or market signal.",
   },
+  {
+    id: "service-availability",
+    label: "Service availability",
+    patterns: [/service|availability|available|coverage|functioning|operational/i],
+    strongTerms: ["service", "availability", "available", "coverage", "functioning", "operational"],
+    usefulTypes: ["number", "string", "boolean"],
+    caveat:
+      "Do not treat service-gap comparisons as action-ready without service availability evidence.",
+    nextAction:
+      "Add or combine a service availability, coverage, or functionality field.",
+  },
+  {
+    id: "hazard-exposure",
+    label: "Hazard exposure",
+    patterns: [/hazard|exposure|flood|storm|cyclone|wildfire|risk/i],
+    strongTerms: ["hazard", "exposure", "flood", "storm", "cyclone", "wildfire", "risk"],
+    usefulTypes: ["number", "string"],
+    caveat:
+      "Do not screen preparedness priorities without a hazard exposure signal.",
+    nextAction:
+      "Add or combine a hazard exposure, risk, flood, storm, or other hazard field.",
+  },
+  {
+    id: "vulnerability",
+    label: "Vulnerability",
+    patterns: [/vulnerability|vulnerable|poverty|elderly|disability|fragility|sensitivity/i],
+    strongTerms: ["vulnerability", "vulnerable", "poverty", "elderly", "disability", "fragility", "sensitivity"],
+    usefulTypes: ["number", "string"],
+    caveat:
+      "Do not screen preparedness priorities without vulnerability evidence.",
+    nextAction:
+      "Add or combine a vulnerability, sensitivity, poverty, disability, or coping-capacity field.",
+  },
+  {
+    id: "population-denominator",
+    label: "Population denominator",
+    patterns: [/population|denominator|people|household|baseline|total/i],
+    strongTerms: ["population", "denominator", "people", "household", "baseline", "total"],
+    usefulTypes: ["number"],
+    caveat:
+      "Do not compare preparedness risk across areas without a population denominator.",
+    nextAction:
+      "Add or combine a total population, household, people, or baseline denominator field.",
+  },
+  {
+    id: "preparedness-capacity",
+    label: "Preparedness capacity",
+    patterns: [/preparedness|readiness|capacity|stock|shelter|plan|warehouse|drill/i],
+    strongTerms: ["preparedness", "readiness", "capacity", "stock", "shelter", "plan", "warehouse", "drill"],
+    usefulTypes: ["number", "string"],
+    caveat:
+      "Do not treat preparedness rankings as action-ready without capacity evidence.",
+    nextAction:
+      "Add or combine a preparedness capacity, readiness, stock, shelter, or plan field.",
+  },
 ];
 
 export function validateDecisionBrief(brief: Partial<DecisionBrief>) {
   const missing: string[] = [];
-  if (brief.useCaseId !== "response_prioritization") missing.push("use case");
+  if (!isUseCaseTemplateId(brief.useCaseId)) missing.push("use case");
   if (!brief.decisionQuestion?.trim()) missing.push("decision question");
   if (!brief.intendedAction?.trim()) missing.push("intended action");
   if (!brief.decisionMaker?.trim()) missing.push("decision-maker");
@@ -390,6 +585,7 @@ export function assessDecisionReadiness(
     dataset.profile?.columns.map((column) => column.columnName) ??
     Object.keys(dataset.data?.[0] ?? {});
   const requiredRules = evidenceRulesFor(decisionBrief.requiredEvidence);
+  const decisionArea = getUseCaseTemplate(decisionBrief.useCaseId).title;
   const missingFindings = requiredRules
     .filter((rule) => !columns.some((column) => rule.patterns.some((pattern) => pattern.test(column))))
     .map((rule): QualityCheckResult => ({
@@ -397,8 +593,8 @@ export function assessDecisionReadiness(
       checkType: "Decision evidence missing",
       status: "fail",
       severity: "high",
-      description: `${rule.label} evidence is missing for response prioritization.`,
-      decisionArea: "Response prioritization",
+      description: `${rule.label} evidence is missing for ${decisionArea.toLowerCase()}.`,
+      decisionArea,
       evidenceNeed: rule.label,
       caveat: rule.caveat,
       suggestedAction: `Add or join a field that supports ${rule.label.toLowerCase()} before relying on this dashboard for action.`,
@@ -440,7 +636,7 @@ export function assessDecisionReadiness(
             : readinessStatusLabel(status),
       summary:
         status === "ready"
-          ? "Required response-prioritization evidence was detected."
+          ? `Required ${decisionArea.toLowerCase()} evidence was detected.`
           : `${blockerCount} blocker${blockerCount === 1 ? "" : "s"} and ${reviewCount} review item${reviewCount === 1 ? "" : "s"} affect this decision.`,
       caveats,
       blockerCount,
@@ -636,15 +832,18 @@ function numericValue(value: unknown) {
 
 function evidenceRulesFor(requiredEvidence: string[]) {
   const normalizedRequirements = requiredEvidence.map(normalizeLabel);
-  const matched = RESPONSE_PRIORITIZATION_EVIDENCE.filter((rule) => {
-    const normalizedLabel = normalizeLabel(rule.label);
-    return normalizedRequirements.some(
-      (requirement) =>
-        requirement === normalizedLabel ||
-        requirement.includes(normalizedLabel) ||
-        normalizedLabel.includes(requirement),
-    );
-  });
+  const matched = normalizedRequirements
+    .map((requirement) =>
+      RESPONSE_PRIORITIZATION_EVIDENCE.find((rule) => {
+        const normalizedLabel = normalizeLabel(rule.label);
+        return (
+          requirement === normalizedLabel ||
+          requirement.includes(normalizedLabel) ||
+          normalizedLabel.includes(requirement)
+        );
+      }),
+    )
+    .filter((rule): rule is EvidenceRule => Boolean(rule));
   return matched.length > 0 ? matched : RESPONSE_PRIORITIZATION_EVIDENCE;
 }
 
