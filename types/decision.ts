@@ -1,4 +1,7 @@
-export type UseCaseTemplateId = "response_prioritization";
+export type UseCaseTemplateId =
+  | "response_prioritization"
+  | "service_gap_monitoring"
+  | "preparedness_risk_screening";
 
 export type UseCaseTemplate = {
   id: UseCaseTemplateId;

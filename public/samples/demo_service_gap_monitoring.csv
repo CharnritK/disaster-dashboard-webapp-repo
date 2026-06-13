@@ -1,0 +1,5 @@
+admin_area,admin_code,observation_date,severity_score,service_availability_score,response_gap_percent,current_capacity,data_source,notes
+North District,D01,2026-06-01,82,35,58,12,Synthetic service survey,Main clinic damaged
+South District,D02,2026-06-01,61,72,24,34,Synthetic service survey,Mobile team active
+East District,D03,2026-06-01,74,48,41,18,Synthetic service survey,Road access limited
+West District,D04,2026-06-01,56,81,16,42,Synthetic service survey,Partner coverage improving

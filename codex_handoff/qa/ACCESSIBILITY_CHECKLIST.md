@@ -29,3 +29,12 @@
 - [ ] UI says full rows are not sent to LLM.
 - [ ] UI says capped samples/metadata may be used when AI is on, if current behavior remains.
 - [ ] AI off/fallback state is visible.
+
+## Evidence Notes
+
+2026-06-13 repo-local baseline:
+
+- `ChartFrame` unit coverage verifies `aria-labelledby`, `aria-describedby`, data-quality state, and screen-reader summary rendering.
+- Deterministic dashboard recommendation tests verify chart `screenReaderSummary` and mobile behavior after policy enforcement.
+- Browser smoke used role and label selectors through template switching, fragmented demo data, profiling, harmonization, dashboard generation, export, and project-kit download.
+- Human keyboard and assistive-technology review remains required before release.
