@@ -51,6 +51,7 @@ Date: 2026-06-14
   - `METADATA_STORE=memory`
   - `NEXT_PUBLIC_SUPABASE_URL`
   - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+  - `APP_BASE_URL`
 - A CLI deployment attempted without `--prod` was unexpectedly classified by
   Vercel as target `production`; it failed during type checking and did not
   become live.
@@ -58,18 +59,47 @@ Date: 2026-06-14
   workspace was included in the root Next.js type check on Vercel. The app
   deployment now excludes that standalone workspace from root TypeScript checks
   and Vercel upload.
+- Explicit Preview deployment with `--target preview` succeeded.
+- Latest deployment inspected:
+  - unique URL:
+    `https://disaster-dashboard-webapp-repo-r0sqgh8tp-charnrit-k.vercel.app`
+  - stable preview alias:
+    `https://disaster-dashboard-webapp-repo-charnritk-charnrit-k.vercel.app`
+  - target: `preview`
+  - status: `Ready`
+- Vercel SSO deployment protection was disabled for this project because it
+  blocked anonymous external validation before requests reached the app.
 
 ## Remaining Blockers
 
-- Create a successful explicit Preview deployment with `--target preview`.
-- Add a real preview URL to Supabase redirect URLs after the preview deployment
-  exists.
-- Set or update hosted preview env values outside git after the preview URL is
-  known:
-  - `APP_BASE_URL`
+- Confirm named beta and admin allowlist values:
   - `AI_BETA_ALLOWED_EMAILS`
   - `ADMIN_EMAILS`
 - Apply `db/schema.sql` and `db/rls.sql` only after schema/RLS review and only
   to a preview or staging database.
 - Enable `METADATA_STORE=supabase`, `AI_USAGE_STORE=supabase`, and
   `SUPABASE_SECRET_KEY` only after the preview/staging database is prepared.
+
+## Hosted Preview Smoke
+
+- Supabase Auth redirect URL added:
+  `https://disaster-dashboard-webapp-repo-charnritk-charnrit-k.vercel.app/auth/callback`
+- Anonymous HTTP checks against the stable preview alias:
+  - `/demo`: `200`
+  - `/api/recommend/status`: `200`,
+    `{"ai":{"fallbackReason":"ai_disabled","mode":"deterministic_fallback"},"ok":true}`
+  - `/api/usage`: `401`, unauthenticated fallback
+  - `/app/data`: `307` to `/login?next=%2Fapp%2Fdata`
+  - `/login?next=/app/data`: `200`
+- Browser check: hosted `/demo` rendered Dashboard Copilot with AI Off and the
+  deterministic workflow visible.
+- Vercel error-log scan over the smoke window returned no error entries.
+
+## Still Not Performed
+
+- No production deployment was created successfully or promoted.
+- No SQL migration was run.
+- No Supabase service-role key or database URL was copied into Vercel.
+- No AI provider key was configured.
+- No beta/admin email allowlists were populated because named values were not
+  supplied in this run.
