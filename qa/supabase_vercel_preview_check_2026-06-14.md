@@ -32,24 +32,41 @@ Date: 2026-06-14
 
 ## Vercel State
 
-- Browser showed the repo on Vercel's New Project import page.
-- No `.vercel/` project link exists locally.
-- `vercel` CLI is not installed on this machine.
-- No Vercel deployment or project creation was performed.
-
-## Remaining Blockers
-
-- Choose preview source: commit the current controlled-beta work for Git-based
-  Vercel preview, or use another explicit preview-only deployment path.
-- Add a real preview URL to Supabase redirect URLs after the preview deployment
-  exists.
-- Set hosted preview env values outside git:
-  - `NEXT_PUBLIC_SUPABASE_URL`
-  - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
-  - `APP_BASE_URL`
+- Vercel CLI was run through `npx vercel@latest`; no global install was
+  required.
+- Project created under `point's projects` / `charnrit-k`:
+  `disaster-dashboard-webapp-repo`.
+- Local repo linked to the Vercel project.
+- Vercel project connected to the fork GitHub repository:
+  `https://github.com/CharnritK/disaster-dashboard-webapp-repo.git`.
+- Project framework settings corrected to Next.js, `npm ci`, and
+  `npm run build`.
+- Preview-scoped environment variables were added for branch
+  `codex/dashboard-copilot-handoff-v1-1`:
   - `LLM_ENABLED=false`
   - `NEXT_PUBLIC_COPILOT_API_ENABLED=false`
   - `AI_DAILY_QUOTA=20`
+  - `AI_BETA_ALLOW_ALL_AUTHENTICATED=false`
+  - `AI_USAGE_STORE=memory`
+  - `METADATA_STORE=memory`
+  - `NEXT_PUBLIC_SUPABASE_URL`
+  - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+- A CLI deployment attempted without `--prod` was unexpectedly classified by
+  Vercel as target `production`; it failed during type checking and did not
+  become live.
+- The failed build exposed that the standalone `tutorial-video/` Remotion
+  workspace was included in the root Next.js type check on Vercel. The app
+  deployment now excludes that standalone workspace from root TypeScript checks
+  and Vercel upload.
+
+## Remaining Blockers
+
+- Create a successful explicit Preview deployment with `--target preview`.
+- Add a real preview URL to Supabase redirect URLs after the preview deployment
+  exists.
+- Set or update hosted preview env values outside git after the preview URL is
+  known:
+  - `APP_BASE_URL`
   - `AI_BETA_ALLOWED_EMAILS`
   - `ADMIN_EMAILS`
 - Apply `db/schema.sql` and `db/rls.sql` only after schema/RLS review and only
