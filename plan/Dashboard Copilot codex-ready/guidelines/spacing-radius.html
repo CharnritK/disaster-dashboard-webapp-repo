@@ -1,0 +1,24 @@
+<!-- @dsCard group="Spacing" viewport="700x180" subtitle="8px everywhere, 999px pills, 7px bars-in-tracks, 5px code chips" name="Radius & borders" -->
+<!DOCTYPE html>
+<html><head><link rel="stylesheet" href="../styles.css">
+<style>
+  body { background: var(--soft); padding: 16px; }
+  .row { display: flex; gap: 12px; align-items: flex-start; flex-wrap: wrap; }
+  .demo { display: grid; gap: 5px; justify-items: center; }
+  .demo i { font-style: normal; color: var(--muted); font-size: 10px; font-family: var(--font-mono); }
+  .card8 { background: var(--paper); border: 1px solid var(--line); border-radius: 8px; width: 130px; height: 78px; box-shadow: var(--shadow-card); }
+  .pill { background: var(--paper); border: 1px solid var(--line-strong); border-radius: 999px; color: var(--muted); font-size: 0.76rem; font-weight: 780; padding: 6px 10px; }
+  .track { background: var(--chart-track); border: 1px solid var(--chart-track-border); border-radius: 8px; width: 150px; padding: 0; }
+  .bar { background: var(--chart-1); border-radius: 7px; color: white; font-size: 0.78rem; padding: 6px 8px; width: 70%; }
+  .code { background: #f1f2ed; border: 1px solid var(--line); border-radius: 5px; font-family: var(--font-mono); font-size: 0.8rem; padding: 2px 6px; }
+  .input { background: var(--paper); border: 1px solid var(--line-strong); border-radius: 8px; min-height: 40px; padding: 9px 11px; color: var(--subtle); font-size: 0.9rem; width: 140px; }
+</style></head>
+<body>
+  <div class="row">
+    <div class="demo"><div class="card8"></div><i>card · 8px · 1px line</i></div>
+    <div class="demo"><div class="input">Placeholder</div><i>control · 8px · 40px tall</i></div>
+    <div class="demo"><span class="pill">12 required</span><i>pill · 999px</i></div>
+    <div class="demo"><div class="track"><div class="bar">642</div></div><i>bar 7px in track 8px</i></div>
+    <div class="demo"><span class="code">admin_pcode</span><i>code · 5px</i></div>
+  </div>
+</body></html>

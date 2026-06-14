@@ -1,0 +1,48 @@
+<!-- @dsCard group="Components" viewport="700x400" subtitle="Section heading, base card, teal recommendation card, accordion" name="Surfaces" -->
+<!DOCTYPE html>
+<html><head>
+<link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="../../ds-fallback-loader.js"></script>
+<script src="../../_ds_bundle.js"></script>
+<style>body { background: var(--soft); margin: 0; padding: 16px; }</style>
+</head><body>
+<div id="root"></div>
+<script type="text/babel">
+(async () => {
+const NS = await window.__dsLoadNamespace({ detect: ["Card", "RecommendationCard"] });
+const { Card, SectionHeading, RecommendationCard, Accordion, Button } = NS;
+
+function Demo() {
+  return (
+    <div style={{ display: "grid", gap: 14 }}>
+      <SectionHeading eyebrow="Step 4" title="Review before combining files" />
+      <RecommendationCard
+        title="Combine files on shared district codes"
+        why={<>Both files share admin_pcode with a 96% match rate.</>}
+        actions={
+          <>
+            <Button style={{ background: "white", borderColor: "white", color: "var(--ink)" }}>Accept recommendation</Button>
+            <Button style={{ background: "rgba(255,255,255,0.08)", borderColor: "rgba(255,255,255,0.22)", color: "white" }}>Adjust join</Button>
+          </>
+        }
+      >
+        Joining adds population baselines to every assessment row.
+      </RecommendationCard>
+      <div style={{ display: "grid", gap: 14, gridTemplateColumns: "1fr 1fr" }}>
+        <Card eyebrow="CSV" title="needs_assessment.csv">
+          <p style={{ color: "var(--muted)", margin: 0, fontSize: "0.9rem" }}>5 rows, 14 columns</p>
+        </Card>
+        <Accordion summary="Review join/combine recommendation" meta="96% match rate">
+          <p style={{ color: "var(--muted)", margin: 0, fontSize: "0.86rem" }}>Join needs_assessment.csv to population.csv using admin_pcode = admin_pcode.</p>
+        </Accordion>
+      </div>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById("root")).render(<Demo />);
+})();
+</script>
+</body></html>

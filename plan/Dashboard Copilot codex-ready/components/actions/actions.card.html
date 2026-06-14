@@ -1,0 +1,39 @@
+<!-- @dsCard group="Components" viewport="700x210" subtitle="Button variants + the AI pill toggle" name="Actions" -->
+<!DOCTYPE html>
+<html><head>
+<link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="../../ds-fallback-loader.js"></script>
+<script src="../../_ds_bundle.js"></script>
+<style>body { background: var(--soft); margin: 0; padding: 16px; }</style>
+</head><body>
+<div id="root"></div>
+<script type="text/babel">
+(async () => {
+const NS = await window.__dsLoadNamespace({ detect: ["Button", "ToggleSwitch"] });
+const { Button, ToggleSwitch } = NS;
+
+function Demo() {
+  const [on, setOn] = React.useState(true);
+  const [off, setOff] = React.useState(false);
+  return (
+    <div style={{ display: "grid", gap: 14 }}>
+      <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+        <Button>Use sample data</Button>
+        <Button variant="primary">Accept recommendation</Button>
+        <Button variant="accent">Generate dashboard</Button>
+        <Button disabled>Profile data</Button>
+      </div>
+      <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+        <ToggleSwitch label="AI" checked={on} onChange={setOn} />
+        <ToggleSwitch label="AI" checked={off} onChange={setOff} />
+      </div>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById("root")).render(<Demo />);
+})();
+</script>
+</body></html>

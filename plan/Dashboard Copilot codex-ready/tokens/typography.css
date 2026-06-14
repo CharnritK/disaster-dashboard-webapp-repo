@@ -1,0 +1,37 @@
+/* Dashboard Copilot — type tokens
+   One family (Rethink Sans variable) does all the work; hierarchy comes
+   from size + heavy intermediate weights (650–820) on the variable axis. */
+:root {
+  /* sizes */
+  --text-hero: 4rem;        /* about-page hero, weight 720, lh 1 */
+  --text-section: 1.8rem;   /* step/section h2, weight 720, lh 1.2 */
+  --text-panel: 1.4rem;     /* card/panel h2, weight 720 */
+  --text-subpanel: 1.24rem; /* readiness/coverage h3 */
+  --text-card-title: 1rem;  /* card h3, weight 700 */
+  --text-brand: 1.08rem;    /* header wordmark, weight 720 */
+  --text-body: 15px;        /* body base, lh 1.5 */
+  --text-label: 0.86rem;    /* form labels, table cells */
+  --text-meta: 0.84rem;     /* secondary meta copy */
+  --text-small: 0.78rem;    /* pills meta, chips, axis labels */
+  --text-pill: 0.76rem;     /* pill/badge text */
+  --text-eyebrow: 0.75rem;  /* uppercase eyebrow, weight 800 */
+  --text-tiny: 0.68rem;     /* uppercase type pills, svg labels */
+
+  /* weights — variable axis, intermediate values are intentional */
+  --weight-body: 400;
+  --weight-medium: 560;
+  --weight-summary: 650;
+  --weight-semibold: 600;   /* buttons */
+  --weight-bold: 700;
+  --weight-heading: 720;    /* all headings */
+  --weight-strong: 760;
+  --weight-pill: 780;
+  --weight-eyebrow: 800;
+  --weight-max: 820;        /* export type pills */
+
+  /* line heights */
+  --leading-tight: 1.1;
+  --leading-heading: 1.2;
+  --leading-body: 1.5;
+  --leading-relaxed: 1.6;
+}

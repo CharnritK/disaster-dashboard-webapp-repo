@@ -1,0 +1,13 @@
+/* Dashboard Copilot — webfonts
+   The product uses Rethink Sans (variable, 400–800) loaded through
+   next/font/google in the original codebase. We load the same family
+   from Google Fonts here. No font binaries ship in the repo. */
+@import url("https://fonts.googleapis.com/css2?family=Rethink+Sans:ital,wght@0,400..800;1,400..800&display=swap");
+
+:root {
+  /* matches the --font-rethink-sans variable from next/font */
+  --font-rethink-sans: "Rethink Sans";
+  --font-sans: "Rethink Sans", Arial, Helvetica, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+}

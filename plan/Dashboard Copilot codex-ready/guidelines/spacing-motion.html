@@ -1,0 +1,24 @@
+<!-- @dsCard group="Spacing" viewport="700x190" subtitle="One easing for everything; entrance fades rise 6–8px; bars grow scaleX 520ms" name="Motion" -->
+<!DOCTYPE html>
+<html><head><link rel="stylesheet" href="../styles.css">
+<style>
+  body { background: var(--soft); padding: 16px; }
+  .row { display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap; }
+  .demo { display: grid; gap: 5px; }
+  .demo i { font-style: normal; color: var(--muted); font-size: 10px; font-family: var(--font-mono); }
+  .panel { background: var(--paper); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; font-size: 0.84rem; font-weight: 650; animation: dcPanelIn 260ms var(--ease) infinite alternate; animation-duration: 1.4s; animation-delay: -0.7s; }
+  .track { background: var(--chart-track); border: 1px solid var(--chart-track-border); border-radius: 8px; width: 190px; }
+  .bar { background: var(--chart-1); border-radius: 7px; color: #fff; font-size: 0.78rem; padding: 6px 8px; width: 78%; transform-origin: left center; animation: dcBarGrow 520ms var(--ease) infinite alternate; animation-duration: 1.4s; animation-delay: -0.9s; }
+  .banner { align-items: center; background: var(--blue-soft); border: 1px solid var(--blue-border); border-radius: 8px; color: var(--blue-deep); display: inline-flex; font-size: 0.78rem; font-weight: 700; gap: 7px; padding: 6px 10px; }
+  .dot { background: currentColor; border-radius: 50%; height: 6px; width: 6px; position: relative; }
+  .dot::after { animation: dcPulseRing 1.25s ease-out infinite; border: 1px solid currentColor; border-radius: 50%; content: ""; inset: -5px; opacity: 0; position: absolute; }
+  .curve { color: var(--muted); font-family: var(--font-mono); font-size: 11px; background: var(--paper); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
+</style></head>
+<body>
+  <div class="row">
+    <div class="demo"><div class="panel">panelIn · 260ms</div><i>fade + 8px rise</i></div>
+    <div class="demo"><div class="track"><div class="bar">barGrow</div></div><i>scaleX · 520ms · from left</i></div>
+    <div class="demo"><span class="banner"><span class="dot"></span>Working...</span><i>pulse ring · 1.25s</i></div>
+    <div class="demo"><div class="curve">--ease<br>cubic-bezier(0.2, 0.8, 0.2, 1)<br>hovers 160–180ms</div><i>the only curve</i></div>
+  </div>
+</body></html>

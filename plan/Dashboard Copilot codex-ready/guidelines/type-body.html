@@ -1,0 +1,17 @@
+<!-- @dsCard group="Type" viewport="700x210" subtitle="Body 15px/1.5, muted secondary text, inline code chips for data terms" name="Body & data terms" -->
+<!DOCTYPE html>
+<html><head><link rel="stylesheet" href="../styles.css">
+<style>
+  body { background: var(--paper); padding: 18px 20px; display: grid; gap: 10px; }
+  p { margin: 0; }
+  .body { max-width: 560px; }
+  .muted { color: var(--muted); font-size: 0.86rem; max-width: 560px; }
+  .small { color: var(--muted); font-size: 0.78rem; }
+  .inline-code { background: #f1f2ed; border: 1px solid var(--line); border-radius: 5px; color: var(--ink); font-family: var(--font-mono); font-size: 0.88em; padding: 1px 5px; white-space: nowrap; }
+</style></head>
+<body>
+  <p class="body">Body — 15px / 1.5. Joins, cleaning operations, quality warnings, and assumptions remain visible so analysts can review what changed.</p>
+  <p class="muted">Muted label / helper — 0.86rem. Defaults are ready to run. Adjust the brief only where your decision differs.</p>
+  <p class="small">Meta — 0.78rem. 46% missing, 82% confidence.</p>
+  <p class="body">Data terms render as chips: join <span class="inline-code">needs_assessment.csv</span> on <span class="inline-code">admin_pcode</span> = <span class="inline-code">district_code</span>.</p>
+</body></html>

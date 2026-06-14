@@ -1,0 +1,20 @@
+<!-- @dsCard group="Colors" viewport="700x150" subtitle="Deep teal accent and its soft tints" name="Brand accent" -->
+<!DOCTYPE html>
+<html><head><link rel="stylesheet" href="../styles.css">
+<style>
+  body { background: var(--soft); padding: 16px; }
+  .row { display: grid; grid-template-columns: 1.6fr 1.6fr 1fr 1fr 1fr; gap: 8px; }
+  .sw { border: 1px solid var(--line); border-radius: 8px; height: 64px; }
+  .lbl { display: grid; gap: 1px; margin-top: 6px; font-size: 11px; }
+  .lbl strong { font-weight: 720; }
+  .lbl code { font-family: var(--font-mono); font-size: 10px; color: var(--muted); }
+</style></head>
+<body>
+  <div class="row">
+    <div><div class="sw" style="background:var(--accent)"></div><p class="lbl"><strong>accent</strong><code>#235f58</code></p></div>
+    <div><div class="sw" style="background:var(--accent-hover)"></div><p class="lbl"><strong>accent-hover</strong><code>#2c6e67</code></p></div>
+    <div><div class="sw" style="background:var(--accent-tint)"></div><p class="lbl"><strong>tint</strong><code>#d8ece8</code></p></div>
+    <div><div class="sw" style="background:var(--accent-border)"></div><p class="lbl"><strong>border</strong><code>#c6ded9</code></p></div>
+    <div><div class="sw" style="background:var(--accent-soft)"></div><p class="lbl"><strong>soft</strong><code>#eef7f5</code></p></div>
+  </div>
+</body></html>

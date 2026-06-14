@@ -1,0 +1,1268 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rethink+Sans:ital,wght@0,400..800;1,400..800&family=Spline+Sans+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    color-scheme: light;
+
+    /* ── Neutral ramp (warm-tinted) ───────────────────────── */
+    --ink: #171717;            /* text-primary */
+    --ink-2: #5f656d;          /* text-secondary */
+    --ink-3: #6f757c;          /* text-tertiary (AA on white) */
+    --line: #deded8;           /* border-subtle */
+    --line-strong: #c9cbc3;    /* border-strong */
+    --paper: #ffffff;          /* surface-raised */
+    --panel: #fbfbf8;          /* surface-sunken */
+    --soft: #f5f6f2;           /* surface-page / inset */
+
+    /* ── Brand / accent (calm teal-green) ─────────────────── */
+    --brand: #235f58;
+    --brand-hover: #2c6e67;
+    --brand-surface: #eef7f5;
+    --brand-border: #c6ded9;
+
+    /* ── Semantic: INFO / AI (blue) ───────────────────────── */
+    --info: #2d5be3;           /* solid */
+    --info-text: #2449bb;      /* text on white (AA) */
+    --info-surface: #eef3ff;
+    --info-border: #ccd8ff;
+
+    /* ── Semantic: SUCCESS / READY (teal-green) ───────────── */
+    --ok: #235f58;
+    --ok-text: #1f574f;
+    --ok-surface: #eef7f5;
+    --ok-border: #c6ded9;
+
+    /* ── Semantic: WARNING / REVIEW (amber) ───────────────── */
+    --warn: #a56315;           /* solid (badge bg / border) */
+    --warn-text: #8a4f12;      /* text on white (AA) */
+    --warn-surface: #fff7ed;
+    --warn-border: #fed7aa;
+
+    /* ── Semantic: ERROR / BLOCKING (red) ─────────────────── */
+    --danger: #b42318;
+    --danger-text: #b42318;
+    --danger-surface: #fff1f1;
+    --danger-border: #f7c6c6;
+
+    /* ── Semantic: NEUTRAL / SYSTEM ───────────────────────── */
+    --neutral-text: #5f656d;
+    --neutral-surface: #f5f6f2;
+    --neutral-border: #deded8;
+
+    /* ── Typography ───────────────────────────────────────── */
+    --font-sans: "Rethink Sans", Arial, Helvetica, sans-serif;
+    --font-mono: "Spline Sans Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+    /* ── Radius ───────────────────────────────────────────── */
+    --radius-sm: 5px;
+    --radius-md: 8px;
+    --radius-lg: 14px;
+    --radius-pill: 999px;
+
+    /* ── Shadow ───────────────────────────────────────────── */
+    --shadow-sm: 0 1px 0 rgba(23,23,23,0.03);
+    --shadow-md: 0 18px 45px rgba(23,23,23,0.07);
+    --shadow-lg: 0 24px 58px rgba(23,23,23,0.11);
+    --shadow-dialog: 0 28px 70px rgba(23,23,23,0.22);
+
+    /* ── Focus & motion ───────────────────────────────────── */
+    --focus-ring: 0 0 0 2px #ffffff, 0 0 0 4px rgba(45,91,227,0.55);
+    --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+    --motion-fast: 140ms;
+    --motion: 180ms;
+    --motion-slow: 260ms;
+  }
+  * { box-sizing: border-box; }
+  html { background: var(--soft); scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: var(--font-sans);
+    color: var(--ink);
+    font-size: 15px;
+    line-height: 1.5;
+    text-wrap: pretty;
+    -webkit-font-smoothing: antialiased;
+  }
+  ::selection { background: rgba(35,95,88,0.16); }
+  a { color: inherit; }
+  @keyframes dcdsFade { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes dcdsBar { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+  @keyframes dcdsPulse { 0% { opacity: .4; transform: scale(.6);} 100% { opacity: 0; transform: scale(1.9);} }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after { animation-duration: 1ms !important; transition-duration: 1ms !important; }
+  }
+</style>
+</helmet>
+
+<div style="display: flex; min-height: 100vh; background:
+    linear-gradient(90deg, rgba(23,23,23,0.035) 1px, transparent 1px) center top / 72px 72px,
+    linear-gradient(180deg, rgba(23,23,23,0.028) 1px, transparent 1px) center top / 72px 72px,
+    linear-gradient(180deg, #fbfbf8 0, var(--soft) 360px);">
+
+  <aside style="position: sticky; top: 0; align-self: flex-start; height: 100vh; width: 268px; flex: 0 0 268px; overflow-y: auto; border-right: 1px solid var(--line); background: rgba(251,251,248,0.86); backdrop-filter: blur(18px); padding: 26px 20px 40px;">
+    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+      <span style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 7px; background: var(--brand); color: #fff; font-weight: 800; font-size: 0.82rem;">DC</span>
+      <span style="font-weight: 760; font-size: 0.96rem; line-height: 1.05;">Dashboard&nbsp;Copilot</span>
+    </div>
+    <p style="margin: 0 0 22px; padding-left: 38px; font-size: 0.74rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-3);">Design System v2.0</p>
+
+    <nav aria-label="Design system sections" style="display: grid; gap: 2px;">
+      <sc-for list="{{ navGroups }}" as="group" hint-placeholder-count="4">
+        <p style="margin: 16px 0 6px; padding: 0 10px; font-size: 0.68rem; font-weight: 800; letter-spacing: 0.09em; text-transform: uppercase; color: var(--ink-3);">{{ group.label }}</p>
+        <sc-for list="{{ group.items }}" as="item" hint-placeholder-count="4">
+          <a href="{{ item.href }}" data-nav="{{ item.id }}" style="display: flex; align-items: center; gap: 9px; padding: 7px 10px; border-radius: 7px; font-size: 0.86rem; font-weight: 600; color: var(--ink-2); text-decoration: none; transition: background var(--motion) var(--ease), color var(--motion) var(--ease);">
+            <span style="width: 18px; text-align: center; font-size: 0.72rem; font-weight: 800; color: var(--ink-3); font-family: var(--font-mono);">{{ item.num }}</span>
+            <span>{{ item.label }}</span>
+          </a>
+        </sc-for>
+      </sc-for>
+    </nav>
+  </aside>
+
+  <main id="content" style="flex: 1 1 auto; min-width: 0; max-width: 1120px;">
+
+    <header id="top" style="padding: 64px 64px 48px; border-bottom: 1px solid var(--line); scroll-margin-top: 0;">
+      <div style="display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: var(--radius-pill); background: var(--brand-surface); border: 1px solid var(--brand-border); margin-bottom: 24px;">
+        <span style="width: 7px; height: 7px; border-radius: 50%; background: var(--brand);"></span>
+        <span style="font-size: 0.76rem; font-weight: 760; color: var(--ok-text); letter-spacing: 0.02em;">Controlled beta · evolves the existing product</span>
+      </div>
+      <h1 style="margin: 0 0 18px; font-size: 3.5rem; font-weight: 760; letter-spacing: -0.02em; line-height: 1.02; max-width: 18ch;">A trustworthy review workspace for disaster-response data</h1>
+      <p style="margin: 0 0 30px; max-width: 70ch; font-size: 1.12rem; line-height: 1.6; color: var(--ink-2);">This is the design system for Dashboard&nbsp;Copilot — the product language, tokens, components, AI/governance states, data-visualization standards, and accessibility rules that turn non-sensitive humanitarian datasets into <strong style="color: var(--ink); font-weight: 700;">transparent, reviewable decision-support packages</strong>. It evolves today's interface; it does not redesign it. Every recommendation here is implementation-ready for the current Next.js / React / TypeScript app using global CSS and design tokens.</p>
+      <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+        <sc-for list="{{ metaChips }}" as="chip" hint-placeholder-count="6">
+          <span style="display: inline-flex; align-items: center; gap: 7px; padding: 7px 12px; border-radius: var(--radius-pill); background: var(--paper); border: 1px solid var(--line); font-size: 0.8rem; font-weight: 640; color: var(--ink-2);">
+            <span style="width: 6px; height: 6px; border-radius: 50%; background: {{ chip.dot }};"></span>{{ chip.label }}
+          </span>
+        </sc-for>
+      </div>
+      <div style="margin-top: 32px; display: flex; gap: 14px; align-items: flex-start; padding: 16px 18px; border-radius: var(--radius-md); background: var(--info-surface); border: 1px solid var(--info-border);">
+        <span aria-hidden="true" style="flex: 0 0 auto; width: 22px; height: 22px; border-radius: 50%; background: var(--info); color: #fff; font-weight: 800; font-size: 0.78rem; display: inline-flex; align-items: center; justify-content: center;">i</span>
+        <p style="margin: 0; font-size: 0.92rem; line-height: 1.55; color: var(--info-text);"><strong style="color: var(--info-text);">How to read this.</strong> Each section pairs rendered, true-to-product examples with the rationale and the concrete tokens / class names to implement them. Code blocks are copy-ready CSS custom properties. Future authenticated patterns are labelled <em>Future</em> — the current product stays session-only and deterministic-safe by default.</p>
+      </div>
+    </header>
+
+    <section id="principles" style="padding: 64px; border-bottom: 1px solid var(--line); scroll-margin-top: 0;">
+      <p style="margin: 0 0 10px; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--brand);">01 · Foundations</p>
+      <h2 style="margin: 0 0 12px; font-size: 2.1rem; font-weight: 760; letter-spacing: -0.015em; line-height: 1.08;">Product design principles</h2>
+      <p style="margin: 0 0 36px; max-width: 68ch; font-size: 1.04rem; line-height: 1.6; color: var(--ink-2);">Seven principles specific to disaster-response decision support. They are the tie-breakers: when a layout, a color, or a copy choice is in tension, the higher-numbered concern never overrides trust, traceability, and caution.</p>
+      <div style="display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));">
+        <sc-for list="{{ principles }}" as="p" hint-placeholder-count="7">
+          <article style="display: grid; gap: 10px; align-content: start; padding: 22px; background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius-md); box-shadow: var(--shadow-sm);">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <span style="flex: 0 0 auto; width: 34px; height: 34px; border-radius: 9px; background: var(--brand-surface); border: 1px solid var(--brand-border); color: var(--ok-text); font-weight: 800; font-size: 0.92rem; display: inline-flex; align-items: center; justify-content: center; font-family: var(--font-mono);">{{ p.num }}</span>
+              <h3 style="margin: 0; font-size: 1.12rem; font-weight: 740; line-height: 1.2;">{{ p.title }}</h3>
+            </div>
+            <p style="margin: 0; color: var(--ink-2); line-height: 1.56; font-size: 0.94rem;">{{ p.body }}</p>
+            <p style="margin: 2px 0 0; font-size: 0.78rem; color: var(--ink-3);"><strong style="color: var(--ink-2); font-weight: 740;">Realized by</strong> &nbsp;{{ p.realized }}</p>
+          </article>
+        </sc-for>
+      </div>
+    </section>
+
+    <section id="color" style="padding: 64px; border-bottom: 1px solid var(--line); scroll-margin-top: 0;">
+      <p style="margin: 0 0 10px; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--brand);">02 · Foundations</p>
+      <h2 style="margin: 0 0 12px; font-size: 2.1rem; font-weight: 760; letter-spacing: -0.015em; line-height: 1.08;">Color: a semantic namespace system</h2>
+      <p style="margin: 0 0 28px; max-width: 70ch; font-size: 1.04rem; line-height: 1.6; color: var(--ink-2);">The current palette uses blue / amber / red somewhat interchangeably for AI, data quality, and status. This system splits color into <strong style="color: var(--ink);">named semantic roles</strong>. Each role owns a hue and a four-part token set — <span style="font-family: var(--font-mono); font-size: 0.86em;">solid</span>, <span style="font-family: var(--font-mono); font-size: 0.86em;">text</span>, <span style="font-family: var(--font-mono); font-size: 0.86em;">surface</span>, <span style="font-family: var(--font-mono); font-size: 0.86em;">border</span> — so AI, quality, and status never borrow each other's color. <strong style="color: var(--ink);">Color is never the only signal</strong>: every status pairs with a text label, and a badge shape or icon.</p>
+
+      <div style="display: grid; gap: 14px;">
+        <sc-for list="{{ semantic }}" as="s" hint-placeholder-count="6">
+          <article style="display: grid; grid-template-columns: 232px 1fr; gap: 0; background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius-md); overflow: hidden;">
+            <div style="padding: 20px; background: {{ s.surface }}; border-right: 1px solid var(--line); display: grid; gap: 12px; align-content: start;">
+              <div style="display: flex; gap: 7px;">
+                <span style="width: 34px; height: 34px; border-radius: 8px; background: {{ s.solid }};"></span>
+                <span style="width: 34px; height: 34px; border-radius: 8px; background: {{ s.surface }}; border: 1px solid {{ s.border }};"></span>
+              </div>
+              <div>
+                <p style="margin: 0; font-weight: 780; font-size: 1rem; color: {{ s.textColor }};">{{ s.name }}</p>
+                <p style="margin: 2px 0 0; font-size: 0.8rem; color: var(--ink-2); font-weight: 600;">{{ s.role }}</p>
+              </div>
+              <span style="justify-self: start; font-family: var(--font-mono); font-size: 0.74rem; color: var(--ink-2); background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius-pill); padding: 4px 9px;">{{ s.prefix }}</span>
+            </div>
+            <div style="display: grid; align-content: start;">
+              <div style="padding: 16px 20px; border-bottom: 1px solid var(--line);">
+                <p style="margin: 0; font-size: 0.92rem; line-height: 1.5; color: var(--ink-2);"><strong style="color: var(--ink); font-weight: 720;">Use for.</strong> {{ s.use }}</p>
+              </div>
+              <div style="padding: 14px 20px; display: grid; gap: 8px;">
+                <sc-for list="{{ s.tokens }}" as="t" hint-placeholder-count="4">
+                  <div style="display: grid; grid-template-columns: 16px 168px 96px 1fr; align-items: center; gap: 10px; font-size: 0.8rem;">
+                    <span style="width: 16px; height: 16px; border-radius: 4px; background: {{ t.val }}; border: 1px solid rgba(23,23,23,0.12);"></span>
+                    <code style="font-family: var(--font-mono); font-size: 0.78rem; color: var(--ink);">{{ t.name }}</code>
+                    <code style="font-family: var(--font-mono); font-size: 0.76rem; color: var(--ink-3);">{{ t.hex }}</code>
+                    <span style="color: var(--ink-2);">{{ t.note }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </article>
+        </sc-for>
+      </div>
+
+      <div style="margin-top: 28px; display: grid; gap: 16px; grid-template-columns: 1fr 1fr;">
+        <article style="padding: 22px; background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius-md);">
+          <h3 style="margin: 0 0 14px; font-size: 1.04rem; font-weight: 740;">Neutral ramp (warm-tinted)</h3>
+          <div style="display: grid; gap: 6px;">
+            <sc-for list="{{ neutrals }}" as="n" hint-placeholder-count="8">
+              <div style="display: grid; grid-template-columns: 28px 150px 86px 1fr; align-items: center; gap: 10px; font-size: 0.8rem;">
+                <span style="width: 28px; height: 24px; border-radius: 5px; background: {{ n.val }}; border: 1px solid rgba(23,23,23,0.1);"></span>
+                <code style="font-family: var(--font-mono); font-size: 0.78rem;">{{ n.name }}</code>
+                <code style="font-family: var(--font-mono); font-size: 0.76rem; color: var(--ink-3);">{{ n.hex }}</code>
+                <span style="color: var(--ink-2);">{{ n.note }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </article>
+        <article style="padding: 22px; background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius-md); display: grid; gap: 14px; align-content: start;">
+          <h3 style="margin: 0; font-size: 1.04rem; font-weight: 740;">Contrast &amp; usage rules</h3>
+          <ul style="margin: 0; padding-left: 18px; display: grid; gap: 9px; color: var(--ink-2); font-size: 0.9rem; line-height: 1.5;">
+            <li><strong style="color: var(--ink);">Text on white meets WCAG AA.</strong> Use <code style="font-family: var(--font-mono); font-size: 0.84em;">--*-text</code> tokens for any small text; the <code style="font-family: var(--font-mono); font-size: 0.84em;">--*-solid</code> hue is for fills, dots, and borders only.</li>
+            <li><strong style="color: var(--ink);">Brand teal is sparing.</strong> Product identity, primary completion, and "ready" states only — not a generic accent.</li>
+            <li><strong style="color: var(--ink);">Red is reserved.</strong> Only failed checks, unsafe charts, and blocked actions. Caution and ambiguity are amber, not red.</li>
+            <li><strong style="color: var(--ink);">Never color-only.</strong> Pair every status hue with a label and a badge shape or icon (see §06–07).</li>
+            <li><strong style="color: var(--ink);">Dark-ready.</strong> All semantic tokens are aliases — a future dark theme reassigns the four-part sets, not the component code.</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section id="type" style="padding: 64px; border-bottom: 1px solid var(--line); scroll-margin-top: 0;">
+      <p style="margin: 0 0 10px; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--brand);">03 · Foundations</p>
+      <h2 style="margin: 0 0 12px; font-size: 2.1rem; font-weight: 760; letter-spacing: -0.015em; line-height: 1.08;">Typography</h2>
+      <p style="margin: 0 0 28px; max-width: 70ch; font-size: 1.04rem; line-height: 1.6; color: var(--ink-2);"><strong style="color: var(--ink);">Rethink Sans</strong> carries the whole interface — a humanist grotesque that reads as institutional and plain-spoken rather than corporate. It is paired with <strong style="color: var(--ink);">Spline Sans Mono</strong> for the things that must read as <em>data</em>: column names, field codes, metric values, and token references. The scale is restrained — six text sizes do all the work, so hierarchy comes from size and weight, not from many fonts.</p>
+
+      <div style="display: grid; gap: 16px; grid-template-columns: 1.6fr 1fr;">
+        <article style="padding: 8px 24px; background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius-md);">
+          <sc-for list="{{ typeScale }}" as="t" hint-placeholder-count="7">
+            <div style="display: grid; grid-template-columns: 1fr 250px; gap: 16px; align-items: baseline; padding: 16px 0; border-bottom: 1px solid var(--line);">
+              <span style="font-size: {{ t.size }}; font-weight: {{ t.weight }}; line-height: 1.1; letter-spacing: {{ t.ls }}; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ t.sample }}</span>
+              <div style="display: grid; gap: 2px;">
+                <code style="font-family: var(--font-mono); font-size: 0.76rem; color: var(--ink);">{{ t.token }}</code>
+                <span style="font-size: 0.76rem; color: var(--ink-3);">{{ t.spec }} &nbsp;·&nbsp; {{ t.role }}</span>
+              </div>
+            </div>
+          </sc-for>
+        </article>
+        <div style="display: grid; gap: 16px; align-content: start;">
+          <article style="padding: 22px; background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius-md);">
+            <h3 style="margin: 0 0 14px; font-size: 1rem; font-weight: 740;">Weights</h3>
+            <div style="display: grid; gap: 10px;">
+              <sc-for list="{{ weights }}" as="w" hint-placeholder-count="5">
+                <div style="display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid var(--line); padding-bottom: 9px;">
+                  <span style="font-size: 1.1rem; font-weight: {{ w.w }};">{{ w.name }}</span>
+                  <code style="font-family: var(--font-mono); font-size: 0.76rem; color: var(--ink-3);">{{ w.w }} · {{ w.use }}</code>
+                </div>
+              </sc-for>
+            </div>
+          </article>
+          <article style="padding: 22px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-md);">
+            <h3 style="margin: 0 0 10px; font-size: 1rem; font-weight: 740;">Monospace · data type</h3>
+            <p style="margin: 0 0 12px; font-size: 0.86rem; color: var(--ink-2); line-height: 1.5;">Use mono for anything literal that came from the data — never for prose.</p>
+            <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+              <code style="font-family: var(--font-mono); font-size: 0.82rem; background: #f1f2ed; border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 4px 8px;">admin_pcode</code>
+              <code style="font-family: var(--font-mono); font-size: 0.82rem; background: #f1f2ed; border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 4px 8px;">severity_score</code>
+              <code style="font-family: var(--font-mono); font-size: 0.82rem; background: #f1f2ed; border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 4px 8px;">12.4%</code>
+              <code style="font-family: var(--font-mono); font-size: 0.82rem; background: #f1f2ed; border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 4px 8px;">--info-surface</code>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="space" style="padding: 64px; border-bottom: 1px solid var(--line); scroll-margin-top: 0;">
+      <p style="margin: 0 0 10px; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--brand);">04 · Foundations</p>
+      <h2 style="margin: 0 0 12px; font-size: 2.1rem; font-weight: 760; letter-spacing: -0.015em; line-height: 1.08;">Space, radius, elevation &amp; motion</h2>
+      <p style="margin: 0 0 28px; max-width: 70ch; font-size: 1.04rem; line-height: 1.6; color: var(--ink-2);">A 4px spacing base keeps dense data layouts aligned. One radius (8px) covers nearly everything; elevation is kept low and soft so the interface reads as a document, not a stack of floating SaaS cards.</p>
+
+      <div style="display: grid; gap: 16px; grid-template-columns: 1.3fr 1fr;">
+        <article style="padding: 24px; background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius-md);">
+          <h3 style="margin: 0 0 16px; font-size: 1rem; font-weight: 740;">Spacing scale &nbsp;<span style="font-weight: 600; color: var(--ink-3); font-size: 0.82rem;">— 4px base · <code style="font-family: var(--font-mono);">--space-N</code></span></h3>
+          <div style="display: grid; gap: 9px;">
+            <sc-for list="{{ spacing }}" as="s" hint-placeholder-count="9">
+              <div style="display: grid; grid-template-columns: 72px 56px 1fr; align-items: center; gap: 12px;">
+                <code style="font-family: var(--font-mono); font-size: 0.78rem; color: var(--ink);">{{ s.token }}</code>
+                <span style="font-size: 0.78rem; color: var(--ink-3); font-family: var(--font-mono);">{{ s.px }}</span>
+                <span style="height: 16px; width: {{ s.px }}; background: var(--brand); border-radius: 3px; opacity: 0.85;"></span>
+              </div>
+            </sc-for>
+          </div>
+        </article>
+        <div style="display: grid; gap: 16px; align-content: start;">
+          <article style="padding: 22px; background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius-md);">
+            <h3 style="margin: 0 0 14px; font-size: 1rem; font-weight: 740;">Radius</h3>
+            <div style="display: flex; gap: 14px; flex-wrap: wrap;">
+              <sc-for list="{{ radii }}" as="r" hint-placeholder-count="4">
+                <div style="display: grid; gap: 7px; justify-items: center;">
+                  <span style="width: 52px; height: 52px; background: var(--brand-surface); border: 1.5px solid var(--brand-border); border-radius: {{ r.val }};"></span>
+                  <code style="font-family: var(--font-mono); font-size: 0.72rem; color: var(--ink-2);">{{ r.token }}</code>
+                </div>
+              </sc-for>
+            </div>
+          </article>
+          <article style="padding: 22px; background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius-md);">
+            <h3 style="margin: 0 0 16px; font-size: 1rem; font-weight: 740;">Elevation</h3>
+            <div style="display: flex; gap: 18px; flex-wrap: wrap;">
+              <sc-for list="{{ shadows }}" as="sh" hint-placeholder-count="3">
+                <div style="display: grid; gap: 8px; justify-items: center;">
+                  <span style="width: 64px; height: 44px; background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius-md); box-shadow: {{ sh.val }};"></span>
+                  <code style="font-family: var(--font-mono); font-size: 0.72rem; color: var(--ink-2);">{{ sh.token }}</code>
+                </div>
+              </sc-for>
+            </div>
+          </article>
+        </div>
+      </div>
+
+      <div style="margin-top: 16px; display: grid; gap: 16px; grid-template-columns: 1fr 1fr 1fr;">
+        <article style="padding: 22px; background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius-md);">
+          <h3 style="margin: 0 0 12px; font-size: 1rem; font-weight: 740;">Focus</h3>
+          <p style="margin: 0 0 14px; font-size: 0.86rem; color: var(--ink-2); line-height: 1.5;">A two-layer ring (white halo + blue) stays visible on any surface. Never remove it.</p>
+          <button type="button" style="font-family: inherit; font-weight: 700; font-size: 0.88rem; padding: 9px 14px; min-height: 40px; border-radius: var(--radius-md); border: 1px solid var(--ink); background: var(--ink); color: #fff; cursor: pointer; box-shadow: var(--focus-ring);">Focused control</button>
+          <code style="display: block; margin-top: 12px; font-family: var(--font-mono); font-size: 0.72rem; color: var(--ink-3); line-height: 1.4;">--focus-ring</code>
+        </article>
+        <article style="padding: 22px; background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius-md);">
+          <h3 style="margin: 0 0 12px; font-size: 1rem; font-weight: 740;">Motion</h3>
+          <ul style="margin: 0; padding-left: 16px; display: grid; gap: 7px; font-size: 0.84rem; color: var(--ink-2); line-height: 1.45;">
+            <li><code style="font-family: var(--font-mono); font-size: 0.82em;">--ease</code> cubic-bezier(.2,.8,.2,1)</li>
+            <li><code style="font-family: var(--font-mono); font-size: 0.82em;">--motion-fast</code> 140ms · hover/press</li>
+            <li><code style="font-family: var(--font-mono); font-size: 0.82em;">--motion</code> 180ms · panels</li>
+            <li><code style="font-family: var(--font-mono); font-size: 0.82em;">--motion-slow</code> 260ms · reveals</li>
+            <li>Honour <code style="font-family: var(--font-mono); font-size: 0.82em;">prefers-reduced-motion</code>.</li>
+          </ul>
+        </article>
+        <article style="padding: 22px; background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius-md);">
+          <h3 style="margin: 0 0 12px; font-size: 1rem; font-weight: 740;">Density</h3>
+          <p style="margin: 0 0 12px; font-size: 0.84rem; color: var(--ink-2); line-height: 1.5;">Default cell padding <code style="font-family: var(--font-mono); font-size: 0.82em;">9–10px</code>. A <code style="font-family: var(--font-mono); font-size: 0.82em;">.compact</code> variant drops to <code style="font-family: var(--font-mono); font-size: 0.82em;">6px</code> for wide profiling tables.</p>
+          <div style="border: 1px solid var(--line); border-radius: var(--radius-sm); overflow: hidden; font-size: 0.78rem;">
+            <div style="padding: 9px 11px; border-bottom: 1px solid var(--line); background: var(--panel); color: var(--ink-2); font-weight: 700;">Default · 9–10px</div>
+            <div style="padding: 6px 8px; color: var(--ink-2);">Compact · 6px</div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section id="components" style="padding: 64px; border-bottom: 1px solid var(--line); scroll-margin-top: 0;">
+      <p style="margin: 0 0 10px; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--brand);">05 · System</p>
+      <h2 style="margin: 0 0 12px; font-size: 2.1rem; font-weight: 760; letter-spacing: -0.015em; line-height: 1.08;">Component system</h2>
+      <p style="margin: 0 0 28px; max-width: 72ch; font-size: 1.04rem; line-height: 1.6; color: var(--ink-2);">Each component is rendered true-to-product, then specified for implementation. The current public product is shown first; <span style="display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px; border-radius: var(--radius-pill); background: var(--warn-surface); border: 1px solid var(--warn-border); font-size: 0.74rem; font-weight: 760; color: var(--warn-text);">Future</span> marks login-gated patterns that must not be dependencies of v1.</p>
+
+      <!-- App shell / header -->
+      <article style="background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-sm); margin-bottom: 22px;">
+        <div style="padding: 22px 24px 16px; display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; align-items: flex-end; border-bottom: 1px solid var(--line);">
+          <div>
+            <h3 style="margin: 0 0 4px; font-size: 1.18rem; font-weight: 740;">App shell &amp; header</h3>
+            <p style="margin: 0; font-size: 0.9rem; color: var(--ink-2); max-width: 62ch; line-height: 1.5;">Persistent identity, workflow context, and the AI-mode control. Sticky, blurred, max-width 1240px gutter. <code style="font-family: var(--font-mono); font-size: 0.84em;">.app-header</code> · <code style="font-family: var(--font-mono); font-size: 0.84em;">.app-shell</code></p>
+          </div>
+          <span style="display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: var(--radius-pill); background: var(--brand-surface); border: 1px solid var(--brand-border); font-size: 0.74rem; font-weight: 760; color: var(--ok-text);">Public · current</span>
+        </div>
+        <div style="padding: 24px; background: var(--soft);">
+          <!-- current public header render -->
+          <div style="background: rgba(251,251,248,0.96); border: 1px solid var(--line); border-radius: var(--radius-md); padding: 14px 18px; display: flex; align-items: center; gap: 16px; justify-content: space-between; box-shadow: var(--shadow-sm);">
+            <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
+              <span style="display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 7px; background: var(--brand); color: #fff; font-weight: 800; font-size: 0.76rem;">DC</span>
+              <strong style="font-size: 0.98rem; font-weight: 760;">Dashboard Copilot</strong>
+              <a href="#components" style="text-decoration: none; color: var(--ink-2); font-size: 0.8rem; font-weight: 740; padding: 5px 10px; border-radius: var(--radius-pill);">About</a>
+            </div>
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <span style="display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: var(--radius-pill); background: var(--neutral-surface); border: 1px solid var(--line); font-size: 0.74rem; font-weight: 760; color: var(--ink-2);"><span style="width: 6px; height: 6px; border-radius: 50%; background: var(--ink-3);"></span>Deterministic</span>
+              <label style="display: inline-flex; align-items: center; gap: 9px; padding: 5px 6px 5px 11px; border-radius: var(--radius-pill); background: var(--paper); border: 1px solid var(--line); font-size: 0.78rem; font-weight: 700; color: var(--ink-2); cursor: pointer;">
+                <span>AI recommendations <strong style="color: var(--ink);">Off</strong></span>
+                <span style="width: 38px; height: 20px; border-radius: var(--radius-pill); background: #d9dcd5; padding: 2px; display: inline-flex;"><span style="width: 16px; height: 16px; border-radius: 50%; background: #fff; box-shadow: 0 1px 4px rgba(23,23,23,0.2);"></span></span>
+              </label>
+            </div>
+          </div>
+        </div>
+        <!-- future workspace header -->
+        <div style="padding: 16px 24px 8px; display: flex; gap: 10px; align-items: center;">
+          <span style="display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: var(--radius-pill); background: var(--warn-surface); border: 1px solid var(--warn-border); font-size: 0.74rem; font-weight: 760; color: var(--warn-text);">Future · authenticated workspace</span>
+          <span style="font-size: 0.82rem; color: var(--ink-2);">adds workspace switcher, quota meter, account — never required for the public, deterministic product.</span>
+        </div>
+        <div style="padding: 8px 24px 24px;">
+          <div style="background: rgba(238,243,255,0.5); border: 1px solid var(--info-border); border-radius: var(--radius-md); padding: 14px 18px; display: flex; align-items: center; gap: 14px; justify-content: space-between; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
+              <span style="display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 7px; background: var(--brand); color: #fff; font-weight: 800; font-size: 0.76rem;">DC</span>
+              <strong style="font-size: 0.98rem; font-weight: 760;">Dashboard Copilot</strong>
+              <span style="display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; border-radius: var(--radius-md); background: var(--paper); border: 1px solid var(--line); font-size: 0.8rem; font-weight: 700; color: var(--ink);">Coastal Flood Response ▾</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <!-- quota meter -->
+              <span style="display: inline-flex; align-items: center; gap: 8px; padding: 5px 11px; border-radius: var(--radius-pill); background: var(--info-surface); border: 1px solid var(--info-border); font-size: 0.76rem; font-weight: 740; color: var(--info-text);">
+                <span style="width: 7px; height: 7px; border-radius: 50%; background: var(--info);"></span>
+                12 / 20 AI assists
+                <span aria-hidden="true" style="display: inline-block; width: 44px; height: 5px; border-radius: 3px; background: var(--info-border); position: relative; overflow: hidden;"><span style="position: absolute; inset: 0 44% 0 0; background: var(--info); border-radius: 3px;"></span></span>
+              </span>
+              <label style="display: inline-flex; align-items: center; gap: 9px; padding: 5px 6px 5px 11px; border-radius: var(--radius-pill); background: var(--paper); border: 1px solid var(--info-border); font-size: 0.78rem; font-weight: 700; color: var(--info-text); cursor: pointer;">
+                <span>AI <strong>On</strong></span>
+                <span style="width: 38px; height: 20px; border-radius: var(--radius-pill); background: var(--info); padding: 2px; display: inline-flex; justify-content: flex-end;"><span style="width: 16px; height: 16px; border-radius: 50%; background: #fff; box-shadow: 0 1px 4px rgba(23,23,23,0.2);"></span></span>
+              </label>
+              <span style="width: 30px; height: 30px; border-radius: 50%; background: var(--brand); color: #fff; font-weight: 760; font-size: 0.8rem; display: inline-flex; align-items: center; justify-content: center;">AM</span>
+            </div>
+          </div>
+        </div>
+        <div style="padding: 16px 24px 22px; border-top: 1px solid var(--line); display: grid; gap: 6px; grid-template-columns: repeat(4, 1fr);">
+          <div><p style="margin: 0 0 3px; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink-3);">Anatomy</p><p style="margin: 0; font-size: 0.82rem; color: var(--ink-2); line-height: 1.45;">Brand · nav · mode status slot · AI toggle. Future adds workspace switcher, quota, avatar.</p></div>
+          <div><p style="margin: 0 0 3px; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink-3);">Variants</p><p style="margin: 0; font-size: 0.82rem; color: var(--ink-2); line-height: 1.45;">Public (default) · Workspace (Future) · Loading (tinted info bg).</p></div>
+          <div><p style="margin: 0 0 3px; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink-3);">States</p><p style="margin: 0; font-size: 0.82rem; color: var(--ink-2); line-height: 1.45;">AI off / on / unavailable · working (header tints info).</p></div>
+          <div><p style="margin: 0 0 3px; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink-3);">Rules</p><p style="margin: 0; font-size: 0.82rem; color: var(--ink-2); line-height: 1.45;">Mode status always visible. Toggle hidden when AI unavailable, replaced by reason chip.</p></div>
+        </div>
+      </article>
+
+      <!-- Stepper + buttons row -->
+      <div style="display: grid; gap: 22px; grid-template-columns: 1.4fr 1fr;">
+        <article style="background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-sm);">
+          <div style="padding: 20px 22px 14px; border-bottom: 1px solid var(--line);">
+            <h3 style="margin: 0 0 4px; font-size: 1.12rem; font-weight: 740;">Stepper</h3>
+            <p style="margin: 0; font-size: 0.88rem; color: var(--ink-2); line-height: 1.5;">Seven-step workflow spine. Complete steps are reachable; future steps lock until prerequisites pass. <code style="font-family: var(--font-mono); font-size: 0.84em;">.stepper / .step</code></p>
+          </div>
+          <div style="padding: 22px; background: var(--soft); display: grid; gap: 18px;">
+            <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+              <sc-for list="{{ steps }}" as="st" hint-placeholder-count="7">
+                <span style="display: inline-flex; align-items: center; gap: 7px; padding: 5px 11px 5px 6px; border-radius: var(--radius-pill); font-size: 0.8rem; font-weight: 600; border: 1px solid {{ st.bd }}; background: {{ st.bg }}; color: {{ st.fg }};">
+                  <span style="width: 21px; height: 21px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 800; background: {{ st.ibg }}; color: {{ st.ifg }};">{{ st.mark }}</span>
+                  {{ st.label }}
+                </span>
+              </sc-for>
+            </div>
+            <!-- mobile variant -->
+            <div style="display: grid; gap: 8px; max-width: 300px;">
+              <p style="margin: 0; font-size: 0.74rem; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink-3);">Mobile collapse</p>
+              <div style="background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius-md); padding: 12px 14px;">
+                <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px;"><strong style="font-size: 0.92rem;">Step 4 · Harmonize</strong><span style="font-size: 0.78rem; color: var(--ink-3);">4 / 7</span></div>
+                <div style="height: 6px; border-radius: 3px; background: var(--line); overflow: hidden;"><span style="display: block; width: 57%; height: 100%; background: var(--brand);"></span></div>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <article style="background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-sm);">
+          <div style="padding: 20px 22px 14px; border-bottom: 1px solid var(--line);">
+            <h3 style="margin: 0 0 4px; font-size: 1.12rem; font-weight: 740;">Buttons</h3>
+            <p style="margin: 0; font-size: 0.88rem; color: var(--ink-2); line-height: 1.5;">One primary per view. The forward action is brand teal.</p>
+          </div>
+          <div style="padding: 22px; background: var(--soft); display: grid; gap: 12px;">
+            <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center;">
+              <span style="display: inline-flex; align-items: center; justify-content: center; min-height: 40px; padding: 9px 15px; border-radius: var(--radius-md); font-weight: 700; font-size: 0.86rem; background: var(--brand); border: 1px solid var(--brand); color: #fff;">Profile data →</span>
+              <span style="display: inline-flex; align-items: center; justify-content: center; min-height: 40px; padding: 9px 15px; border-radius: var(--radius-md); font-weight: 700; font-size: 0.86rem; background: var(--ink); border: 1px solid var(--ink); color: #fff;">Use template</span>
+            </div>
+            <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center;">
+              <span style="display: inline-flex; align-items: center; justify-content: center; min-height: 40px; padding: 9px 15px; border-radius: var(--radius-md); font-weight: 700; font-size: 0.86rem; background: var(--paper); border: 1px solid var(--line-strong); color: var(--ink);">Secondary</span>
+              <span style="display: inline-flex; align-items: center; justify-content: center; min-height: 40px; padding: 9px 15px; border-radius: var(--radius-md); font-weight: 700; font-size: 0.86rem; background: transparent; border: 1px solid transparent; color: var(--ink-2);">Ghost</span>
+              <span style="display: inline-flex; align-items: center; justify-content: center; min-height: 36px; padding: 7px 11px; border-radius: var(--radius-md); font-weight: 700; font-size: 0.82rem; background: var(--paper); border: 1px solid var(--line); color: var(--danger-text);">Remove</span>
+            </div>
+            <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center;">
+              <span style="display: inline-flex; align-items: center; justify-content: center; min-height: 40px; padding: 9px 15px; border-radius: var(--radius-md); font-weight: 700; font-size: 0.86rem; background: var(--paper); border: 1px solid var(--line-strong); color: var(--ink); opacity: 0.45;">Disabled</span>
+              <span style="font-size: 0.78rem; color: var(--ink-3); line-height: 1.4;">≥ 40px height · ≥ 44px touch target</span>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+<div style="display: grid; gap: 22px; grid-template-columns: 1fr 1fr; margin-top: 22px; padding: 0 64px;">
+        <article style="background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-sm);">
+          <div style="padding: 20px 22px 14px; border-bottom: 1px solid var(--line);">
+            <h3 style="margin: 0 0 4px; font-size: 1.12rem; font-weight: 740;">Status badges</h3>
+            <p style="margin: 0; font-size: 0.88rem; color: var(--ink-2); line-height: 1.5;">Every badge pairs a <strong style="color: var(--ink);">shape/glyph</strong> with a <strong style="color: var(--ink);">word</strong> — readable with color removed.</p>
+          </div>
+          <div style="padding: 22px; background: var(--soft); display: grid; gap: 16px;">
+            <div style="display: grid; gap: 7px;">
+              <p style="margin: 0; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink-3);">Quality pill · chart &amp; dataset</p>
+              <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                <span style="display: inline-flex; align-items: center; gap: 6px; padding: 5px 9px; border-radius: var(--radius-pill); font-size: 0.7rem; font-weight: 800; text-transform: uppercase; background: var(--ok-surface); border: 1px solid var(--ok-border); color: var(--ok-text);">● Pass</span>
+                <span style="display: inline-flex; align-items: center; gap: 6px; padding: 5px 9px; border-radius: var(--radius-pill); font-size: 0.7rem; font-weight: 800; text-transform: uppercase; background: var(--warn-surface); border: 1px solid var(--warn-border); color: var(--warn-text);">▲ Caution</span>
+                <span style="display: inline-flex; align-items: center; gap: 6px; padding: 5px 9px; border-radius: var(--radius-pill); font-size: 0.7rem; font-weight: 800; text-transform: uppercase; background: var(--danger-surface); border: 1px solid var(--danger-border); color: var(--danger-text);">✕ Blocking</span>
+              </div>
+            </div>
+            <div style="display: grid; gap: 7px;">
+              <p style="margin: 0; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink-3);">Data-readiness</p>
+              <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                <span style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 11px; border-radius: var(--radius-md); font-size: 0.78rem; font-weight: 760; background: var(--ok-surface); border: 1px solid var(--ok-border); color: var(--ok-text);"><span style="width: 8px; height: 8px; border-radius: 50%; background: var(--ok);"></span>Ready to review</span>
+                <span style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 11px; border-radius: var(--radius-md); font-size: 0.78rem; font-weight: 760; background: var(--warn-surface); border: 1px solid var(--warn-border); color: var(--warn-text);"><span style="width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-bottom: 9px solid var(--warn);"></span>Needs review</span>
+                <span style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 11px; border-radius: var(--radius-md); font-size: 0.78rem; font-weight: 760; background: var(--danger-surface); border: 1px solid var(--danger-border); color: var(--danger-text);"><span style="width: 8px; height: 8px; background: var(--danger);"></span>Not ready for operational use</span>
+              </div>
+            </div>
+            <div style="display: grid; gap: 7px;">
+              <p style="margin: 0; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink-3);">Review gate &amp; evidence</p>
+              <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                <span style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 11px; border-radius: var(--radius-pill); font-size: 0.76rem; font-weight: 760; background: var(--paper); border: 1px solid var(--warn-border); color: var(--warn-text);">⚑ Human review required</span>
+                <span style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 11px; border-radius: var(--radius-pill); font-size: 0.76rem; font-weight: 760; background: var(--paper); border: 1px solid var(--ok-border); color: var(--ok-text);">✓ Covered</span>
+                <span style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 11px; border-radius: var(--radius-pill); font-size: 0.76rem; font-weight: 760; background: var(--paper); border: 1px solid var(--info-border); color: var(--info-text);">Required</span>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <article style="background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-sm);">
+          <div style="padding: 20px 22px 14px; border-bottom: 1px solid var(--line);">
+            <h3 style="margin: 0 0 4px; font-size: 1.12rem; font-weight: 740;">Notices &amp; messaging</h3>
+            <p style="margin: 0; font-size: 0.88rem; color: var(--ink-2); line-height: 1.5;">Full-width banners. <code style="font-family: var(--font-mono); font-size: 0.84em;">role="alert"</code> for error, <code style="font-family: var(--font-mono); font-size: 0.84em;">role="status"</code> otherwise.</p>
+          </div>
+          <div style="padding: 22px; background: var(--soft); display: grid; gap: 10px;">
+            <div style="display: flex; gap: 11px; padding: 12px 14px; border-radius: var(--radius-md); background: var(--info-surface); border: 1px solid var(--info-border);"><span aria-hidden="true" style="flex: 0 0 auto; width: 20px; height: 20px; border-radius: 50%; background: var(--info); color: #fff; font-weight: 800; font-size: 0.74rem; display: inline-flex; align-items: center; justify-content: center;">i</span><p style="margin: 0; font-size: 0.86rem; color: var(--info-text); line-height: 1.45;"><strong>Info / AI.</strong> AI recommendations are on. Outputs are suggestions for review.</p></div>
+            <div style="display: flex; gap: 11px; padding: 12px 14px; border-radius: var(--radius-md); background: var(--warn-surface); border: 1px solid var(--warn-border);"><span aria-hidden="true" style="flex: 0 0 auto; width: 0; height: 0; margin-top: 2px; border-left: 9px solid transparent; border-right: 9px solid transparent; border-bottom: 16px solid var(--warn);"></span><p style="margin: 0; font-size: 0.86rem; color: var(--warn-text); line-height: 1.45;"><strong>Warning / review.</strong> Three columns have &gt;30% missing values. Review before charting.</p></div>
+            <div style="display: flex; gap: 11px; padding: 12px 14px; border-radius: var(--radius-md); background: var(--danger-surface); border: 1px solid var(--danger-border);"><span aria-hidden="true" style="flex: 0 0 auto; width: 20px; height: 20px; border-radius: 50%; background: var(--danger); color: #fff; font-weight: 800; font-size: 0.74rem; display: inline-flex; align-items: center; justify-content: center;">✕</span><p style="margin: 0; font-size: 0.86rem; color: var(--danger-text); line-height: 1.45;"><strong>Error / blocking.</strong> No join key shared across files. Harmonization is blocked.</p></div>
+            <div style="display: flex; gap: 11px; padding: 12px 14px; border-radius: var(--radius-md); background: var(--ok-surface); border: 1px solid var(--ok-border);"><span aria-hidden="true" style="flex: 0 0 auto; width: 20px; height: 20px; border-radius: 50%; background: var(--ok); color: #fff; font-weight: 800; font-size: 0.74rem; display: inline-flex; align-items: center; justify-content: center;">✓</span><p style="margin: 0; font-size: 0.86rem; color: var(--ok-text); line-height: 1.45;"><strong>Success / ready.</strong> All required evidence is covered. Dashboard is ready to review.</p></div>
+          </div>
+        </article>
+      </div>
+
+<section id="panels" style="padding: 64px; border-bottom: 1px solid var(--line); scroll-margin-top: 0;">
+      <p style="margin: 0 0 10px; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--brand);">06 · System</p>
+      <h2 style="margin: 0 0 12px; font-size: 2.1rem; font-weight: 760; letter-spacing: -0.015em; line-height: 1.08;">Panels &amp; trust signals</h2>
+      <p style="margin: 0 0 32px; max-width: 72ch; font-size: 1.04rem; line-height: 1.6; color: var(--ink-2);">These panels are where trust is won or lost. They make evidence coverage, data quality, caveats, and review status <strong style="color: var(--ink);">impossible to miss</strong>. The shared pattern: a colored left border encodes status, the status word is always written, and the most consequential caveat is never below the fold.</p>
+
+      <!-- Evidence coverage panel -->
+      <div style="display: grid; gap: 10px; margin-bottom: 28px;">
+        <div style="display: flex; gap: 10px; align-items: baseline;"><h3 style="margin: 0; font-size: 1.16rem; font-weight: 740;">Evidence coverage panel</h3><code style="font-family: var(--font-mono); font-size: 0.78rem; color: var(--ink-3);">.evidence-coverage-panel</code></div>
+        <p style="margin: 0 0 6px; font-size: 0.9rem; color: var(--ink-2); max-width: 70ch; line-height: 1.5;">Answers one question before any chart appears: <em>does the uploaded data actually contain the evidence this decision needs?</em> Renders per required signal with candidate columns, missingness, confidence, a caveat, and a concrete next action.</p>
+        <article style="background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius-md); box-shadow: var(--shadow-md); padding: 22px; display: grid; gap: 16px;">
+          <div style="display: flex; gap: 16px; justify-content: space-between; align-items: flex-start; flex-wrap: wrap;">
+            <div>
+              <p style="margin: 0 0 6px; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--brand);">Evidence coverage</p>
+              <h4 style="margin: 0 0 5px; font-size: 1.24rem; font-weight: 720;">Coverage for response prioritization</h4>
+              <p style="margin: 0; font-size: 0.9rem; color: var(--ink-2); max-width: 56ch; line-height: 1.5;">Checks whether your uploaded files contain the evidence needed for the selected decision.</p>
+            </div>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+              <span style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: var(--radius-pill); font-size: 0.76rem; font-weight: 780; background: var(--ok-surface); border: 1px solid var(--ok-border); color: var(--ok-text);">2 covered</span>
+              <span style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: var(--radius-pill); font-size: 0.76rem; font-weight: 780; background: var(--warn-surface); border: 1px solid var(--warn-border); color: var(--warn-text);">1 need review</span>
+              <span style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: var(--radius-pill); font-size: 0.76rem; font-weight: 780; background: var(--danger-surface); border: 1px solid var(--danger-border); color: var(--danger-text);">1 missing</span>
+            </div>
+          </div>
+          <div style="display: grid; gap: 12px;">
+            <sc-for list="{{ evidence }}" as="ev" hint-placeholder-count="3">
+              <article style="background: var(--panel); border: 1px solid var(--line); border-left: 4px solid {{ ev.accent }}; border-radius: var(--radius-md); padding: 14px; display: grid; gap: 10px;">
+                <div style="display: flex; gap: 10px; justify-content: space-between; align-items: center;">
+                  <h5 style="margin: 0; font-size: 1rem; font-weight: 720;">{{ ev.need }}</h5>
+                  <span style="display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: var(--radius-pill); font-size: 0.74rem; font-weight: 780; background: {{ ev.surface }}; border: 1px solid {{ ev.border }}; color: {{ ev.text }};">{{ ev.glyph }} {{ ev.statusLabel }}</span>
+                </div>
+                <sc-if value="{{ ev.hasCandidate }}" hint-placeholder-val="{{ true }}">
+                  <div style="background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius-md); padding: 10px; display: grid; gap: 3px;">
+                    <span style="font-size: 0.86rem;"><strong style="font-weight: 720;">{{ ev.dataset }}</strong> &nbsp;<code style="font-family: var(--font-mono); font-size: 0.8rem; background: #f1f2ed; border: 1px solid var(--line); border-radius: 4px; padding: 1px 5px;">{{ ev.column }}</code></span>
+                    <span style="font-size: 0.82rem; color: var(--ink-2);">{{ ev.coverageStat }}</span>
+                  </div>
+                </sc-if>
+                <p style="margin: 0; font-size: 0.84rem; color: var(--ink-2); line-height: 1.45;">{{ ev.caveat }}</p>
+                <p style="margin: 0; font-size: 0.84rem; display: grid; gap: 2px;"><strong style="font-weight: 740; color: var(--ink);">Next action</strong><span style="color: var(--ink-2);">{{ ev.nextAction }}</span></p>
+              </article>
+            </sc-for>
+          </div>
+        </article>
+      </div>
+
+      <!-- Quality panel -->
+      <div style="display: grid; gap: 10px; margin-bottom: 28px;">
+        <div style="display: flex; gap: 10px; align-items: baseline;"><h3 style="margin: 0; font-size: 1.16rem; font-weight: 740;">Quality panel</h3><code style="font-family: var(--font-mono); font-size: 0.78rem; color: var(--ink-3);">.quality / .quality.high / .quality.medium</code></div>
+        <p style="margin: 0 0 6px; font-size: 0.9rem; color: var(--ink-2); max-width: 70ch; line-height: 1.5;">Surfaces validation findings ordered by severity. High-risk findings propagate into chart quality badges downstream (see §08). Each finding names the affected column in mono.</p>
+        <div style="display: grid; gap: 10px;">
+          <sc-for list="{{ quality }}" as="q" hint-placeholder-count="3">
+            <article style="background: var(--panel); border: 1px solid var(--line); border-left: 4px solid {{ q.accent }}; border-radius: var(--radius-md); padding: 14px 16px; display: grid; gap: 5px;">
+              <div style="display: flex; gap: 10px; align-items: center;">
+                <span style="display: inline-flex; align-items: center; gap: 5px; padding: 3px 8px; border-radius: var(--radius-pill); font-size: 0.68rem; font-weight: 800; text-transform: uppercase; background: {{ q.surface }}; border: 1px solid {{ q.border }}; color: {{ q.text }};">{{ q.glyph }} {{ q.sev }}</span>
+                <strong style="font-size: 0.96rem; font-weight: 720;">{{ q.title }}</strong>
+              </div>
+              <p style="margin: 0; font-size: 0.88rem; color: var(--ink-2); line-height: 1.5;">{{ q.body }} <code style="font-family: var(--font-mono); font-size: 0.8rem; background: #f1f2ed; border: 1px solid var(--line); border-radius: 4px; padding: 1px 5px;">{{ q.column }}</code></p>
+            </article>
+          </sc-for>
+        </div>
+      </div>
+
+<!-- Recommendation card -->
+      <div style="display: grid; gap: 10px; margin-bottom: 28px;">
+        <div style="display: flex; gap: 10px; align-items: baseline;"><h3 style="margin: 0; font-size: 1.16rem; font-weight: 740;">Recommendation card</h3><code style="font-family: var(--font-mono); font-size: 0.78rem; color: var(--ink-3);">.recommendation-card</code></div>
+        <p style="margin: 0 0 6px; font-size: 0.9rem; color: var(--ink-2); max-width: 70ch; line-height: 1.5;">The one place a directive lives. It states a recommendation <strong style="color: var(--ink);">with</strong> its evidence basis, source, and caveat in the same card — and closes with an explicit review gate. It never implies the action is approved.</p>
+        <article style="background: var(--brand); border: 1px solid var(--brand); border-radius: var(--radius-md); box-shadow: var(--shadow-md); padding: 24px; color: #fff; display: grid; gap: 14px;">
+          <div style="display: flex; gap: 12px; justify-content: space-between; align-items: flex-start; flex-wrap: wrap;">
+            <div>
+              <p style="margin: 0 0 6px; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: rgba(255,255,255,0.78);">Recommendation · deterministic</p>
+              <h4 style="margin: 0; font-size: 1.4rem; font-weight: 720; line-height: 1.2; max-width: 30ch;">Prioritize the 4 districts with high severity and low capacity</h4>
+            </div>
+            <span style="flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; padding: 6px 11px; border-radius: var(--radius-pill); background: rgba(255,255,255,0.14); border: 1px solid rgba(255,255,255,0.28); font-size: 0.74rem; font-weight: 760; color: #fff;">⚑ Review required</span>
+          </div>
+          <p style="margin: 0; color: rgba(255,255,255,0.92); line-height: 1.55; font-size: 0.96rem; max-width: 64ch;">Ranking combines the covered severity signal with the population denominator you confirmed. Capacity is missing, so this ranking weighs need only.</p>
+          <div style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.18); border-radius: var(--radius-md); padding: 13px 15px; display: grid; gap: 6px;">
+            <p style="margin: 0; font-size: 0.74rem; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; color: rgba(255,255,255,0.78);">Why this</p>
+            <p style="margin: 0; font-size: 0.88rem; color: rgba(255,255,255,0.92); line-height: 1.5;">Based on <code style="font-family: var(--font-mono); font-size: 0.84em; background: rgba(0,0,0,0.18); border-radius: 4px; padding: 1px 5px;">severity_score</code> (needs_assessment.csv) normalized by <code style="font-family: var(--font-mono); font-size: 0.84em; background: rgba(0,0,0,0.18); border-radius: 4px; padding: 1px 5px;">pop_total</code>. <strong>Caveat:</strong> capacity unknown; do not read as a resourcing plan.</p>
+          </div>
+          <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+            <span style="display: inline-flex; align-items: center; min-height: 40px; padding: 9px 15px; border-radius: var(--radius-md); background: #fff; color: var(--ink); font-weight: 740; font-size: 0.86rem;">Add to dashboard</span>
+            <span style="display: inline-flex; align-items: center; min-height: 40px; padding: 9px 15px; border-radius: var(--radius-md); background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.22); color: #fff; font-weight: 700; font-size: 0.86rem;">Adjust signals</span>
+            <span style="font-size: 0.78rem; color: rgba(255,255,255,0.78);">Not operational approval — a human gate follows.</span>
+          </div>
+        </article>
+      </div>
+
+      <!-- review checklist + feedback -->
+      <div style="display: grid; gap: 22px; grid-template-columns: 1fr 1fr; margin-bottom: 28px;">
+        <article style="background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); padding: 22px; display: grid; gap: 14px; align-content: start;">
+          <div>
+            <div style="display: flex; gap: 8px; align-items: baseline;"><h3 style="margin: 0; font-size: 1.08rem; font-weight: 740;">Review checklist</h3><code style="font-family: var(--font-mono); font-size: 0.74rem; color: var(--ink-3);">.review-checklist</code></div>
+            <p style="margin: 5px 0 0; font-size: 0.86rem; color: var(--ink-2); line-height: 1.45;">The human review gate before export. Each item is a deliberate confirmation, not a default-checked box.</p>
+          </div>
+          <div style="display: grid; gap: 8px;">
+            <sc-for list="{{ checklist }}" as="c" hint-placeholder-count="4">
+              <label style="display: flex; gap: 11px; align-items: flex-start; padding: 11px 12px; border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--panel); cursor: pointer;">
+                <span style="flex: 0 0 auto; width: 20px; height: 20px; border-radius: 5px; border: 1.5px solid {{ c.boxBorder }}; background: {{ c.boxBg }}; color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 0.74rem; font-weight: 800;">{{ c.check }}</span>
+                <span style="display: grid; gap: 1px;"><strong style="font-size: 0.9rem; font-weight: 700; color: var(--ink);">{{ c.title }}</strong><span style="font-size: 0.8rem; color: var(--ink-2); line-height: 1.4;">{{ c.detail }}</span></span>
+              </label>
+            </sc-for>
+          </div>
+        </article>
+
+        <article style="background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); padding: 22px; display: grid; gap: 14px; align-content: start;">
+          <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+            <h3 style="margin: 0; font-size: 1.08rem; font-weight: 740;">Feedback capture</h3>
+            <span style="display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: var(--radius-pill); background: var(--warn-surface); border: 1px solid var(--warn-border); font-size: 0.72rem; font-weight: 760; color: var(--warn-text);">Future</span>
+          </div>
+          <p style="margin: 0; font-size: 0.86rem; color: var(--ink-2); line-height: 1.45;">A lightweight review loop on recommendations and charts — captured per output, never blocking the workflow. Powers future review history.</p>
+          <div style="border: 1px solid var(--line); border-radius: var(--radius-md); padding: 16px; background: var(--panel); display: grid; gap: 12px;">
+            <p style="margin: 0; font-size: 0.9rem; font-weight: 700;">Was this recommendation useful for your decision?</p>
+            <div style="display: flex; gap: 8px;">
+              <span style="display: inline-flex; align-items: center; gap: 7px; padding: 8px 14px; border-radius: var(--radius-md); border: 1px solid var(--ok-border); background: var(--ok-surface); color: var(--ok-text); font-weight: 700; font-size: 0.85rem;">✓ Useful</span>
+              <span style="display: inline-flex; align-items: center; gap: 7px; padding: 8px 14px; border-radius: var(--radius-md); border: 1px solid var(--line-strong); background: var(--paper); color: var(--ink-2); font-weight: 700; font-size: 0.85rem;">Needs work</span>
+            </div>
+            <div style="border: 1px solid var(--line-strong); border-radius: var(--radius-md); background: var(--paper); padding: 10px 12px; color: var(--ink-3); font-size: 0.84rem;">What was missing or wrong? (optional)</div>
+            <span style="font-size: 0.76rem; color: var(--ink-3);">Stored against the review session, not the uploaded data.</span>
+          </div>
+        </article>
+      </div>
+
+      <!-- empty state -->
+      <div style="display: grid; gap: 10px;">
+        <div style="display: flex; gap: 10px; align-items: baseline;"><h3 style="margin: 0; font-size: 1.16rem; font-weight: 740;">Empty state</h3><code style="font-family: var(--font-mono); font-size: 0.78rem; color: var(--ink-3);">.empty-state</code></div>
+        <p style="margin: 0 0 6px; font-size: 0.9rem; color: var(--ink-2); max-width: 70ch; line-height: 1.5;">Left-aligned, instructive, and never a dead end — it states the input rules and offers sample data so a reviewer can reach a safe first result immediately.</p>
+        <div style="border: 1px dashed var(--line-strong); border-radius: var(--radius-md); background: var(--panel); padding: 28px; display: grid; gap: 12px; max-width: 620px;">
+          <h4 style="margin: 0; font-size: 1.16rem; font-weight: 720;">Add data to begin</h4>
+          <p style="margin: 0; font-size: 0.92rem; color: var(--ink-2);">CSV or XLSX files, up to 20MB each. Do not upload sensitive or personal data.</p>
+          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <span style="display: inline-flex; align-items: center; min-height: 40px; padding: 9px 15px; border-radius: var(--radius-md); background: var(--ink); color: #fff; font-weight: 740; font-size: 0.86rem;">Upload files</span>
+            <span style="display: inline-flex; align-items: center; min-height: 40px; padding: 9px 15px; border-radius: var(--radius-md); background: var(--paper); border: 1px solid var(--line-strong); color: var(--ink); font-weight: 700; font-size: 0.86rem;">Use sample data</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+<section id="ai-states" style="padding: 64px; border-bottom: 1px solid var(--line); scroll-margin-top: 0;">
+      <p style="margin: 0 0 10px; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--brand);">07 · System</p>
+      <h2 style="margin: 0 0 12px; font-size: 2.1rem; font-weight: 760; letter-spacing: -0.015em; line-height: 1.08;">AI &amp; governance state model</h2>
+      <p style="margin: 0 0 24px; max-width: 72ch; font-size: 1.04rem; line-height: 1.6; color: var(--ink-2);">AI is an optional, server-side assist on top of a deterministic core. Every failure path — disabled, rate-limited, timed out, quota-exhausted — <strong style="color: var(--ink);">degrades to deterministic output and keeps the workflow moving</strong>. The interface states which mode produced each result, and never lets AI read as authoritative.</p>
+
+      <div style="display: flex; gap: 14px; align-items: flex-start; padding: 16px 18px; border-radius: var(--radius-md); background: var(--brand-surface); border: 1px solid var(--brand-border); margin-bottom: 28px;">
+        <span aria-hidden="true" style="flex: 0 0 auto; width: 22px; height: 22px; border-radius: 50%; background: var(--brand); color: #fff; font-weight: 800; font-size: 0.78rem; display: inline-flex; align-items: center; justify-content: center;">✓</span>
+        <p style="margin: 0; font-size: 0.92rem; line-height: 1.55; color: var(--ok-text);"><strong>Governance posture.</strong> Deterministic is the default and the floor. Fallback is normal, expected behavior — it is shown calmly in <span style="color: var(--warn-text); font-weight: 700;">amber (review)</span>, not as a <span style="color: var(--danger-text); font-weight: 700;">red error</span>. Red is reserved for blocked actions and unsafe output.</p>
+      </div>
+
+      <!-- mode triad -->
+      <div style="display: grid; gap: 14px; grid-template-columns: repeat(3, 1fr); margin-bottom: 28px;">
+        <article style="border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--paper); overflow: hidden;">
+          <div style="padding: 14px 16px; background: var(--neutral-surface); border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 8px;"><span style="width: 8px; height: 8px; border-radius: 50%; background: var(--ink-3);"></span><strong style="font-size: 0.92rem;">AI Off · default</strong></div>
+          <div style="padding: 16px; display: grid; gap: 8px;"><span style="justify-self: start; display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: var(--radius-pill); background: var(--neutral-surface); border: 1px solid var(--line); font-size: 0.74rem; font-weight: 760; color: var(--ink-2);"><span style="width: 6px; height: 6px; border-radius: 50%; background: var(--ink-3);"></span>Deterministic</span><p style="margin: 0; font-size: 0.86rem; color: var(--ink-2); line-height: 1.5;">All recommendations are rule-based. The public product runs here. Quiet neutral styling — this is the trusted baseline.</p></div>
+        </article>
+        <article style="border: 1px solid var(--info-border); border-radius: var(--radius-md); background: var(--paper); overflow: hidden;">
+          <div style="padding: 14px 16px; background: var(--info-surface); border-bottom: 1px solid var(--info-border); display: flex; align-items: center; gap: 8px;"><span style="width: 8px; height: 8px; border-radius: 50%; background: var(--info);"></span><strong style="font-size: 0.92rem; color: var(--info-text);">AI On</strong></div>
+          <div style="padding: 16px; display: grid; gap: 8px;"><span style="justify-self: start; display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: var(--radius-pill); background: var(--info-surface); border: 1px solid var(--info-border); font-size: 0.74rem; font-weight: 760; color: var(--info-text);"><span style="width: 6px; height: 6px; border-radius: 50%; background: var(--info);"></span>AI assist on</span><p style="margin: 0; font-size: 0.86rem; color: var(--ink-2); line-height: 1.5;">AI suggestions are clearly labelled info-blue. Login-gated. Every AI output stays reviewable and reversible to deterministic.</p></div>
+        </article>
+        <article style="border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--paper); overflow: hidden;">
+          <div style="padding: 14px 16px; background: var(--neutral-surface); border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 8px;"><span style="width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-bottom: 9px solid var(--warn);"></span><strong style="font-size: 0.92rem;">AI Unavailable</strong></div>
+          <div style="padding: 16px; display: grid; gap: 8px;"><span style="justify-self: start; display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: var(--radius-pill); background: var(--warn-surface); border: 1px solid var(--warn-border); font-size: 0.74rem; font-weight: 760; color: var(--warn-text);">▲ Deterministic fallback</span><p style="margin: 0; font-size: 0.86rem; color: var(--ink-2); line-height: 1.5;">Toggle is replaced by a reason chip. The workflow never blocks — it falls back and says so.</p></div>
+        </article>
+      </div>
+
+      <!-- key banners -->
+      <div style="display: grid; gap: 12px; margin-bottom: 28px;">
+        <h3 style="margin: 0; font-size: 1.16rem; font-weight: 740;">Fallback &amp; limit banners</h3>
+        <div style="display: flex; gap: 12px; padding: 14px 16px; border-radius: var(--radius-md); background: var(--warn-surface); border: 1px solid var(--warn-border); align-items: flex-start;">
+          <span aria-hidden="true" style="flex: 0 0 auto; width: 0; height: 0; margin-top: 2px; border-left: 9px solid transparent; border-right: 9px solid transparent; border-bottom: 16px solid var(--warn);"></span>
+          <div><p style="margin: 0 0 2px; font-size: 0.92rem; font-weight: 740; color: var(--warn-text);">Showing deterministic recommendations</p><p style="margin: 0; font-size: 0.86rem; color: var(--warn-text); line-height: 1.45; opacity: 0.92;">The AI provider didn't respond in time. These rule-based results are complete and safe to review — retry AI anytime.</p></div>
+        </div>
+        <div style="display: flex; gap: 12px; padding: 14px 16px; border-radius: var(--radius-md); background: var(--warn-surface); border: 1px solid var(--warn-border); align-items: flex-start;">
+          <span aria-hidden="true" style="flex: 0 0 auto; width: 0; height: 0; margin-top: 2px; border-left: 9px solid transparent; border-right: 9px solid transparent; border-bottom: 16px solid var(--warn);"></span>
+          <div style="flex: 1 1 auto;"><div style="display: flex; gap: 10px; justify-content: space-between; align-items: center; flex-wrap: wrap;"><p style="margin: 0; font-size: 0.92rem; font-weight: 740; color: var(--warn-text);">Daily AI quota reached</p><span style="display: inline-flex; align-items: center; gap: 7px; padding: 4px 10px; border-radius: var(--radius-pill); background: var(--paper); border: 1px solid var(--warn-border); font-size: 0.74rem; font-weight: 760; color: var(--warn-text);">20 / 20 used</span></div><p style="margin: 4px 0 0; font-size: 0.86rem; color: var(--warn-text); line-height: 1.45; opacity: 0.92;">Switched to deterministic mode for the rest of today. Your workflow continues uninterrupted; the quota resets at 00:00 UTC.</p></div>
+        </div>
+        <div style="display: flex; gap: 12px; padding: 14px 16px; border-radius: var(--radius-md); background: var(--info-surface); border: 1px solid var(--info-border); align-items: flex-start;">
+          <span aria-hidden="true" style="flex: 0 0 auto; width: 20px; height: 20px; margin-top: 1px; border-radius: 50%; background: var(--info); color: #fff; font-weight: 800; font-size: 0.74rem; display: inline-flex; align-items: center; justify-content: center;">i</span>
+          <div><p style="margin: 0 0 2px; font-size: 0.92rem; font-weight: 740; color: var(--info-text);">AI mode not configured</p><p style="margin: 0; font-size: 0.86rem; color: var(--info-text); line-height: 1.45; opacity: 0.92;">No provider key is set for this deployment, so AI assist is hidden. Deterministic mode is fully functional — nothing is broken.</p></div>
+        </div>
+      </div>
+
+      <!-- full state matrix -->
+      <div style="display: grid; gap: 10px;">
+        <h3 style="margin: 0; font-size: 1.16rem; font-weight: 740;">Complete state matrix</h3>
+        <p style="margin: 0 0 4px; font-size: 0.9rem; color: var(--ink-2);">Thirteen states, their trigger, the color role + non-color cue, the pattern, and the guaranteed fallback.</p>
+        <div style="border: 1px solid var(--line); border-radius: var(--radius-md); overflow: hidden; background: var(--paper);">
+          <div style="display: grid; grid-template-columns: 1.1fr 1.3fr 1.5fr 1.4fr; background: var(--panel); border-bottom: 1px solid var(--line); font-size: 0.72rem; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-3);">
+            <span style="padding: 11px 14px;">State</span><span style="padding: 11px 14px;">Trigger</span><span style="padding: 11px 14px;">User-facing pattern</span><span style="padding: 11px 14px;">Fallback</span>
+          </div>
+          <sc-for list="{{ aiStates }}" as="row" hint-placeholder-count="13">
+            <div style="display: grid; grid-template-columns: 1.1fr 1.3fr 1.5fr 1.4fr; border-bottom: 1px solid var(--line); font-size: 0.84rem; align-items: start;">
+              <span style="padding: 12px 14px; display: flex; gap: 8px; align-items: center; font-weight: 700; color: var(--ink);"><span style="flex: 0 0 auto; width: 9px; height: 9px; border-radius: {{ row.shape }}; background: {{ row.dot }};"></span>{{ row.name }}</span>
+              <span style="padding: 12px 14px; color: var(--ink-2); line-height: 1.4;">{{ row.trigger }}</span>
+              <span style="padding: 12px 14px; color: var(--ink-2); line-height: 1.4;">{{ row.sees }}</span>
+              <span style="padding: 12px 14px; color: var(--ink-2); line-height: 1.4;">{{ row.fallback }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </section>
+
+<section id="dataviz" style="padding: 64px; border-bottom: 1px solid var(--line); scroll-margin-top: 0;">
+      <p style="margin: 0 0 10px; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--brand);">08 · System</p>
+      <h2 style="margin: 0 0 12px; font-size: 2.1rem; font-weight: 760; letter-spacing: -0.015em; line-height: 1.08;">Data-visualization standards</h2>
+      <p style="margin: 0 0 28px; max-width: 72ch; font-size: 1.04rem; line-height: 1.6; color: var(--ink-2);">Deterministic guardrails own chart type, sorting, safety, badges, and summaries — AI may suggest, but <code style="font-family: var(--font-mono); font-size: 0.86em;">vizPolicy.ts</code> decides. The contract: <strong style="color: var(--ink);">every chart carries a title, a rationale, a source/caveat note, a quality badge, and an accessible summary.</strong> No exceptions.</p>
+
+      <!-- chart card anatomy -->
+      <div style="display: grid; gap: 20px; grid-template-columns: 1.25fr 1fr; align-items: start; margin-bottom: 28px;">
+        <div style="display: grid; gap: 10px;">
+          <div style="display: flex; gap: 10px; align-items: baseline;"><h3 style="margin: 0; font-size: 1.16rem; font-weight: 740;">Chart card anatomy</h3><code style="font-family: var(--font-mono); font-size: 0.78rem; color: var(--ink-3);">.chart-card</code></div>
+          <article style="background: var(--paper); border: 1px solid var(--warn-border); border-radius: var(--radius-md); box-shadow: var(--shadow-md); padding: 20px; display: grid; gap: 12px;">
+            <div style="display: flex; gap: 12px; justify-content: space-between; align-items: flex-start;">
+              <div style="min-width: 0;">
+                <span style="display: inline-block; font-size: 0.7rem; font-weight: 800; color: var(--info-text); background: var(--info-surface); border: 1px solid var(--info-border); border-radius: 4px; padding: 1px 6px; margin-bottom: 6px;">1 · title + 2 · subtitle</span>
+                <h4 style="margin: 0; font-size: 1.12rem; font-weight: 720; line-height: 1.2;">Severity per 1,000 people by district</h4>
+                <p style="margin: 3px 0 0; font-size: 0.8rem; font-weight: 640; color: var(--ink-2);">Top 6 of 24 districts · normalized by confirmed population</p>
+              </div>
+              <span style="flex: 0 0 auto; display: inline-flex; align-items: center; gap: 5px; padding: 5px 9px; border-radius: var(--radius-pill); font-size: 0.68rem; font-weight: 800; text-transform: uppercase; background: var(--warn-surface); border: 1px solid var(--warn-border); color: var(--warn-text);">▲ Caution · 3 · quality badge</span>
+            </div>
+            <p style="margin: 0; font-size: 0.84rem; color: var(--ink-2); line-height: 1.45;"><span style="font-size: 0.7rem; font-weight: 800; color: var(--info-text); background: var(--info-surface); border: 1px solid var(--info-border); border-radius: 4px; padding: 1px 6px;">4 · rationale</span> &nbsp;Ranks need where population is known, so high counts in big areas don't dominate.</p>
+            <div style="display: grid; gap: 8px;">
+              <sc-for list="{{ bars }}" as="b" hint-placeholder-count="5">
+                <div style="display: grid; grid-template-columns: 116px 1fr; gap: 10px; align-items: center;">
+                  <span style="font-size: 0.82rem; color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ b.label }}</span>
+                  <span style="background: #eeeeea; border: 1px solid #e2e2dc; border-radius: 7px; min-height: 28px; overflow: hidden;"><span style="display: flex; align-items: center; width: {{ b.w }}; min-height: 28px; background: #005ab5; border-radius: 6px; color: #fff; font-size: 0.78rem; font-weight: 600; padding: 0 9px;">{{ b.val }}</span></span>
+                </div>
+              </sc-for>
+            </div>
+            <div style="background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-md); padding: 10px 11px;">
+              <p style="margin: 0; font-size: 0.78rem; color: var(--ink-2); line-height: 1.45;"><span style="font-size: 0.7rem; font-weight: 800; color: var(--info-text); background: var(--info-surface); border: 1px solid var(--info-border); border-radius: 4px; padding: 1px 6px;">5 · source + caveat</span> &nbsp;Source: needs_assessment.csv (round 2), population.xlsx. Caveat: <code style="font-family: var(--font-mono); font-size: 0.82em; background: #f1f2ed; border: 1px solid var(--line); border-radius: 4px; padding: 0 4px;">severity_score</code> has 12 out-of-range values; 18% of population rows blank.</p>
+            </div>
+            <p style="margin: 0; font-size: 0.74rem; color: var(--ink-3); line-height: 1.4; border-top: 1px solid var(--line); padding-top: 9px;"><span style="font-size: 0.68rem; font-weight: 800; color: var(--info-text); background: var(--info-surface); border: 1px solid var(--info-border); border-radius: 4px; padding: 1px 6px;">6 · screen-reader summary</span> &nbsp;<span class="sr-summary" style="font-style: italic;">“Bar chart. Severity per 1,000 people across 6 districts, ranging 51 to 86. Riverside highest at 86; data has a caution-level quality flag.”</span></p>
+          </article>
+        </div>
+
+        <div style="display: grid; gap: 14px; align-content: start;">
+          <article style="background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius-md); padding: 18px;">
+            <h4 style="margin: 0 0 12px; font-size: 0.96rem; font-weight: 740;">Required parts</h4>
+            <ol style="margin: 0; padding-left: 20px; display: grid; gap: 7px; font-size: 0.86rem; color: var(--ink-2); line-height: 1.45;">
+              <li><strong style="color: var(--ink);">Title</strong> — what is measured, with unit/denominator.</li>
+              <li><strong style="color: var(--ink);">Subtitle</strong> — scope, count shown vs. total, normalization.</li>
+              <li><strong style="color: var(--ink);">Quality badge</strong> — Pass / Caution / Blocking, inherited from §06.</li>
+              <li><strong style="color: var(--ink);">Rationale</strong> — why this chart answers the decision.</li>
+              <li><strong style="color: var(--ink);">Source + caveat</strong> — files, transforms, known limits.</li>
+              <li><strong style="color: var(--ink);">SR summary</strong> — trend + range + flag, in words.</li>
+            </ol>
+          </article>
+          <article style="background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius-md); padding: 18px;">
+            <h4 style="margin: 0 0 12px; font-size: 0.96rem; font-weight: 740;">Color palette · colorblind-safe</h4>
+            <div style="display: grid; gap: 7px;">
+              <sc-for list="{{ chartPalette }}" as="c" hint-placeholder-count="6">
+                <div style="display: grid; grid-template-columns: 22px 1fr auto; gap: 9px; align-items: center; font-size: 0.8rem;"><span style="width: 22px; height: 16px; border-radius: 4px; background: {{ c.hex }};"></span><span style="color: var(--ink-2);">{{ c.role }}</span><code style="font-family: var(--font-mono); font-size: 0.74rem; color: var(--ink-3);">{{ c.hex }}</code></div>
+              </sc-for>
+            </div>
+            <p style="margin: 10px 0 0; font-size: 0.78rem; color: var(--ink-3); line-height: 1.4;">Categories use the sequence in order; never re-map a category's color between charts.</p>
+          </article>
+        </div>
+      </div>
+
+      <!-- map safety -->
+      <div style="display: grid; gap: 10px; margin-bottom: 28px;">
+        <div style="display: flex; gap: 10px; align-items: baseline;"><h3 style="margin: 0; font-size: 1.16rem; font-weight: 740;">Map safety rules</h3><code style="font-family: var(--font-mono); font-size: 0.78rem; color: var(--ink-3);">vizPolicy.ts</code></div>
+        <div style="display: grid; gap: 14px; grid-template-columns: 1fr 1fr;">
+          <article style="background: var(--danger-surface); border: 1px solid var(--danger-border); border-radius: var(--radius-md); padding: 18px; display: grid; gap: 10px; align-content: start;">
+            <div style="display: flex; align-items: center; gap: 8px;"><span style="width: 20px; height: 20px; border-radius: 50%; background: var(--danger); color: #fff; font-weight: 800; font-size: 0.74rem; display: inline-flex; align-items: center; justify-content: center;">✕</span><strong style="font-size: 0.96rem; color: var(--danger-text);">Never do</strong></div>
+            <ul style="margin: 0; padding-left: 18px; display: grid; gap: 7px; font-size: 0.86rem; color: var(--ink); line-height: 1.45;">
+              <li>Encode <strong>raw counts</strong> as choropleth area fill.</li>
+              <li>Draw boundary choropleths without <strong>verified local boundary geometry</strong>.</li>
+              <li>Call geocoders, basemaps, or remote boundary services from the browser.</li>
+              <li>Default to a map when geometry or quality is uncertain.</li>
+            </ul>
+          </article>
+          <article style="background: var(--ok-surface); border: 1px solid var(--ok-border); border-radius: var(--radius-md); padding: 18px; display: grid; gap: 10px; align-content: start;">
+            <div style="display: flex; align-items: center; gap: 8px;"><span style="width: 20px; height: 20px; border-radius: 50%; background: var(--ok); color: #fff; font-weight: 800; font-size: 0.74rem; display: inline-flex; align-items: center; justify-content: center;">✓</span><strong style="font-size: 0.96rem; color: var(--ok-text);">Safe path</strong></div>
+            <ul style="margin: 0; padding-left: 18px; display: grid; gap: 7px; font-size: 0.86rem; color: var(--ink); line-height: 1.45;">
+              <li>Choropleth only with a <strong>normalized measure</strong> (rate, ratio, density, index) + verified geometry.</li>
+              <li>Coordinate maps are <strong>local uploaded-coordinate views only</strong>.</li>
+              <li>When a map is unsafe, <strong>fall back to a bar or table</strong> with a caveat — not silently.</li>
+              <li>Keep denominator fields visible whenever comparisons depend on scale.</li>
+            </ul>
+          </article>
+        </div>
+        <div style="display: flex; gap: 12px; padding: 13px 15px; border-radius: var(--radius-md); background: var(--warn-surface); border: 1px solid var(--warn-border); align-items: flex-start;">
+          <span aria-hidden="true" style="flex: 0 0 auto; width: 0; height: 0; margin-top: 2px; border-left: 8px solid transparent; border-right: 8px solid transparent; border-bottom: 14px solid var(--warn);"></span>
+          <p style="margin: 0; font-size: 0.85rem; color: var(--warn-text); line-height: 1.45;"><strong>Fallback in practice.</strong> “A choropleth of raw affected counts would mislead by area size. Showing a ranked bar chart of the rate instead.” — the caveat travels into the source note and the export package.</p>
+        </div>
+      </div>
+
+      <!-- metric / table / caveat -->
+      <div style="display: grid; gap: 14px; grid-template-columns: 0.8fr 1.3fr 0.9fr; align-items: start;">
+        <article style="background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-md); padding: 18px; display: grid; gap: 6px;">
+          <span style="font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-3);">Metric card</span>
+          <span style="font-size: 0.84rem; color: var(--ink-2);">Districts above threshold</span>
+          <strong style="font-size: 1.9rem; font-weight: 780; line-height: 1;">4 <span style="font-size: 0.86rem; font-weight: 600; color: var(--ink-3);">/ 24</span></strong>
+          <span style="font-size: 0.76rem; color: var(--ink-3);">severity ≥ 70 · per 1,000</span>
+        </article>
+        <article style="background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius-md); overflow: hidden;">
+          <div style="padding: 12px 14px; border-bottom: 1px solid var(--line);"><strong style="font-size: 0.92rem;">Table card</strong> <span style="font-size: 0.78rem; color: var(--ink-3);">· horizontal scroll preserved</span></div>
+          <div style="overflow-x: auto;">
+            <table style="border-collapse: collapse; min-width: 100%; font-size: 0.82rem;">
+              <thead><tr><th style="text-align: left; padding: 9px 12px; background: var(--panel); color: var(--ink-2); font-weight: 700; border-bottom: 1px solid var(--line); white-space: nowrap;">District</th><th style="text-align: left; padding: 9px 12px; background: var(--panel); color: var(--ink-2); font-weight: 700; border-bottom: 1px solid var(--line); white-space: nowrap;">Severity</th><th style="text-align: left; padding: 9px 12px; background: var(--panel); color: var(--ink-2); font-weight: 700; border-bottom: 1px solid var(--line); white-space: nowrap;">Missing</th></tr></thead>
+              <tbody>
+                <tr><td style="padding: 9px 12px; border-bottom: 1px solid var(--line); white-space: nowrap;">Riverside</td><td style="padding: 9px 12px; border-bottom: 1px solid var(--line); white-space: nowrap;">86</td><td style="padding: 9px 12px; border-bottom: 1px solid var(--line); white-space: nowrap; color: var(--warn-text);">4%</td></tr>
+                <tr><td style="padding: 9px 12px; border-bottom: 1px solid var(--line); white-space: nowrap;">Hill North</td><td style="padding: 9px 12px; border-bottom: 1px solid var(--line); white-space: nowrap;">72</td><td style="padding: 9px 12px; border-bottom: 1px solid var(--line); white-space: nowrap;">0%</td></tr>
+                <tr><td style="padding: 9px 12px; white-space: nowrap;">Old Port</td><td style="padding: 9px 12px; white-space: nowrap;">64</td><td style="padding: 9px 12px; white-space: nowrap; color: var(--danger-text);">31%</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </article>
+        <article style="background: var(--panel); border: 1px solid var(--line); border-left: 4px solid var(--warn); border-radius: var(--radius-md); padding: 16px; display: grid; gap: 6px;">
+          <span style="font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; color: var(--warn-text);">▲ Caveat block</span>
+          <p style="margin: 0; font-size: 0.84rem; color: var(--ink-2); line-height: 1.45;">For maps & charts where interpretation is at risk. Sits <em>above</em> the visual, never below the fold.</p>
+        </article>
+      </div>
+
+      <div style="margin-top: 16px; display: grid; gap: 14px; grid-template-columns: 1fr 1fr;">
+        <article style="background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius-md); padding: 18px;">
+          <h4 style="margin: 0 0 10px; font-size: 0.96rem; font-weight: 740;">Accessible summaries &amp; mobile</h4>
+          <ul style="margin: 0; padding-left: 18px; display: grid; gap: 7px; font-size: 0.85rem; color: var(--ink-2); line-height: 1.45;">
+            <li>Every chart exposes its title via <code style="font-family: var(--font-mono); font-size: 0.82em;">aria-labelledby</code> and a text summary via <code style="font-family: var(--font-mono); font-size: 0.82em;">aria-describedby</code>.</li>
+            <li>Missingness shown as labelled values, never color alone.</li>
+            <li>On mobile, multi-series collapse to ranked bars or a table; pies become legends-with-values.</li>
+            <li>Bars keep value labels in-bar so the chart reads without axes.</li>
+          </ul>
+        </article>
+        <article style="background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius-md); padding: 18px;">
+          <h4 style="margin: 0 0 10px; font-size: 0.96rem; font-weight: 740;">Export / PDF-safe rendering</h4>
+          <ul style="margin: 0; padding-left: 18px; display: grid; gap: 7px; font-size: 0.85rem; color: var(--ink-2); line-height: 1.45;">
+            <li>Exports preserve <strong style="color: var(--ink);">title, source, caveat, quality badge, and review notice</strong> on every chart.</li>
+            <li>Animations and tooltips are disabled in the export render target.</li>
+            <li>Fixed 1120px export width; shadows removed; colors flattened for print.</li>
+            <li>Status is legible in grayscale — shape + label carry meaning.</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+<section id="workflow" style="padding: 64px; border-bottom: 1px solid var(--line); scroll-margin-top: 0;">
+      <p style="margin: 0 0 10px; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--brand);">09 · Application</p>
+      <h2 style="margin: 0 0 12px; font-size: 2.1rem; font-weight: 760; letter-spacing: -0.015em; line-height: 1.08;">Workflow screen guidance</h2>
+      <p style="margin: 0 0 28px; max-width: 72ch; font-size: 1.04rem; line-height: 1.6; color: var(--ink-2);">The seven-step spine, each step specified for hierarchy. For every screen: what to <strong style="color: var(--ink);">lead with</strong>, the single main action, the risk/caveat that must stay visible, the empty / loading / error / success states, and what to deliberately <strong style="color: var(--ink);">de-emphasize</strong>.</p>
+
+      <div style="display: grid; gap: 14px;">
+        <sc-for list="{{ workflow }}" as="w" hint-placeholder-count="7">
+          <article style="background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); overflow: hidden;">
+            <div style="display: flex; gap: 14px; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--line); flex-wrap: wrap;">
+              <div style="display: flex; gap: 13px; align-items: center; min-width: 0;">
+                <span style="flex: 0 0 auto; width: 32px; height: 32px; border-radius: 9px; background: var(--ink); color: #fff; font-weight: 800; font-size: 0.86rem; display: inline-flex; align-items: center; justify-content: center; font-family: var(--font-mono);">{{ w.num }}</span>
+                <div style="min-width: 0;"><h3 style="margin: 0; font-size: 1.12rem; font-weight: 740;">{{ w.title }}</h3><p style="margin: 1px 0 0; font-size: 0.85rem; color: var(--ink-2); line-height: 1.4;">{{ w.goal }}</p></div>
+              </div>
+              <span style="flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: var(--radius-md); background: var(--brand); color: #fff; font-size: 0.8rem; font-weight: 740;">{{ w.action }} →</span>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0;">
+              <div style="padding: 14px 18px; border-right: 1px solid var(--line);">
+                <p style="margin: 0 0 6px; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ok-text);">Lead with</p>
+                <p style="margin: 0; font-size: 0.85rem; color: var(--ink-2); line-height: 1.5;">{{ w.lead }}</p>
+              </div>
+              <div style="padding: 14px 18px; border-right: 1px solid var(--line);">
+                <p style="margin: 0 0 6px; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: var(--warn-text);">Risk &amp; caveat</p>
+                <p style="margin: 0; font-size: 0.85rem; color: var(--ink-2); line-height: 1.5;">{{ w.caveat }}</p>
+              </div>
+              <div style="padding: 14px 18px;">
+                <p style="margin: 0 0 6px; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: var(--info-text);">States</p>
+                <p style="margin: 0; font-size: 0.85rem; color: var(--ink-2); line-height: 1.5;">{{ w.states }}</p>
+              </div>
+            </div>
+            <div style="padding: 11px 20px; border-top: 1px solid var(--line); background: var(--panel); display: flex; gap: 10px; flex-wrap: wrap; align-items: baseline;">
+              <span style="font-size: 0.72rem; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-3);">De-emphasize</span>
+              <span style="font-size: 0.83rem; color: var(--ink-2); line-height: 1.4;">{{ w.deemphasize }}</span>
+              <span style="margin-left: auto; font-size: 0.78rem; color: var(--ink-3);"><strong style="color: var(--ink-2); font-weight: 700;">Secondary:</strong> {{ w.secondary }}</span>
+            </div>
+          </article>
+        </sc-for>
+      </div>
+    </section>
+
+<section id="a11y" style="padding: 64px; border-bottom: 1px solid var(--line); scroll-margin-top: 0;">
+      <p style="margin: 0 0 10px; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--brand);">10 · Quality &amp; handoff</p>
+      <h2 style="margin: 0 0 12px; font-size: 2.1rem; font-weight: 760; letter-spacing: -0.015em; line-height: 1.08;">Accessibility &amp; responsive rules</h2>
+      <p style="margin: 0 0 28px; max-width: 72ch; font-size: 1.04rem; line-height: 1.6; color: var(--ink-2);">Target is <strong style="color: var(--ink);">WCAG AA</strong>, but the higher bar is operational: a responder on a phone, under pressure, must still reach a correct, caveated answer. These are commitments, not aspirations.</p>
+      <div style="display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));">
+        <sc-for list="{{ a11y }}" as="g" hint-placeholder-count="6">
+          <article style="background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius-md); padding: 20px; display: grid; gap: 12px; align-content: start;">
+            <div style="display: flex; align-items: center; gap: 9px;"><span aria-hidden="true" style="width: 26px; height: 26px; border-radius: 7px; background: var(--brand-surface); border: 1px solid var(--brand-border); color: var(--ok-text); display: inline-flex; align-items: center; justify-content: center; font-size: 0.82rem; font-weight: 800;">{{ g.glyph }}</span><h3 style="margin: 0; font-size: 1.02rem; font-weight: 740;">{{ g.area }}</h3></div>
+            <ul style="margin: 0; padding-left: 17px; display: grid; gap: 7px; font-size: 0.85rem; color: var(--ink-2); line-height: 1.45;">
+              <sc-for list="{{ g.items }}" as="it" hint-placeholder-count="3">
+                <li>{{ it }}</li>
+              </sc-for>
+            </ul>
+          </article>
+        </sc-for>
+      </div>
+    </section>
+
+    <section id="roadmap" style="padding: 64px; border-bottom: 1px solid var(--line); scroll-margin-top: 0;">
+      <p style="margin: 0 0 10px; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--brand);">11 · Quality &amp; handoff</p>
+      <h2 style="margin: 0 0 12px; font-size: 2.1rem; font-weight: 760; letter-spacing: -0.015em; line-height: 1.08;">Implementation roadmap</h2>
+      <p style="margin: 0 0 16px; max-width: 72ch; font-size: 1.04rem; line-height: 1.6; color: var(--ink-2);">Incremental and additive for the existing Next.js / React / TypeScript app with global CSS. <strong style="color: var(--ink);">No new component library, no Tailwind, no Radix.</strong> Phase 0 is a pure rename behind aliases — zero visual change — so every later phase is a safe diff.</p>
+      <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 24px;">
+        <span style="display: inline-flex; align-items: center; gap: 7px; padding: 7px 13px; border-radius: var(--radius-pill); background: var(--paper); border: 1px solid var(--line); font-size: 0.82rem; font-weight: 700; color: var(--ink-2);"><span style="width: 7px; height: 7px; border-radius: 50%; background: var(--brand);"></span>Net-new dependency: none required</span>
+        <span style="display: inline-flex; align-items: center; gap: 7px; padding: 7px 13px; border-radius: var(--radius-pill); background: var(--paper); border: 1px solid var(--line); font-size: 0.82rem; font-weight: 700; color: var(--ink-2);"><span style="width: 7px; height: 7px; border-radius: 50%; background: var(--info);"></span>Lands entirely in <code style="font-family: var(--font-mono); font-size: 0.86em;">app/styles.css</code> + component files</span>
+      </div>
+      <div style="display: grid; gap: 12px;">
+        <sc-for list="{{ roadmap }}" as="r" hint-placeholder-count="6">
+          <article style="background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); display: grid; grid-template-columns: 120px 1fr; overflow: hidden;">
+            <div style="padding: 18px; background: {{ r.bg }}; border-right: 1px solid var(--line); display: grid; gap: 4px; align-content: start;">
+              <span style="font-size: 0.7rem; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink-3);">{{ r.phase }}</span>
+              <span style="font-size: 0.82rem; font-weight: 700; color: {{ r.tag }};">{{ r.effort }}</span>
+            </div>
+            <div style="padding: 16px 20px; display: grid; gap: 8px;">
+              <h3 style="margin: 0; font-size: 1.06rem; font-weight: 740;">{{ r.title }}</h3>
+              <p style="margin: 0; font-size: 0.88rem; color: var(--ink-2); line-height: 1.5;">{{ r.scope }}</p>
+              <div style="display: flex; gap: 16px; flex-wrap: wrap; margin-top: 2px;">
+                <span style="font-size: 0.8rem; color: var(--ink-3);"><strong style="color: var(--ink-2); font-weight: 700;">Files:</strong> <code style="font-family: var(--font-mono); font-size: 0.84em;">{{ r.files }}</code></span>
+                <span style="font-size: 0.8rem; color: var(--ink-3);"><strong style="color: var(--ink-2); font-weight: 700;">Done when:</strong> {{ r.done }}</span>
+              </div>
+            </div>
+          </article>
+        </sc-for>
+      </div>
+    </section>
+
+<section id="qa" style="padding: 64px; border-bottom: 1px solid var(--line); scroll-margin-top: 0;">
+      <p style="margin: 0 0 10px; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--brand);">12 · Quality &amp; handoff</p>
+      <h2 style="margin: 0 0 12px; font-size: 2.1rem; font-weight: 760; letter-spacing: -0.015em; line-height: 1.08;">QA checklist</h2>
+      <p style="margin: 0 0 28px; max-width: 72ch; font-size: 1.04rem; line-height: 1.6; color: var(--ink-2);">Run before any release that touches the interface. Grouped by surface; each item is pass/fail, not subjective.</p>
+      <div style="display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));">
+        <sc-for list="{{ qa }}" as="g" hint-placeholder-count="6">
+          <article style="background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius-md); padding: 20px; display: grid; gap: 12px; align-content: start;">
+            <h3 style="margin: 0; font-size: 1.02rem; font-weight: 740;">{{ g.area }}</h3>
+            <div style="display: grid; gap: 8px;">
+              <sc-for list="{{ g.items }}" as="it" hint-placeholder-count="4">
+                <div style="display: flex; gap: 10px; align-items: flex-start;"><span aria-hidden="true" style="flex: 0 0 auto; width: 17px; height: 17px; margin-top: 1px; border-radius: 4px; border: 1.5px solid var(--line-strong); background: var(--panel);"></span><span style="font-size: 0.85rem; color: var(--ink-2); line-height: 1.4;">{{ it }}</span></div>
+              </sc-for>
+            </div>
+          </article>
+        </sc-for>
+      </div>
+    </section>
+
+    <section id="risks" style="padding: 64px; border-bottom: 1px solid var(--line); scroll-margin-top: 0;">
+      <p style="margin: 0 0 10px; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--brand);">13 · Quality &amp; handoff</p>
+      <h2 style="margin: 0 0 12px; font-size: 2.1rem; font-weight: 760; letter-spacing: -0.015em; line-height: 1.08;">Risks &amp; blind spots</h2>
+      <p style="margin: 0 0 28px; max-width: 72ch; font-size: 1.04rem; line-height: 1.6; color: var(--ink-2);">Where this design can fail the mission if implemented carelessly. Each pairs the risk with the mitigation already built into the system.</p>
+      <div style="display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(330px, 1fr));">
+        <sc-for list="{{ risks }}" as="r" hint-placeholder-count="6">
+          <article style="background: var(--paper); border: 1px solid var(--line); border-left: 4px solid var(--warn); border-radius: var(--radius-md); padding: 18px; display: grid; gap: 9px; align-content: start;">
+            <h3 style="margin: 0; font-size: 1rem; font-weight: 740;">{{ r.risk }}</h3>
+            <p style="margin: 0; font-size: 0.86rem; color: var(--ink-2); line-height: 1.5;">{{ r.detail }}</p>
+            <p style="margin: 2px 0 0; font-size: 0.83rem; display: grid; gap: 2px;"><strong style="font-size: 0.7rem; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ok-text);">Mitigation</strong><span style="color: var(--ink-2); line-height: 1.45;">{{ r.fix }}</span></p>
+          </article>
+        </sc-for>
+      </div>
+    </section>
+
+    <footer style="padding: 56px 64px 72px; display: grid; gap: 16px;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 7px; background: var(--brand); color: #fff; font-weight: 800; font-size: 0.82rem;">DC</span>
+        <strong style="font-size: 1rem; font-weight: 760;">Dashboard Copilot — Design System v2.0</strong>
+      </div>
+      <p style="margin: 0; max-width: 70ch; font-size: 0.92rem; color: var(--ink-2); line-height: 1.6;">This reference is itself built on the tokens it specifies — the same semantic color namespaces, type scale, spacing, and focus rules render this page. Evolve it in place: add components as cards, version the file rather than forking it, and keep the principles in <a href="#principles" style="color: var(--info-text); font-weight: 600;">§01</a> as the tie-breaker. Trust, traceability, and caution outrank polish, every time.</p>
+      <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px;">
+        <span style="font-size: 0.78rem; color: var(--ink-3); padding: 5px 11px; border: 1px solid var(--line); border-radius: var(--radius-pill); background: var(--paper);">Controlled beta</span>
+        <span style="font-size: 0.78rem; color: var(--ink-3); padding: 5px 11px; border: 1px solid var(--line); border-radius: var(--radius-pill); background: var(--paper);">Session-only · deterministic-safe</span>
+        <span style="font-size: 0.78rem; color: var(--ink-3); padding: 5px 11px; border: 1px solid var(--line); border-radius: var(--radius-pill); background: var(--paper);">WCAG AA</span>
+        <span style="font-size: 0.78rem; color: var(--ink-3); padding: 5px 11px; border: 1px solid var(--line); border-radius: var(--radius-pill); background: var(--paper);">Next.js · React · TypeScript · global CSS</span>
+      </div>
+    </footer>
+
+    <!-- APPEND -->
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 1280, &quot;height&quot;: 900}}">
+class Component extends DCLogic {
+  state = { activeId: "top" };
+
+  renderVals() {
+    return {
+      activeId: this.state.activeId,
+      navGroups: [
+        { label: "Foundations", items: [
+          { id: "principles", num: "01", label: "Design principles", href: "#principles" },
+          { id: "color", num: "02", label: "Color system", href: "#color" },
+          { id: "type", num: "03", label: "Typography", href: "#type" },
+          { id: "space", num: "04", label: "Space · radius · motion", href: "#space" },
+        ]},
+        { label: "System", items: [
+          { id: "components", num: "05", label: "Components", href: "#components" },
+          { id: "panels", num: "06", label: "Panels & trust signals", href: "#panels" },
+          { id: "ai-states", num: "07", label: "AI / governance states", href: "#ai-states" },
+          { id: "dataviz", num: "08", label: "Data-viz standards", href: "#dataviz" },
+        ]},
+        { label: "Application", items: [
+          { id: "workflow", num: "09", label: "Workflow screens", href: "#workflow" },
+        ]},
+        { label: "Quality & handoff", items: [
+          { id: "a11y", num: "10", label: "Accessibility", href: "#a11y" },
+          { id: "roadmap", num: "11", label: "Implementation roadmap", href: "#roadmap" },
+          { id: "qa", num: "12", label: "QA checklist", href: "#qa" },
+          { id: "risks", num: "13", label: "Risks & blind spots", href: "#risks" },
+        ]},
+      ],
+      metaChips: [
+        { label: "Session-only · no persistence", dot: "var(--ink-3)" },
+        { label: "Deterministic by default", dot: "var(--brand)" },
+        { label: "AI server-side, optional", dot: "var(--info)" },
+        { label: "WCAG AA", dot: "var(--ok)" },
+        { label: "Next.js + global CSS", dot: "var(--ink-3)" },
+        { label: "Export / PDF-safe", dot: "var(--warn)" },
+      ],
+      principles: [
+        { num: "01", title: "Evidence before answers", body: "Lead with what the data can and cannot support. Never show a recommendation without its evidence coverage, source, and caveats present in the same view — not a click away.", realized: "Evidence coverage panel, recommendation card, chart source notes" },
+        { num: "02", title: "Traceability, end to end", body: "Every figure, chart, and recommendation traces to an uploaded source and a logged transformation. The transformation log and source notes are first-class surfaces, never buried.", realized: "Transformation log, source/caveat block, export package" },
+        { num: "03", title: "Caution is the default", body: "Communicate uncertainty, missingness, and quality risk plainly. When confidence is low or evidence is incomplete, the interface says so before it shows the number.", realized: "Quality panel, data-readiness badge, caveat block" },
+        { num: "04", title: "Deterministic first, AI assists", body: "Deterministic logic owns the guardrails — chart type, map safety, badges, fallbacks. AI is optional, server-side, and always degrades cleanly. Never make AI look magical or authoritative.", realized: "AI state banner, fallback warning, quota indicator" },
+        { num: "05", title: "A review surface, not an order", body: "The dashboard supports a human decision; it does not approve operational action. Review gates and the explicit 'not ready for operational use' state are always reachable.", realized: "Review gate badge, review checklist, export acknowledgement" },
+        { num: "06", title: "Fast under pressure", body: "Sensible defaults are ready to run and the critical path is short. A responder should reach a safe first result without configuring anything — refinement is optional, not required.", realized: "Stepper, decision template selector, 'defaults ready to run'" },
+        { num: "07", title: "Accessible &amp; export-safe", body: "AA contrast, full keyboard operation, screen-reader chart summaries, and exports that preserve every title, source, caveat, badge, and review notice. Nothing critical lives in color or hover alone.", realized: "Focus tokens, chart accessible summary, PDF-safe layout" },
+      ],
+      semantic: [
+        { name: "Brand / accent", role: "Identity · positive completion", prefix: "--brand-*", solid: "var(--brand)", surface: "var(--brand-surface)", border: "var(--brand-border)", textColor: "var(--ok-text)",
+          use: "Product identity, the active primary action, and the calm 'done / completed step' state. Used sparingly — it should feel earned, never decorative.",
+          tokens: [
+            { name: "--brand", hex: "#235f58", val: "#235f58", note: "Solid fills, dots, active rail" },
+            { name: "--brand-hover", hex: "#2c6e67", val: "#2c6e67", note: "Hover for solid brand" },
+            { name: "--brand-surface", hex: "#eef7f5", val: "#eef7f5", note: "Tinted backgrounds" },
+            { name: "--brand-border", hex: "#c6ded9", val: "#c6ded9", note: "Tinted-surface borders" },
+          ] },
+        { name: "Info / AI", role: "AI mode · guidance · system info", prefix: "--info-*", solid: "var(--info)", surface: "var(--info-surface)", border: "var(--info-border)", textColor: "var(--info-text)",
+          use: "AI-assisted mode, neutral system messages, in-progress / working states, and informational guidance. This is the only role that signals 'AI is involved'.",
+          tokens: [
+            { name: "--info", hex: "#2d5be3", val: "#2d5be3", note: "Solid — AI badges, focus accent" },
+            { name: "--info-text", hex: "#2449bb", val: "#2449bb", note: "Small text on white (AA)" },
+            { name: "--info-surface", hex: "#eef3ff", val: "#eef3ff", note: "Banner / loading backgrounds" },
+            { name: "--info-border", hex: "#ccd8ff", val: "#ccd8ff", note: "Banner borders" },
+          ] },
+        { name: "Success / ready", role: "Covered evidence · ready states", prefix: "--ok-*", solid: "var(--ok)", surface: "var(--ok-surface)", border: "var(--ok-border)", textColor: "var(--ok-text)",
+          use: "Evidence covered, checks passed, step complete, 'ready for export'. Shares the teal family with brand but carries its own tokens so meaning stays separable.",
+          tokens: [
+            { name: "--ok", hex: "#235f58", val: "#235f58", note: "Pass dots, solid badges" },
+            { name: "--ok-text", hex: "#1f574f", val: "#1f574f", note: "'Covered' / 'Ready' text" },
+            { name: "--ok-surface", hex: "#eef7f5", val: "#eef7f5", note: "Pass-state tint" },
+            { name: "--ok-border", hex: "#c6ded9", val: "#c6ded9", note: "Pass-state border" },
+          ] },
+        { name: "Warning / review", role: "Caution · ambiguity · medium risk", prefix: "--warn-*", solid: "var(--warn)", surface: "var(--warn-surface)", border: "var(--warn-border)", textColor: "var(--warn-text)",
+          use: "Ambiguous evidence, medium data-quality risk, deterministic fallback, 'needs review'. Carries most uncertainty — keep red for true blocking failures only.",
+          tokens: [
+            { name: "--warn", hex: "#a56315", val: "#a56315", note: "Solid — bars, badge bg" },
+            { name: "--warn-text", hex: "#8a4f12", val: "#8a4f12", note: "Small text on white (AA)" },
+            { name: "--warn-surface", hex: "#fff7ed", val: "#fff7ed", note: "Caution backgrounds" },
+            { name: "--warn-border", hex: "#fed7aa", val: "#fed7aa", note: "Caution borders" },
+          ] },
+        { name: "Error / blocking", role: "Failed checks · unsafe · blocked", prefix: "--danger-*", solid: "var(--danger)", surface: "var(--danger-surface)", border: "var(--danger-border)", textColor: "var(--danger-text)",
+          use: "Failed validation, unsafe chart blocked by policy, blocked export or action, missing required evidence. Reserved — overuse erodes its urgency.",
+          tokens: [
+            { name: "--danger", hex: "#b42318", val: "#b42318", note: "Solid + text (AA on white)" },
+            { name: "--danger-surface", hex: "#fff1f1", val: "#fff1f1", note: "Error backgrounds" },
+            { name: "--danger-border", hex: "#f7c6c6", val: "#f7c6c6", note: "Error borders" },
+            { name: "(text reuses --danger)", hex: "#b42318", val: "#b42318", note: "6.4:1 on white" },
+          ] },
+        { name: "Neutral / system", role: "Structure · labels · inactive", prefix: "--ink / --line", solid: "var(--ink)", surface: "var(--neutral-surface)", border: "var(--neutral-border)", textColor: "var(--ink)",
+          use: "Borders, structural surfaces, metadata, labels, inactive and 'not applicable' states. The quiet majority of the interface — color earns attention against this.",
+          tokens: [
+            { name: "--ink", hex: "#171717", val: "#171717", note: "Primary text, solid dark btn" },
+            { name: "--ink-2", hex: "#5f656d", val: "#5f656d", note: "Secondary text" },
+            { name: "--neutral-surface", hex: "#f5f6f2", val: "#f5f6f2", note: "Inactive / inset" },
+            { name: "--neutral-border", hex: "#deded8", val: "#deded8", note: "Default border" },
+          ] },
+      ],
+      qa: [
+        { area: "Tokens & color", items: ["No raw hex in component code — only semantic tokens.", "Each status uses its correct namespace (AI≠quality≠status).", "Text colors meet AA on their surface.", "Dark-theme aliases reassign cleanly (smoke test)."] },
+        { area: "Components & states", items: ["Every badge has a glyph/shape + word, legible in grayscale.", "One primary action per screen; forward action is brand teal.", "Empty / loading / error / success exist for each step.", "Focus ring visible on all interactive elements."] },
+        { area: "AI / governance", items: ["All 13 states reachable and styled per matrix.", "Every AI failure degrades to deterministic + says so.", "Fallback shown in amber, never red.", "Quota meter and workspace stay off in public build."] },
+        { area: "Data-viz", items: ["Every chart has title, rationale, source/caveat, badge, SR summary.", "No raw-count choropleths; unsafe maps fall back with caveat.", "High-risk quality flags propagate to chart badges.", "Denominators visible where comparisons need scale."] },
+        { area: "Accessibility", items: ["Keyboard path complete; dialogs trap + restore focus.", "Tables overflow-scroll with caption + sticky header.", "Stepper collapses on mobile; targets ≥ 44px.", "Reduced-motion honored."] },
+        { area: "Export & PDF", items: ["Titles, sources, caveats, badges, notices preserved.", "Animations/tooltips disabled in export render.", "Readiness verdict + caveats included in package.", "No uploaded raw rows written to disk or sent to AI."] },
+      ],
+      risks: [
+        { risk: "Over-trust of AI output", detail: "Polished AI recommendations can read as authoritative answers rather than reviewable suggestions.", fix: "AI labelled info-blue, always paired with evidence/caveat, gated by human review, and reversible to deterministic." },
+        { risk: "Denominator confusion", detail: "Counts compared across areas of different size mislead — the classic disaster-data error.", fix: "Coverage panel forces denominator confirmation; vizPolicy normalizes; denominators kept visible." },
+        { risk: "Map misuse", detail: "A choropleth of raw counts or unverified geometry looks credible while being wrong.", fix: "Policy blocks raw-count fills and unverified boundaries; falls back to bar/table with a stated caveat." },
+        { risk: "Color-only regressions", detail: "Future contributors may add a status that relies on hue alone, breaking grayscale/CVD legibility.", fix: "Badge pattern bakes in glyph + label; QA item and lint-style review catch raw-hex status." },
+        { risk: "Quota dead-ends", detail: "A hard block when AI quota is exhausted would strand a responder mid-task.", fix: "Quota exhaustion is a soft fallback to deterministic, not a wall; reset time is shown." },
+        { risk: "Future-auth scope creep", detail: "Workspace / login features could leak into and complicate the public deterministic product.", fix: "All authenticated patterns are flagged Future and behind flags; public build must pass with flags off." },
+        { risk: "Sensitive data via upload", detail: "Users may paste PII despite warnings; nothing should persist or leave the session.", fix: "Persistent sensitive-data note; session-only, no server-side row storage; AI sees minimized samples only." },
+        { risk: "Export fidelity drift", detail: "A redesign could let exports drop caveats or badges, breaking the traceability promise.", fix: "Export contract enforces the six chart parts + review notice; QA blocks release otherwise." },
+      ],
+      a11y: [
+        { glyph: "◐", area: "Contrast", items: ["All text meets AA (4.5:1 normal, 3:1 large). Use --*-text tokens on light surfaces.", "Status never relies on hue alone — pair with glyph + label.", "Solid hues are for fills/borders, not small text on white."] },
+        { glyph: "⌨", area: "Keyboard & focus", items: ["Every control reachable and operable by keyboard in DOM order.", "Visible two-layer focus ring (--focus-ring); never suppressed.", "Dialogs trap focus, restore on close, and close on Escape."] },
+        { glyph: "♿", area: "Screen reader", items: ["Charts: aria-labelledby (title) + aria-describedby (text summary).", "Live regions announce mode changes, fallbacks, and validation.", "Icon-only controls carry aria-label; decorative glyphs aria-hidden."] },
+        { glyph: "▦", area: "Tables", items: ["Wrap in an overflow-x container; never clip data.", "Sticky header row; <caption> describes the table.", "Numeric columns keep units; missingness labelled, not colored only."] },
+        { glyph: "▢", area: "Mobile & dense data", items: ["Stepper collapses to “Step X / 7” + progress bar.", "Multi-series charts become ranked bars or tables.", "Hit targets ≥ 44px; single-column panels below 920px."] },
+        { glyph: "⎙", area: "Export / PDF-safe", items: ["Titles, sources, caveats, badges, and review notices preserved.", "Animations/tooltips off; fixed width; shadows flattened.", "Meaning survives grayscale via shape + label."] },
+      ],
+      roadmap: [
+        { phase: "Phase 0", effort: "~0.5 day", tag: "var(--ok-text)", bg: "var(--ok-surface)", title: "Token foundation", scope: "Add the semantic CSS custom properties to :root as aliases over today's values. No component touched yet, no visual change — purely additive.", files: "app/styles.css", done: "Tokens resolve; build unchanged." },
+        { phase: "Phase 1", effort: "~2 days", tag: "var(--ink-2)", bg: "var(--panel)", title: "Status & color refactor", scope: "Swap interchangeable blue/amber/red for the right semantic namespace per use. Add non-color glyph/shape to every badge and notice.", files: "styles.css · WorkflowComponents.tsx", done: "No raw hex in status UI; AA verified." },
+        { phase: "Phase 2", effort: "~2–3 days", tag: "var(--ink-2)", bg: "var(--panel)", title: "Trust panels", scope: "Tighten evidence-coverage, quality, and readiness components; add the review-gate badge and the recommendation card's review footer.", files: "WorkflowComponents.tsx · decisionContext.ts", done: "Caveats above the fold on every step." },
+        { phase: "Phase 3", effort: "~2 days", tag: "var(--ink-2)", bg: "var(--panel)", title: "AI / governance states", scope: "Componentize the fallback / limit / quota banners against the state matrix. Quota meter scaffolded behind a flag (Future).", files: "WorkflowComponents.tsx · config.ts · llmClient.ts", done: "All 13 states render from one source." },
+        { phase: "Phase 4", effort: "~2–3 days", tag: "var(--ink-2)", bg: "var(--panel)", title: "Data-viz contract", scope: "Enforce title + rationale + source/caveat + quality badge + SR summary on every chart; harden the export-safe render path.", files: "charts/ChartFrame.ts · vizPolicy.ts · exportPdf.ts", done: "No chart ships without all six parts." },
+        { phase: "Phase 5", effort: "Future", tag: "var(--warn-text)", bg: "var(--warn-surface)", title: "Authenticated shell", scope: "Workspace header variant, quota meter, feedback capture — all behind auth + flags. Never a dependency of the public deterministic product.", files: "layout.tsx · new workspace routes", done: "Public build works with flags off." },
+      ],
+      workflow: [
+        { num: "01", title: "Select decision template", goal: "Frame the decision before any data is touched.", action: "Use template", lead: "The decision question, intended action, and required signals — defaults pre-filled and ready to run.", caveat: "Missing brief fields warn in amber on continue; never block exploration. The decision map is read-only.", states: "Pre-filled (no true empty) · error: missing required brief fields chip.", deemphasize: "Advanced brief fields and the full collection template (in accordions).", secondary: "Edit brief · view decision map · download CSV template" },
+        { num: "02", title: "Upload data", goal: "Get evidence in, mapped to the decision.", action: "Profile data", lead: "The persistent sensitive-data note, the drop target, and sample-data shortcuts.", caveat: "“Do not upload sensitive/personal data” always visible. AI sends only minimized samples, and only when on.", states: "Empty: add-data prompt · loading: parsing · error: unsupported / too large / parse fail · success: dataset cards.", deemphasize: "File-format trivia; raw parser detail lives in a panel.", secondary: "Replace data · sample variants · per-dataset evidence hints" },
+        { num: "03", title: "Review data profiling", goal: "Understand shape and quality before harmonizing.", action: "Harmonize data", lead: "Evidence coverage panel and quality panel — coverage gaps and high-risk findings first.", caveat: "High-risk findings are surfaced before recommendations, not after. Confidence shown per candidate.", states: "Loading: profiling · success: profile cards + coverage + quality.", deemphasize: "Full column dumps and sample rows (collapsed into details).", secondary: "Expand column details · view metadata · per-column stats" },
+        { num: "04", title: "Harmonize data", goal: "A clean, joined dataset with every change logged.", action: "Validate dataset", lead: "The join plan, cleaning recommendations, and the transformation log as a first-class surface.", caveat: "Every transform is logged and reversible. AI suggestions are labelled; deterministic fallback on failure.", states: "Loading: generating recs · fallback: amber banner · error: no shared join key → blocked.", deemphasize: "Nothing is hidden — the log is never collapsed away.", secondary: "Adjust join key · accept / skip individual transforms" },
+        { num: "05", title: "Validate dataset", goal: "Confirm fitness and decide review readiness.", action: "Generate dashboard", lead: "Validation results, decision readiness, and the data-readiness badge / verdict.", caveat: "A blocking issue yields “Not ready for operational use”; remaining caveats stay listed above the fold.", states: "Success: ready badge · warn: needs review · block: not-ready badge + reasons.", deemphasize: "Passed checks (summarized / collapsed); failures lead.", secondary: "Re-run checks · revisit harmonize · view full readiness" },
+        { num: "06", title: "Generate dashboard", goal: "A reviewable visual answer to the decision.", action: "Export package", lead: "The recommendation card and chart cards — each with rationale, source, caveat, and quality badge.", caveat: "“A review surface, not operational approval” is persistent. Unsafe charts fall back to bar/table with a caveat.", states: "Empty: no charts yet · loading: building · success: dashboard + insights.", deemphasize: "Decoration and chrome; data and caveats carry the screen.", secondary: "Add / adjust charts · expand insights · jump to chart" },
+        { num: "07", title: "Export package", goal: "A transparent, shareable decision package.", action: "Export package", lead: "The review-checklist gate, then export options (PDF · CSV · PNG · AI handoff).", caveat: "Acknowledgement required; the package carries readiness, sources, caveats, and review notices into the file.", states: "Gated until checklist complete · success: download · handoff: deterministic summary if AI unavailable.", deemphasize: "Format minutiae; what's included is what's emphasized.", secondary: "Choose format · copy handoff summary · review checklist" },
+      ],
+      bars: [
+        { label: "Riverside", val: "86", w: "100%" },
+        { label: "Hill North", val: "72", w: "84%" },
+        { label: "Old Port", val: "64", w: "74%" },
+        { label: "East Reach", val: "58", w: "67%" },
+        { label: "Lowfields", val: "51", w: "59%" },
+      ],
+      chartPalette: [
+        { hex: "#005ab5", role: "Series 1 · primary" },
+        { hex: "#d55e00", role: "Series 2 · highlight" },
+        { hex: "#009e73", role: "Series 3" },
+        { hex: "#7b3294", role: "Series 4" },
+        { hex: "#b35c00", role: "Series 5" },
+        { hex: "#4b5563", role: "Series 6 · neutral" },
+      ],
+      aiStates: [
+        { name: "AI off", dot: "var(--ink-3)", shape: "50%", trigger: "Default; user toggle off; public product", sees: "Neutral “Deterministic” chip in header", fallback: "n/a — this is the baseline" },
+        { name: "AI on", dot: "var(--info)", shape: "50%", trigger: "Logged-in user enables AI", sees: "Info-blue “AI assist on” chip; AI outputs labelled", fallback: "Any failure reverts to deterministic" },
+        { name: "AI unavailable", dot: "var(--warn)", shape: "2px", trigger: "Feature flag off in this environment", sees: "Toggle hidden; reason chip in status slot", fallback: "Deterministic only" },
+        { name: "Deterministic fallback", dot: "var(--warn)", shape: "2px", trigger: "AI requested but returned no valid result", sees: "Amber banner: “Showing deterministic recommendations”", fallback: "Rule-based result shown; retry offered" },
+        { name: "App rate limit", dot: "var(--warn)", shape: "2px", trigger: "App-side request throttle hit", sees: "Amber banner with cooldown time", fallback: "Deterministic; auto-retry after cooldown" },
+        { name: "Provider rate limit", dot: "var(--warn)", shape: "2px", trigger: "LLM provider returns 429", sees: "Amber banner: provider busy", fallback: "Deterministic; retry later" },
+        { name: "Missing API key", dot: "var(--info)", shape: "50%", trigger: "No key configured for deployment", sees: "Info note: “AI not configured”", fallback: "AI hidden; deterministic full" },
+        { name: "Request too large", dot: "var(--warn)", shape: "2px", trigger: "Minimized payload still exceeds limit", sees: "Amber: “Dataset too large for AI assist”", fallback: "Deterministic on full data" },
+        { name: "Request timeout", dot: "var(--warn)", shape: "2px", trigger: "Provider exceeds time budget", sees: "Amber: “AI didn't respond in time”", fallback: "Deterministic; retry offered" },
+        { name: "Quota exceeded", dot: "var(--warn)", shape: "2px", trigger: "Daily AI-assist count reached (e.g. 20/20)", sees: "Amber banner + “20/20 used”; meter full", fallback: "Deterministic until reset (00:00 UTC)" },
+        { name: "Human review required", dot: "var(--warn)", shape: "2px", trigger: "Output affects interpretation / unsafe to auto-trust", sees: "“⚑ Human review required” gate badge", fallback: "Export blocked until review confirmed" },
+        { name: "Ready for export", dot: "var(--ok)", shape: "50%", trigger: "Required evidence covered + review confirmed", sees: "“✓ Ready to review” readiness badge", fallback: "n/a" },
+        { name: "Not ready for operational use", dot: "var(--danger)", shape: "2px", trigger: "Blocking quality issue or missing evidence", sees: "Red “Not ready for operational use” badge", fallback: "Export carries the warning into the package" },
+      ],
+      checklist: [
+        { title: "Denominators confirmed", detail: "Every rate uses a population/base I verified.", check: "✓", boxBg: "var(--ok)", boxBorder: "var(--ok)" },
+        { title: "Caveats reviewed", detail: "Quality findings and missingness are acknowledged.", check: "✓", boxBg: "var(--ok)", boxBorder: "var(--ok)" },
+        { title: "No personal or sensitive data", detail: "Upload contains only non-sensitive aggregates.", check: "", boxBg: "transparent", boxBorder: "var(--line-strong)" },
+        { title: "Not used as operational tasking", detail: "This package informs a decision; it does not authorize action.", check: "", boxBg: "transparent", boxBorder: "var(--line-strong)" },
+      ],
+      evidence: [
+        { need: "Severity / needs signal", glyph: "✓", statusLabel: "Covered", accent: "var(--ok)", surface: "var(--ok-surface)", border: "var(--ok-border)", text: "var(--ok-text)", hasCandidate: true, dataset: "needs_assessment.csv", column: "severity_score", coverageStat: "4% missing · 92% confidence", caveat: "0–100 scale; values self-reported by field teams in round 2.", nextAction: "Confirm the scale direction (higher = worse) before ranking." },
+        { need: "Population denominator", glyph: "▲", statusLabel: "Needs review", accent: "var(--warn)", surface: "var(--warn-surface)", border: "var(--warn-border)", text: "var(--warn-text)", hasCandidate: true, dataset: "population.xlsx", column: "pop_total", coverageStat: "18% missing · 61% confidence", caveat: "Two candidate columns matched; denominator choice changes every rate.", nextAction: "Pick the authoritative population column, or mark counts as un-normalized." },
+        { need: "Response capacity", glyph: "✕", statusLabel: "Missing", accent: "var(--danger)", surface: "var(--danger-surface)", border: "var(--danger-border)", text: "var(--danger-text)", hasCandidate: false, dataset: "", column: "", coverageStat: "", caveat: "No uploaded field maps to response capacity for this decision.", nextAction: "Upload a capacity file, or remove capacity from the decision signals." },
+      ],
+      quality: [
+        { sev: "High", glyph: "✕", accent: "var(--danger)", surface: "var(--danger-surface)", border: "var(--danger-border)", text: "var(--danger-text)", title: "Out-of-range values", body: "12 rows hold severity values above 100 on a 0–100 scale in", column: "severity_score" },
+        { sev: "Medium", glyph: "▲", accent: "var(--warn)", surface: "var(--warn-surface)", border: "var(--warn-border)", text: "var(--warn-text)", title: "High missingness", body: "31% of rows are blank, which will skew any aggregate over", column: "households_affected" },
+        { sev: "Info", glyph: "i", accent: "var(--info)", surface: "var(--info-surface)", border: "var(--info-border)", text: "var(--info-text)", title: "Mixed date formats", body: "Two date formats were detected and normalized to ISO in", column: "report_date" },
+      ],
+      steps: [
+        { label: "Template", mark: "✓", bg: "var(--ok-surface)", bd: "var(--ok-border)", fg: "var(--ok-text)", ibg: "#d8ece8", ifg: "var(--ok-text)" },
+        { label: "Upload", mark: "✓", bg: "var(--ok-surface)", bd: "var(--ok-border)", fg: "var(--ok-text)", ibg: "#d8ece8", ifg: "var(--ok-text)" },
+        { label: "Profile", mark: "✓", bg: "var(--ok-surface)", bd: "var(--ok-border)", fg: "var(--ok-text)", ibg: "#d8ece8", ifg: "var(--ok-text)" },
+        { label: "Harmonize", mark: "4", bg: "var(--ink)", bd: "var(--ink)", fg: "#ffffff", ibg: "rgba(255,255,255,0.18)", ifg: "#ffffff" },
+        { label: "Dataset", mark: "5", bg: "rgba(255,255,255,0.6)", bd: "var(--line)", fg: "var(--ink-2)", ibg: "rgba(23,23,23,0.08)", ifg: "var(--ink-2)" },
+        { label: "Dashboard", mark: "6", bg: "rgba(255,255,255,0.6)", bd: "var(--line)", fg: "var(--ink-3)", ibg: "rgba(23,23,23,0.06)", ifg: "var(--ink-3)" },
+        { label: "Export", mark: "7", bg: "rgba(255,255,255,0.6)", bd: "var(--line)", fg: "var(--ink-3)", ibg: "rgba(23,23,23,0.06)", ifg: "var(--ink-3)" },
+      ],
+      typeScale: [
+        { sample: "Decision-support package", size: "2.6rem", weight: "760", ls: "-0.02em", token: "--text-display", spec: "42px / 1.02", role: "Page & about hero" },
+        { sample: "Review data profiling", size: "2.1rem", weight: "760", ls: "-0.015em", token: "--text-3xl", spec: "34px / 1.08", role: "Section headings" },
+        { sample: "Evidence coverage", size: "1.4rem", weight: "720", ls: "-0.01em", token: "--text-2xl", spec: "22px / 1.2", role: "Panel titles" },
+        { sample: "Recommended join fields", size: "1.12rem", weight: "740", ls: "0", token: "--text-lg", spec: "18px / 1.25", role: "Card titles" },
+        { sample: "Lead paragraphs and intros set the context for a step.", size: "1.04rem", weight: "500", ls: "0", token: "--text-md", spec: "17px / 1.6", role: "Lede" },
+        { sample: "Body copy carries explanations, rationale, and caveats.", size: "0.9375rem", weight: "400", ls: "0", token: "--text-base", spec: "15px / 1.5", role: "Body default" },
+        { sample: "Source notes, metadata, table cells", size: "0.82rem", weight: "500", ls: "0", token: "--text-sm", spec: "13px / 1.45", role: "Secondary / dense" },
+        { sample: "EVIDENCE COVERAGE", size: "0.72rem", weight: "800", ls: "0.08em", token: "--text-eyebrow", spec: "11.5px · uppercase", role: "Eyebrows & labels" },
+      ],
+      weights: [
+        { name: "Regular", w: "400", use: "body" },
+        { name: "Medium", w: "500", use: "lede, secondary" },
+        { name: "Semibold", w: "600", use: "buttons, emphasis" },
+        { name: "Bold", w: "720", use: "headings" },
+        { name: "Heavy", w: "800", use: "eyebrows, badges" },
+      ],
+      spacing: [
+        { token: "--space-1", px: "4px" },
+        { token: "--space-2", px: "8px" },
+        { token: "--space-3", px: "12px" },
+        { token: "--space-4", px: "16px" },
+        { token: "--space-5", px: "20px" },
+        { token: "--space-6", px: "24px" },
+        { token: "--space-7", px: "28px" },
+        { token: "--space-8", px: "32px" },
+        { token: "--space-10", px: "40px" },
+        { token: "--space-12", px: "48px" },
+        { token: "--space-16", px: "64px" },
+      ],
+      radii: [
+        { token: "--radius-sm · 5", val: "5px" },
+        { token: "--radius-md · 8", val: "8px" },
+        { token: "--radius-lg · 14", val: "14px" },
+        { token: "--radius-pill", val: "999px" },
+      ],
+      shadows: [
+        { token: "--shadow-sm", val: "var(--shadow-sm)" },
+        { token: "--shadow-md", val: "var(--shadow-md)" },
+        { token: "--shadow-lg", val: "var(--shadow-lg)" },
+      ],
+      neutrals: [
+        { name: "--ink", hex: "#171717", val: "#171717", note: "Text primary · 16:1 on white" },
+        { name: "--ink-2", hex: "#5f656d", val: "#5f656d", note: "Text secondary · 5.6:1" },
+        { name: "--ink-3", hex: "#6f757c", val: "#6f757c", note: "Text tertiary · 4.5:1 (AA)" },
+        { name: "--line", hex: "#deded8", val: "#deded8", note: "Border subtle" },
+        { name: "--line-strong", hex: "#c9cbc3", val: "#c9cbc3", note: "Border strong · inputs" },
+        { name: "--paper", hex: "#ffffff", val: "#ffffff", note: "Surface raised · cards" },
+        { name: "--panel", hex: "#fbfbf8", val: "#fbfbf8", note: "Surface sunken · insets" },
+        { name: "--soft", hex: "#f5f6f2", val: "#f5f6f2", note: "Page background" },
+      ],
+    };
+  }
+
+  componentDidMount() {
+    const root = this.dcRoot || document;
+    const links = Array.from(root.querySelectorAll("[data-nav]"));
+    const paint = (id) => links.forEach((l) => {
+      const on = l.getAttribute("data-nav") === id;
+      l.style.background = on ? "var(--brand-surface)" : "transparent";
+      l.style.color = on ? "var(--ok-text)" : "var(--ink-2)";
+      l.style.fontWeight = on ? "760" : "600";
+    });
+    paint("top");
+    const ids = links.map((l) => l.getAttribute("data-nav"));
+    const sections = ids.map((id) => root.getElementById ? root.getElementById(id) : document.getElementById(id)).filter(Boolean);
+    if ("IntersectionObserver" in window) {
+      const io = new IntersectionObserver((entries) => {
+        entries.forEach((e) => { if (e.isIntersecting) paint(e.target.id); });
+      }, { rootMargin: "-12% 0px -78% 0px", threshold: 0 });
+      sections.forEach((s) => io.observe(s));
+      const topEl = document.getElementById("top");
+      if (topEl) io.observe(topEl);
+    }
+    links.forEach((l) => l.addEventListener("mouseenter", () => {
+      if (l.style.background === "transparent" || !l.style.background) l.style.background = "var(--soft)";
+    }));
+    links.forEach((l) => l.addEventListener("mouseleave", () => {
+      if (l.getAttribute("data-nav") !== this._active) l.style.background = "";
+    }));
+  }
+}
+</script>
+</body>
+</html>

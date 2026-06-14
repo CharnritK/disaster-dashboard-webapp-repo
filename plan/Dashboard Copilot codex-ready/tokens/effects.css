@@ -1,0 +1,52 @@
+/* Dashboard Copilot — shadow, motion, background tokens */
+:root {
+  /* shadows — large, soft, very low alpha */
+  --shadow: 0 18px 45px rgba(23, 23, 23, 0.07);        /* main panels */
+  --shadow-hover: 0 24px 58px rgba(23, 23, 23, 0.11);
+  --shadow-card: 0 1px 0 rgba(23, 23, 23, 0.03);       /* flat cards: hairline only */
+  --shadow-resource-hover: 0 8px 22px rgba(23, 23, 23, 0.06);
+  --shadow-tooltip: 0 10px 22px rgba(23, 23, 23, 0.16);
+  --shadow-modal: 0 28px 70px rgba(23, 23, 23, 0.22);   /* modal dialog */
+  --shadow-highlight: 0 0 0 3px rgba(45, 91, 227, 0.12),
+    0 12px 26px rgba(45, 91, 227, 0.1);                /* linked-chart highlight */
+
+  /* motion — one easing curve for everything */
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --dur-fast: 160ms;   /* hovers on buttons, pills, segments */
+  --dur-mid: 180ms;    /* card borders, header state */
+  --dur-enter: 260ms;  /* panel/content entrance (fade + 6-8px rise) */
+  --dur-bar: 520ms;    /* chart bar grow (scaleX from left) */
+
+  /* signature page background: faint 72px graph paper + warm fade */
+  --bg-graph-paper:
+    linear-gradient(90deg, rgba(23, 23, 23, 0.035) 1px, transparent 1px)
+      center top / 72px 72px,
+    linear-gradient(180deg, rgba(23, 23, 23, 0.028) 1px, transparent 1px)
+      center top / 72px 72px,
+    linear-gradient(180deg, #fbfbf8 0, #f5f6f2 280px);
+
+  /* sticky header glass */
+  --header-bg: rgba(251, 251, 248, 0.94);
+  --header-blur: 18px;
+}
+
+@keyframes dcPanelIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes dcContentIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes dcRevealIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes dcBarGrow {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+@keyframes dcPulseRing {
+  0%   { opacity: 0.35; transform: scale(0.65); }
+  100% { opacity: 0;    transform: scale(1.9); }
+}

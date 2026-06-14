@@ -1,0 +1,116 @@
+/* Dashboard Copilot — color tokens
+   Source of truth: app/styles.css in the disaster-dashboard-webapp repo. */
+:root {
+  color-scheme: light;
+
+  /* ── Ink (text) ─────────────────────────────────── */
+  --ink: #171717;        /* primary text, primary buttons, tooltips */
+  --muted: #5f656d;      /* secondary text, labels, helper copy */
+  --subtle: #8a9098;     /* tertiary text (rarely used) */
+
+  /* ── Lines & surfaces ───────────────────────────── */
+  --line: #deded8;          /* default 1px border */
+  --line-strong: #c9cbc3;   /* form controls, emphasized borders */
+  --paper: #ffffff;         /* cards, inputs */
+  --panel: #fbfbf8;         /* nested tiles, table headers, chart plots */
+  --soft: #f5f6f2;          /* page background */
+
+  /* ── Brand accent (deep teal-green) ─────────────── */
+  --accent: #235f58;
+  --accent-hover: #2c6e67;
+  --accent-soft: #eef7f5;     /* completed steps, export type pills */
+  --accent-border: #c6ded9;
+  --accent-tint: #d8ece8;     /* step index inside completed pill */
+
+  /* ── Semantic: info / blue ──────────────────────── */
+  --blue: #2d5be3;
+  --blue-deep: #2449bb;      /* loading banner text */
+  --blue-soft: #eef3ff;      /* loading banner bg, active insight bg */
+  --blue-border: #ccd8ff;
+  --blue-soft-alt: #edf4ff;  /* required field pills */
+  --blue-border-alt: #bdd1ff;
+
+  /* ── Semantic: warning / amber ──────────────────── */
+  --amber: #a56315;
+  --amber-deep: #7c3e0b;     /* strong text inside warnings */
+  --amber-soft: #fff7ed;     /* warning notice bg */
+  --amber-border: #fed7aa;
+  --amber-ack-bg: #fff8eb;   /* acknowledgement bar */
+  --amber-ack-border: #e6c98f;
+  --amber-ack-text: #68420f;
+
+  /* ── Semantic: error / red ──────────────────────── */
+  --red: #b42318;
+  --red-soft: #fff1f1;
+  --red-border: #f7c6c6;
+
+  /* ── Focus ring ─────────────────────────────────── */
+  --focus-ring: rgba(45, 91, 227, 0.28);
+
+  /* ── Chart palette (colorblind-safe, Okabe-Ito derived) ── */
+  --chart-1: #005ab5;  /* bars, lines, first series */
+  --chart-2: #d55e00;  /* second series + hover/highlight color */
+  --chart-3: #009e73;
+  --chart-4: #7b3294;
+  --chart-5: #b35c00;
+  --chart-6: #4b5563;
+  --chart-track: #eeeeea;        /* bar track fill */
+  --chart-track-border: #e2e2dc;
+  --chart-area-fill: rgba(0, 90, 181, 0.1);
+
+  /* ── Semantic aliases ───────────────────────────── */
+  --text-body: var(--ink);
+  --text-muted: var(--muted);
+  --surface-page: var(--soft);
+  --surface-card: var(--paper);
+  --surface-panel: var(--panel);
+  --surface: var(--panel);
+  --border-default: var(--line);
+  --border-strong: var(--line-strong);
+
+/* ── New semantic color system (codex-ready) ── */
+/* Neutral colors */
+--color-text-primary: var(--ink);
+--color-text-secondary: var(--muted);
+--color-text-tertiary: var(--subtle);
+--color-border-subtle: var(--line);
+--color-border-strong: var(--line-strong);
+--color-surface-page: var(--soft);
+--color-surface-panel: var(--panel);
+--color-surface-raised: var(--paper);
+
+/* Brand / accent */
+--color-brand-solid: var(--accent);
+--color-brand-hover: var(--accent-hover);
+--color-brand-surface: var(--accent-soft);
+--color-brand-border: var(--accent-border);
+--color-brand-tint: var(--accent-tint);
+
+/* Info (AI) */
+--color-info-solid: var(--blue);
+--color-info-deep: var(--blue-deep);
+--color-info-surface: var(--blue-soft);
+--color-info-border: var(--blue-border);
+--color-info-surface-alt: var(--blue-soft-alt);
+--color-info-border-alt: var(--blue-border-alt);
+
+/* Warning / review */
+--color-warning-solid: var(--amber);
+--color-warning-deep: var(--amber-deep);
+--color-warning-surface: var(--amber-soft);
+--color-warning-border: var(--amber-border);
+--color-warning-ack-bg: var(--amber-ack-bg);
+--color-warning-ack-border: var(--amber-ack-border);
+--color-warning-ack-text: var(--amber-ack-text);
+
+/* Danger / error */
+--color-danger-solid: var(--red);
+--color-danger-surface: var(--red-soft);
+--color-danger-border: var(--red-border);
+
+/* Success / ok (reuse brand colors for now) */
+--color-success-solid: var(--accent);
+--color-success-hover: var(--accent-hover);
+--color-success-surface: var(--accent-soft);
+--color-success-border: var(--accent-border);
+}

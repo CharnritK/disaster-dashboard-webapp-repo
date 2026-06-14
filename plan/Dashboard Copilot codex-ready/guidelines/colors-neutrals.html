@@ -1,0 +1,23 @@
+<!-- @dsCard group="Colors" viewport="700x150" subtitle="Warm neutral ramp: ink, lines, surfaces" name="Neutrals" -->
+<!DOCTYPE html>
+<html><head><link rel="stylesheet" href="../styles.css">
+<style>
+  body { background: var(--soft); padding: 16px; }
+  .row { display: grid; grid-template-columns: repeat(8, 1fr); gap: 8px; }
+  .sw { border: 1px solid var(--line); border-radius: 8px; height: 64px; }
+  .lbl { display: grid; gap: 1px; margin-top: 6px; font-size: 11px; }
+  .lbl strong { font-weight: 720; }
+  .lbl code { font-family: var(--font-mono); font-size: 10px; color: var(--muted); }
+</style></head>
+<body>
+  <div class="row">
+    <div><div class="sw" style="background:var(--ink)"></div><p class="lbl"><strong>ink</strong><code>#171717</code></p></div>
+    <div><div class="sw" style="background:var(--muted)"></div><p class="lbl"><strong>muted</strong><code>#5f656d</code></p></div>
+    <div><div class="sw" style="background:var(--subtle)"></div><p class="lbl"><strong>subtle</strong><code>#8a9098</code></p></div>
+    <div><div class="sw" style="background:var(--line-strong)"></div><p class="lbl"><strong>line-strong</strong><code>#c9cbc3</code></p></div>
+    <div><div class="sw" style="background:var(--line)"></div><p class="lbl"><strong>line</strong><code>#deded8</code></p></div>
+    <div><div class="sw" style="background:var(--soft)"></div><p class="lbl"><strong>soft</strong><code>#f5f6f2</code></p></div>
+    <div><div class="sw" style="background:var(--panel)"></div><p class="lbl"><strong>panel</strong><code>#fbfbf8</code></p></div>
+    <div><div class="sw" style="background:var(--paper)"></div><p class="lbl"><strong>paper</strong><code>#ffffff</code></p></div>
+  </div>
+</body></html>

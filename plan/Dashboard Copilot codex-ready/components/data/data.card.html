@@ -1,0 +1,51 @@
+<!-- @dsCard group="Components" viewport="700x430" subtitle="KPI metrics, horizontal bars with values inside, bordered table, inline code chips" name="Data display" -->
+<!DOCTYPE html>
+<html><head>
+<link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="../../ds-fallback-loader.js"></script>
+<script src="../../_ds_bundle.js"></script>
+<style>body { background: var(--soft); margin: 0; padding: 16px; }</style>
+</head><body>
+<div id="root"></div>
+<script type="text/babel">
+(async () => {
+const NS = await window.__dsLoadNamespace({ detect: ["Metric", "BarChart"] });
+const { Metric, BarChart, DataTable, Card, InlineCode } = NS;
+
+function Demo() {
+  return (
+    <div style={{ display: "grid", gap: 14 }}>
+      <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(3, 1fr)" }}>
+        <Metric label="Total records" value="2,332" />
+        <Metric label="Average of Need severity score" value="70" />
+        <Metric label="Sum of People assessed" value="2,332" />
+      </div>
+      <Card title="People assessed by district">
+        <BarChart items={[
+          { label: "Central District", value: 792 },
+          { label: "North District", value: 642 },
+          { label: "South District", value: 510 },
+          { label: "East District", value: 388 },
+        ]} />
+      </Card>
+      <DataTable
+        columns={["Column", "Type", "Missing", "Unique", "Samples"]}
+        rows={[
+          ["need_severity_score", "number", "0%", "5", "78, 74, 61"],
+          ["priority_need", "string", "0%", "4", "water, food, shelter"],
+          ["response_gap_percent", "number", "18%", "5", "46, 41, 33"],
+        ]}
+      />
+      <p style={{ color: "var(--muted)", fontSize: "0.9rem", margin: 0 }}>
+        Response gap (<InlineCode>response_gap_percent</InlineCode>) is 18% missing in East District.
+      </p>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById("root")).render(<Demo />);
+})();
+</script>
+</body></html>

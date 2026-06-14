@@ -1,0 +1,18 @@
+<!-- @dsCard group="Colors" viewport="700x180" subtitle="Severity = 4px left border: blue info, teal good, amber review, red blocking" name="Severity convention" -->
+<!DOCTYPE html>
+<html><head><link rel="stylesheet" href="../styles.css">
+<style>
+  body { background: var(--soft); padding: 16px; }
+  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .tile { background: var(--panel); border: 1px solid var(--line); border-left-width: 4px; border-radius: 8px; padding: 11px 12px; display: grid; gap: 3px; }
+  .tile strong { font-size: 0.86rem; font-weight: 720; }
+  .tile span { color: var(--muted); font-size: 0.78rem; }
+</style></head>
+<body>
+  <div class="grid">
+    <div class="tile" style="border-left-color:var(--blue)"><strong>Info / default</strong><span>Neutral observations</span></div>
+    <div class="tile" style="border-left-color:var(--accent)"><strong>Low / covered</strong><span>Good to proceed</span></div>
+    <div class="tile" style="border-left-color:var(--amber)"><strong>Medium / review</strong><span>Needs a human look</span></div>
+    <div class="tile" style="border-left-color:var(--red)"><strong>High / blocking</strong><span>Decision unsafe</span></div>
+  </div>
+</body></html>

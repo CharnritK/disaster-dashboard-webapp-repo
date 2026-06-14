@@ -1,0 +1,30 @@
+/* Dashboard Copilot — spacing, radius, layout tokens */
+:root {
+  /* radius — one card radius everywhere, pills are full-round */
+  --radius: 8px;        /* cards, buttons, inputs, notices, tables */
+  --radius-bar: 7px;    /* chart bars + tooltips, nested inside 8px tracks */
+  --radius-code: 5px;   /* inline code chips */
+  --radius-pill: 999px; /* chips, steps, toggles, badges */
+
+  /* spacing scale (observed values, not a strict 4pt grid) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 28px;
+
+  /* card padding */
+  --pad-card: 18px;       /* .card, .metric */
+  --pad-panel: 28px;      /* .main-panel */
+  --pad-panel-lg: 22px;   /* recommendation/readiness panels */
+  --pad-tile: 12px;       /* nested tiles */
+
+  /* layout */
+  --shell-max: 1240px;    /* app shell + header max-width */
+  --about-max: 1120px;    /* about page shell */
+  --shell-pad-x: 28px;
+  --control-height: 40px; /* buttons, inputs, selects min-height */
+  --grid-cell: 72px;      /* background graph-paper cell size */
+}

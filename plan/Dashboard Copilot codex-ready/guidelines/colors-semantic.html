@@ -1,0 +1,42 @@
+<!-- @dsCard group="Colors" viewport="700x190" subtitle="Info blue, warning amber, error red — each with soft bg + border tints" name="Semantic colors" -->
+<!DOCTYPE html>
+<html><head><link rel="stylesheet" href="../styles.css">
+<style>
+  body { background: var(--soft); padding: 16px; }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .trio { display: grid; grid-template-columns: 1.7fr 1fr 1fr; gap: 6px; }
+  .sw { border: 1px solid var(--line); border-radius: 8px; height: 56px; }
+  h4 { margin: 0 0 6px; font-size: 12px; font-weight: 780; text-transform: uppercase; letter-spacing: 0; }
+  .codes { display: flex; gap: 10px; margin-top: 6px; font-family: var(--font-mono); font-size: 10px; color: var(--muted); }
+</style></head>
+<body>
+  <div class="grid">
+    <div>
+      <h4 style="color:var(--blue)">Info / blue</h4>
+      <div class="trio">
+        <div class="sw" style="background:var(--blue)"></div>
+        <div class="sw" style="background:var(--blue-border)"></div>
+        <div class="sw" style="background:var(--blue-soft)"></div>
+      </div>
+      <div class="codes"><span>#2d5be3</span><span>#ccd8ff</span><span>#eef3ff</span></div>
+    </div>
+    <div>
+      <h4 style="color:var(--amber)">Warning / amber</h4>
+      <div class="trio">
+        <div class="sw" style="background:var(--amber)"></div>
+        <div class="sw" style="background:var(--amber-border)"></div>
+        <div class="sw" style="background:var(--amber-soft)"></div>
+      </div>
+      <div class="codes"><span>#a56315</span><span>#fed7aa</span><span>#fff7ed</span></div>
+    </div>
+    <div>
+      <h4 style="color:var(--red)">Error / red</h4>
+      <div class="trio">
+        <div class="sw" style="background:var(--red)"></div>
+        <div class="sw" style="background:var(--red-border)"></div>
+        <div class="sw" style="background:var(--red-soft)"></div>
+      </div>
+      <div class="codes"><span>#b42318</span><span>#f7c6c6</span><span>#fff1f1</span></div>
+    </div>
+  </div>
+</body></html>

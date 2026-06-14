@@ -1,0 +1,17 @@
+<!-- @dsCard group="Spacing" viewport="700x190" subtitle="Borders over shadows: hairline cards, one huge soft shadow for main panels" name="Shadows" -->
+<!DOCTYPE html>
+<html><head><link rel="stylesheet" href="../styles.css">
+<style>
+  body { background: var(--bg-graph-paper); padding: 20px; }
+  .row { display: flex; gap: 20px; align-items: stretch; }
+  .b { border: 1px solid var(--line); border-radius: 8px; background: var(--paper); padding: 14px; width: 200px; display: grid; gap: 3px; align-content: start; }
+  .b strong { font-size: 0.86rem; font-weight: 720; }
+  .b code { font-family: var(--font-mono); font-size: 10px; color: var(--muted); }
+</style></head>
+<body>
+  <div class="row">
+    <div class="b" style="box-shadow:var(--shadow-card)"><strong>Card</strong><code>0 1px 0 / 3%</code><code>hairline only</code></div>
+    <div class="b" style="background:rgba(255,255,255,.86);box-shadow:var(--shadow)"><strong>Main panel</strong><code>0 18px 45px / 7%</code><code>--shadow</code></div>
+    <div class="b" style="box-shadow:var(--shadow-tooltip);background:var(--ink);color:#fff;border-color:var(--ink)"><strong>Tooltip</strong><code style="color:#e7e7e2">0 10px 22px / 16%</code><code style="color:#e7e7e2">ink chip</code></div>
+  </div>
+</body></html>

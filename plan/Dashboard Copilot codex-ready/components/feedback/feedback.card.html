@@ -1,0 +1,53 @@
+<!-- @dsCard group="Components" viewport="700x540" subtitle="Notices, pills, tooltip, loading banner, severity callouts, empty states" name="Feedback" -->
+<!DOCTYPE html>
+<html><head>
+<link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="../../ds-fallback-loader.js"></script>
+<script src="../../_ds_bundle.js"></script>
+<style>body { background: var(--soft); margin: 0; padding: 16px; }</style>
+</head><body>
+<div id="root"></div>
+<script type="text/babel">
+(async () => {
+const NS = await window.__dsLoadNamespace({ detect: ["Notice", "Pill"] });
+const { Notice, Pill, LoadingBanner, SeverityCallout, EmptyState, Tooltip } = NS;
+
+function Demo() {
+  return (
+    <div style={{ display: "grid", gap: 12 }}>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+        <Pill tone="accent" uppercase>CSV</Pill>
+        <Pill tone="blue">Required</Pill>
+        <Pill tone="ink">2 covered</Pill>
+        <Pill>3 need review</Pill>
+        <Pill tone="panel">96% match rate</Pill>
+        <LoadingBanner />
+      </div>
+      <Notice tone="warn" items={["AI is off. Deterministic profiling, evidence coverage, readiness checks, and dashboard recommendations remain available."]} style={{ margin: 0 }} />
+      <Notice tone="error" items={["One or more files could not be loaded. Check the files and try again."]} />
+      <div style={{ display: "grid", gap: 10, gridTemplateColumns: "repeat(2, minmax(0,1fr))" }}>
+        <SeverityCallout severity="medium" title="Response gap data partially missing" meta={<Tooltip label={<><strong>East District</strong><span style={{ color: "#e7e7e2", display: "block" }}>18% of rows missing</span></>}><Pill uppercase>data gap</Pill></Tooltip>}>
+          <span style={{ color: "var(--muted)", fontSize: "0.86rem" }}>response_gap_percent is 18% missing in East District.</span>
+        </SeverityCallout>
+        <SeverityCallout severity="low" title="Join coverage is strong">
+          <span style={{ color: "var(--muted)", fontSize: "0.86rem" }}>96% of assessment rows matched a population baseline.</span>
+        </SeverityCallout>
+      </div>
+      <div style={{ display: "grid", gap: 10, gridTemplateColumns: "3fr 2fr" }}>
+        <EmptyState title="Add data to begin" minHeight="150px">
+          <p style={{ margin: 0 }}>Upload CSV or XLSX files to profile, harmonize, and build a dashboard.</p>
+        </EmptyState>
+        <EmptyState compact title="No blocking quality issues were found.">
+          Checks cover missingness, duplicates, and join coverage.
+        </EmptyState>
+      </div>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById("root")).render(<Demo />);
+})();
+</script>
+</body></html>
