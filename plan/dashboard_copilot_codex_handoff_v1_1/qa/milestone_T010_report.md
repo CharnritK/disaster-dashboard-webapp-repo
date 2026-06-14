@@ -2,7 +2,7 @@
 
 Date: 2026-06-14
 
-Verdict: `T011_AUTH_FOUNDATION_ADDED_REVIEW_REQUIRED`
+Verdict: `T011_AUTH_FOUNDATION_STAGING_VERIFIED`
 
 This pass completed the safe first implementation milestone through T010/T010A, then continued into the explicitly approved T011 Supabase Auth foundation only. It still stops before persistent database adapters, route split, AI coach work, internal dashboards, production deployment, or production migrations.
 
@@ -210,10 +210,13 @@ These remain blocked until human review passes this checkpoint:
 - If Vercel build behavior regresses, revert `next.config.ts` and `scripts/prepare-sites-dist.mjs` together because they jointly control local Codex Sites `dist` handling versus Vercel standard Next output.
 - If the usage UI causes public-demo confusion, remove the `usageSlot` prop and `UsageMeter` mount while keeping `/api/usage` and entitlement tests.
 
-## Required Stop
+## Follow-On Gate Update
 
-Stop here for human review before database adapter work, persistent usage
-ledger work, workflow route split, AI coach, dashboards, production deployment,
-or production migrations. Manual Supabase magic-link login is code-complete but
-not claimed as verified without a real reviewed Supabase project, redirect URL,
-and test email flow.
+The original T010A stop was satisfied by explicit user approval before T011+
+work continued. As of 2026-06-14, the staging Supabase project, redirect URLs,
+schema/RLS migration, Vercel preview environment, and approved beta/admin email
+magic-link login have been validated for preview-only use.
+
+Production deployment, production Supabase configuration, production
+migrations, added beta/admin allowlist entries, anonymous AI, and retention
+automation remain blocked until separately approved.

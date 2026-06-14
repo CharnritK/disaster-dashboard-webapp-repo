@@ -86,5 +86,14 @@ Smoke results:
   - redirect location:
     `/login?next=%2Fapp%2Fusage&sent=1`
 
-Authenticated browser smoke is still pending the user clicking the one-time
-magic-link email. The email link was not read or used by Codex.
+## Authenticated Magic-Link Smoke
+
+User-confirmed on 2026-06-14:
+
+- The approved beta/admin email received the Supabase magic-link email.
+- Opening the link completed login against the staging-backed Vercel preview.
+- The authenticated preview path worked for the user.
+
+Codex did not read the user's email inbox or inspect the one-time magic-link
+URL. This is recorded as user-confirmed external auth validation, not as a
+Codex-controlled email-link capture.

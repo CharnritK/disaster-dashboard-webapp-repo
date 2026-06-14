@@ -62,13 +62,14 @@ Implication: document retention posture, but do not automate deletion until
 legal/product review approves ownership, service-role boundaries, logs, and
 rollback.
 
-## Still Needed From The User
+## Current Follow-Up Decisions
 
-- Preview deployment target.
-- Supabase project URL and publishable key for preview/staging.
-- Server-side Supabase secret key or database connection details for the
-  server-only metadata adapter.
-- Named beta email allowlist.
-- Named admin email allowlist.
-- Preview `APP_BASE_URL` and approved Supabase redirect URLs.
-- Confirmation after schema/RLS review before any staging migration is run.
+The preview/staging path has now been configured and user-confirmed for the
+approved beta/admin email. The following decisions remain intentionally blocked:
+
+- Production deployment target and timing.
+- Production Supabase project configuration, redirect URLs, and migrations.
+- Any additional beta or admin allowlist entries.
+- Any change to `AI_DAILY_QUOTA=20`.
+- Any change to deterministic sample-only `/demo` behavior.
+- Any retention automation.

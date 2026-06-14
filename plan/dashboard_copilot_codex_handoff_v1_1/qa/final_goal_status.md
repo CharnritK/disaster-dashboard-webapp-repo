@@ -2,11 +2,12 @@
 
 Date: 2026-06-14
 
-Verdict: `IMPLEMENTATION_COMPLETE_LOCAL_BETA_READY`
+Verdict: `IMPLEMENTATION_COMPLETE_STAGING_AUTH_VERIFIED`
 
 The controlled-beta implementation is complete for local/reviewable code paths
-that do not require production credentials, production migrations, production
-deployment, or entering provider secrets.
+and the staging preview auth path has now been verified with a real
+Supabase-backed magic-link login. Production credentials, production migrations,
+production deployment, and production allowlist changes remain out of scope.
 
 ## Completed
 
@@ -97,15 +98,21 @@ deployment, or entering provider secrets.
   - `/api/templates` returns 401 unauthenticated;
   - `/api/feedback` returns 401 unauthenticated;
   - `/api/coach` returns deterministic fallback unauthenticated.
+- Staging Supabase-backed Vercel preview smoke passed:
+  - `/demo` returned 200;
+  - `/api/recommend/status` returned deterministic fallback with
+    `fallbackReason="ai_disabled"`;
+  - unauthenticated `/api/usage` and `/api/templates` returned 401;
+  - approved beta/admin email magic-link login was user-confirmed working.
 
 ## Remaining External Gates
 
 - No production migration was run.
 - No production deployment was run.
-- Manual Supabase email login is not claimed without reviewed provider project,
-  redirect URL configuration, and a real email flow.
-- Admin role behavior is deny-by-default and needs reviewed preview/staging
-  allowlist values before external validation.
-- Preview/staging Supabase project values, redirect URLs, beta emails, admin
-  emails, and server-side secrets still need to be supplied outside version
-  control.
+- Production Supabase project configuration, redirect URLs, allowlists, and
+  migrations remain blocked pending explicit production approval.
+- Production Vercel environment variables remain blocked pending explicit
+  production approval.
+- Additional beta/admin users require explicit allowlist approval before being
+  added.
+- Retention automation remains blocked pending legal/product review.
