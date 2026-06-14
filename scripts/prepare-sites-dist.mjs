@@ -1,4 +1,4 @@
-import { cp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { cp, mkdir, readdir, rm, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -22,8 +22,8 @@ await rm(path.join(dist, "_appgen_meta"), { recursive: true, force: true });
 await mkdir(client, { recursive: true });
 await mkdir(path.join(client, "_next"), { recursive: true });
 
-await copyIfExists(path.join(server, "app", "index.html"), path.join(client, "index.html"));
-await copyIfExists(path.join(server, "app", "about.html"), path.join(client, "about.html"));
+await copyTopLevelHtmlRoutes(path.join(server, "app"), client);
+await copyIfExists(path.join(server, "app", "demo.html"), path.join(client, "index.html"));
 await copyIfExists(path.join(server, "app", "_not-found.html"), path.join(client, "404.html"));
 await copyIfExists(path.join(server, "app", "icon.svg.body"), path.join(client, "icon.svg"));
 await copyIfExists(path.join(dist, "static"), path.join(client, "_next", "static"));
@@ -93,4 +93,16 @@ export default {
 async function copyIfExists(source, destination) {
   if (!existsSync(source)) return;
   await cp(source, destination, { recursive: true, force: true });
+}
+
+async function copyTopLevelHtmlRoutes(sourceDir, destinationDir) {
+  if (!existsSync(sourceDir)) return;
+  const entries = await readdir(sourceDir, { withFileTypes: true });
+  await Promise.all(
+    entries
+      .filter((entry) => entry.isFile() && entry.name.endsWith(".html"))
+      .map((entry) =>
+        copyIfExists(path.join(sourceDir, entry.name), path.join(destinationDir, entry.name)),
+      ),
+  );
 }
