@@ -34,6 +34,7 @@ grant select, insert, update, delete on table public.template_versions to servic
 
 -- RPC execution should be explicit. Keep reserve_ai_usage unavailable to
 -- browser roles until a reviewed migration decides otherwise.
+revoke execute on function public.reserve_ai_usage(uuid, date, integer) from public;
 revoke execute on function public.reserve_ai_usage(uuid, date, integer) from anon, authenticated;
 grant execute on function public.reserve_ai_usage(uuid, date, integer) to service_role;
 

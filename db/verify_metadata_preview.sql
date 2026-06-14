@@ -33,15 +33,23 @@ where routine_schema = 'public'
   and routine_name = 'reserve_ai_usage';
 
 select
-  routine_schema,
-  routine_name,
-  grantee,
-  privilege_type
-from information_schema.routine_privileges
-where routine_schema = 'public'
-  and routine_name = 'reserve_ai_usage'
-  and grantee in ('anon', 'authenticated', 'service_role')
-order by grantee, privilege_type;
+  to_regprocedure('public.reserve_ai_usage(uuid,date,integer)') is not null
+    as rpc_exists,
+  has_function_privilege(
+    'anon',
+    'public.reserve_ai_usage(uuid,date,integer)',
+    'execute'
+  ) as anon_execute,
+  has_function_privilege(
+    'authenticated',
+    'public.reserve_ai_usage(uuid,date,integer)',
+    'execute'
+  ) as authenticated_execute,
+  has_function_privilege(
+    'service_role',
+    'public.reserve_ai_usage(uuid,date,integer)',
+    'execute'
+  ) as service_role_execute;
 
 select
   table_schema,

@@ -63,6 +63,7 @@ describe("metadata database drafts", () => {
     expect(schema).toContain("p_usage_date date");
     expect(schema).toContain("p_daily_limit integer");
     expect(rls).toContain("public.reserve_ai_usage(uuid, date, integer)");
+    expect(rls).toContain("from public");
     expect(rls).not.toContain("public.reserve_ai_usage(uuid, date, text, integer)");
 
     for (const route of ["/api/recommend", "/api/copilot", "/api/coach"]) {
