@@ -55,6 +55,11 @@ Date: 2026-06-14
   - `NEXT_PUBLIC_SUPABASE_URL`
   - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
   - `APP_BASE_URL`
+- Preview-scoped allowlist environment variables were added for one named
+  beta/admin email. The email value is stored only in Vercel env vars and is
+  intentionally not committed to this repository:
+  - `AI_BETA_ALLOWED_EMAILS`
+  - `ADMIN_EMAILS`
 - A CLI deployment attempted without `--prod` was unexpectedly classified by
   Vercel as target `production`; it failed during type checking and did not
   become live.
@@ -73,9 +78,6 @@ Date: 2026-06-14
 
 ## Remaining Blockers
 
-- Confirm named beta and admin allowlist values:
-  - `AI_BETA_ALLOWED_EMAILS`
-  - `ADMIN_EMAILS`
 - Apply `db/schema.sql` and `db/rls.sql` only after schema/RLS review and only
   to a preview or staging database.
 - Enable `METADATA_STORE=supabase`, `AI_USAGE_STORE=supabase`, and
@@ -96,11 +98,51 @@ Date: 2026-06-14
   deterministic workflow visible.
 - Vercel error-log scan over the smoke window returned no error entries.
 
+## Beta Auth Smoke
+
+- Created one named Supabase Auth beta/admin user from the Supabase dashboard.
+  The user was auto-confirmed so the app can use magic-link login with
+  `shouldCreateUser=false`.
+- A throwaway dashboard-required password was generated only for user creation
+  and was not stored or committed.
+- App magic-link request smoke:
+  - `POST /auth/signin`
+  - result: `307` to `/login?next=%2Fapp%2Fdata&sent=1`
+- Full end-to-end login remains user-action gated because the one-time
+  magic-link email must be opened from the recipient inbox.
+
+## Schema And RLS Review
+
+- Reviewed `db/schema.sql` and `db/rls.sql` against the metadata-only product
+  boundary.
+- Confirmed schema only defines approved metadata tables:
+  - `user_profiles`
+  - `ai_usage_daily`
+  - `ai_events`
+  - `feedback`
+  - `custom_templates`
+  - `template_versions`
+- Confirmed forbidden persistence tables are not present: uploaded rows,
+  prepared rows, raw files, exports, prompts, prompt bodies, screenshots, or
+  model responses.
+- Confirmed RLS is enabled for every metadata table.
+- Confirmed `anon` and `authenticated` grants are revoked before explicit
+  re-grants.
+- Confirmed authenticated users can read only their own usage/events/feedback
+  and own or reviewed templates.
+- Confirmed authenticated users cannot directly insert/update/delete
+  `ai_usage_daily` or `ai_events`.
+- Confirmed `reserve_ai_usage(uuid, date, integer)` is executable by
+  `service_role` only.
+- Confirmed service-role DB access remains behind the server-only helper.
+- Verification: `npm run test -- tests/db-schema-boundary.test.ts` passed
+  with 4 tests.
+
 ## Still Not Performed
 
 - No production deployment was created successfully or promoted.
 - No SQL migration was run.
+- No staging/preview database target was identified in Supabase; the dashboard
+  project is still labeled `main Production`.
 - No Supabase service-role key or database URL was copied into Vercel.
 - No AI provider key was configured.
-- No beta/admin email allowlists were populated because named values were not
-  supplied in this run.
