@@ -2,6 +2,9 @@
 
 This file is a security implementation note for the approved default provider path: Supabase Auth + Supabase Postgres.
 
+Current SQL drafts: `../../../db/schema.sql` and `../../../db/rls.sql`. These
+are review artifacts only, not production migrations.
+
 ## Non-negotiable rules
 
 - Use Supabase `auth.users` as the identity source.

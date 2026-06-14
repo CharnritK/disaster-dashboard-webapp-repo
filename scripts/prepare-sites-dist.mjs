@@ -3,6 +3,11 @@ import { existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
+if (process.env.VERCEL === "1" || process.env.VERCEL === "true") {
+  console.log("Skipping Codex Sites dist post-processing during Vercel build.");
+  process.exit(0);
+}
+
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const dist = path.join(root, "dist");
 const client = path.join(dist, "client");

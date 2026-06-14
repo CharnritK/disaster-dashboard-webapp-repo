@@ -167,6 +167,10 @@ export type AIRecommendationResponse = {
   summary: string;
   source?: "deterministic" | "llm";
   fallbackReason?:
+    | "ai_disabled"
+    | "unauthenticated"
+    | "not_entitled"
+    | "quota_exceeded"
     | "missing_api_key"
     | "unsupported_provider"
     | "app_rate_limit"

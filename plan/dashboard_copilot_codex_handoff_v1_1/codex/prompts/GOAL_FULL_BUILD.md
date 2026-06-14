@@ -45,14 +45,18 @@ APPROVED_AUTH_PROVIDER=Supabase Auth
 APPROVED_PERSISTENCE_PROVIDER=Supabase Postgres
 APPROVED_DAILY_AI_QUOTA=20
 APPROVED_ROOT_BEHAVIOR=/ redirects to /demo
-APPROVED_ANONYMOUS_AI_VISIBILITY=visible disabled CTA
+APPROVED_ANONYMOUS_AI_VISIBILITY=none in /demo
 
 APPROVED_PROVIDER_IMPLEMENTATION=true
 APPROVED_SCHEMA_FILES=true
+APPROVED_PREVIEW_DEPLOYMENT=true
 APPROVED_PRODUCTION_DEPLOYMENT=false
 APPROVED_PRODUCTION_MIGRATIONS=false
 APPROVED_AI_PROVIDER_MODEL_CHANGES=false
 APPROVED_DATA_RETENTION_AUTOMATION=false
+APPROVED_OPEN_SIGNUP=false
+APPROVED_BETA_ACCESS=named beta emails only
+APPROVED_ADMIN_ACCESS=named admin emails only
 ```
 
 If `APPROVED_PROVIDER_IMPLEMENTATION` is not `true`, stop after:
@@ -218,7 +222,7 @@ getDailyUsage(userId, localDate)
 3. Display `used / limit`.
 4. Show quota warning.
 5. Show deterministic workflow-continuation copy when quota is exceeded.
-6. Do not show AI usage meter in public demo unless CTA-only.
+6. Do not show AI usage meter or anonymous AI controls in public demo.
 
 ### Milestone checkpoint after T010
 

@@ -78,6 +78,30 @@ Not production-ready.
 
 The handoff is ready for controlled Codex implementation with assumptions and review gates. Preview build readiness depends on baseline commands and provider setup. Production release remains blocked until review gates are closed.
 
+## T010A checkpoint update
+
+Status: `CHECKPOINT_REACHED_STOP_REQUIRED`
+
+The first milestone implementation reached the mandated T010/T010A checkpoint. The new checkpoint report is `qa/milestone_T010_report.md`.
+
+Validated:
+
+- lint, tests, and build pass after implementation;
+- browser smoke passes on desktop and mobile through local Next dev;
+- unauthenticated `/api/usage` returns deterministic fallback status;
+- no provider SDK, real auth integration, database adapter, route split, AI coach, internal dashboard, production deployment, or migration was started.
+
+Continue only after human review approves the checkpoint and confirms the next phase scope.
+
+Continuation note:
+
+- T006/T006A SQL drafts, T025 status hardening, and T027 deployment smoke artifacts were added as credential-free review artifacts after the initial checkpoint.
+- T011 Supabase Auth foundation was added after confirming `APPROVED_PROVIDER_IMPLEMENTATION=true` and `APPROVED_AUTH_PROVIDER=Supabase Auth`.
+- `/app/**` is now protected by Supabase SSR middleware and a verified-claims server page check; `/`, `/about`, `/demo`, and API fallback routes remain public.
+- Magic-link login/callback/signout routes exist, but manual end-to-end Supabase email login is not claimed without reviewed provider credentials and redirect configuration.
+- Current validation is recorded in `qa/milestone_T010_report.md`.
+- DB adapter, persistent usage ledger, route split, AI coach, internal dashboard, production deployment, and production migration remain blocked.
+
 ## Review gate
 
 Reviewer:
@@ -109,3 +133,12 @@ Fallback:
 - keep demo deterministic only
 - disable AI mode
 - do not deploy authenticated beta
+
+## Final goal update
+
+Status: `IMPLEMENTATION_COMPLETE_WITH_T021_STOP_GATE`
+
+The final implementation status is recorded in `qa/final_goal_status.md`.
+T021 full workflow step-route split remains stop-gated because a correct split
+requires shared in-memory workflow state under `/app`; fake route aliases would
+not satisfy the product contract.

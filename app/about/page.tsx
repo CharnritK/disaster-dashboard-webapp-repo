@@ -53,6 +53,9 @@ export default function AboutPage() {
             >
               About
             </a>
+            <a className="header-nav-link" href="/progress">
+              Progress
+            </a>
           </div>
         </div>
       </header>

@@ -1,145 +1,74 @@
-# Decisions Requiring User Approval
+# Controlled-Beta Decisions
 
-## D1 — Auth provider
+Date: 2026-06-14
 
-Default in `/goal`:
+Verdict: `APPROVED_WITH_PREVIEW_AND_STAGING_LIMITS`
 
-- Supabase Auth
+The user approved the controlled-beta decision posture below. This is approval
+to configure and validate the beta path safely. It is not approval to mutate
+production, run production migrations, open public signup, add anonymous AI, or
+automate retention deletion.
 
-Alternatives:
+## D1 - Preview Deployment Path
 
-- Auth.js with OAuth
-- Auth.js with credentials
-- Auth0
-- Clerk
+Decision: approved preview-only first.
 
-Approval needed before:
+Implication: use a preview deployment for external validation. Do not deploy
+production until auth, DB, and deterministic fallback smoke tests pass.
 
-- installing provider SDK
-- creating auth routes
-- creating auth tables
-- changing route protection
+## D2 - Real Supabase Project
 
-Recommended default:
+Decision: approved Supabase Auth and Supabase Postgres.
 
-Supabase Auth if the user wants the fewest external services.
+Implication: use magic-link login, protected `/app/**` routes, metadata-only
+storage, and RLS review. Credentials and project values must still be supplied
+outside version control.
 
-Fallback:
+## D3 - Database Migration Timing
 
-If not approved, implement only auth interfaces and mock sessions for tests.
+Decision: approved review-first migration timing.
 
-## D2 — Persistence provider
+Implication: review `db/schema.sql` and `db/rls.sql`, then apply them only to a
+preview or staging database. Production migrations remain blocked.
 
-Default in `/goal`:
+## D4 - Beta And Admin Allowlists
 
-- Supabase Postgres
+Decision: approved narrow access.
 
-Alternatives:
+Implication: use named beta emails and named admins. Keep
+`AI_BETA_ALLOW_ALL_AUTHENTICATED=false`. Do not enable open self-serve signup.
 
-- Neon Postgres
-- Vercel Marketplace Postgres
-- external managed Postgres
+## D5 - Daily AI Quota
 
-Approval needed before:
+Decision: approved early-beta quota of `AI_DAILY_QUOTA=20`.
 
-- adding provider SDK
-- adding migration files
-- connecting DB adapter
-- deploying schema
+Implication: keep quota copy, usage reservations, and fallback behavior aligned
+to 20 attempted provider calls per user per day unless real beta usage changes
+the decision.
 
-Recommended default:
+## D6 - Public Demo Behavior
 
-Supabase Postgres with metadata-only tables.
+Decision: approved deterministic sample-only demo.
 
-Fallback:
+Implication: keep `/demo` public, deterministic, sample-only, and free of
+anonymous AI. Arbitrary upload controls and anonymous provider calls remain out
+of scope for the public demo.
 
-Use in-memory adapters and SQL draft only.
+## D7 - Retention Policy
 
-## D3 — Daily AI quota
+Decision: approved manual retention documentation now.
 
-Default:
+Implication: document retention posture, but do not automate deletion until
+legal/product review approves ownership, service-role boundaries, logs, and
+rollback.
 
-- 20 AI assists per user per Asia/Bangkok day
+## Still Needed From The User
 
-Approval needed before:
-
-- hard-coding default quota
-- exposing quota copy in UI
-- writing quota policy docs
-
-Fallback:
-
-Use environment variable `AI_DAILY_QUOTA=20`.
-
-## D4 — Root route behavior
-
-Default:
-
-- `/` redirects to `/demo`
-
-Alternative:
-
-- Keep `/` as the demo route.
-- Keep `/` as landing page with `/demo` CTA.
-
-Approval needed before:
-
-- changing root route behavior
-
-Fallback:
-
-Leave root route unchanged and add `/demo`.
-
-## D5 — Anonymous AI visibility
-
-Default:
-
-- show disabled AI mode with CTA
-
-Alternative:
-
-- hide AI controls entirely for anonymous users
-
-Approval needed before:
-
-- changing public demo messaging
-
-Fallback:
-
-Hide AI controls in `/demo`.
-
-## D6 — Vercel deployment settings
-
-Default:
-
-- no production deployment by Codex
-- generate config and smoke checklist only
-
-Approval needed before:
-
-- deploying
-- modifying production env values
-- running production smoke tests with live credentials
-
-Fallback:
-
-Preview-only handoff.
-
-## D7 — Data retention policy
-
-Default draft:
-
-- `ai_events`: 90 days
-- `feedback`: 180 days
-- templates: retained until user deletion
-- users: retained until account deletion
-
-Approval needed before:
-
-- scheduled deletion
-- retention automation
-- legal/compliance docs
-
-Fallback:
-
-Document retention as pending.
+- Preview deployment target.
+- Supabase project URL and publishable key for preview/staging.
+- Server-side Supabase secret key or database connection details for the
+  server-only metadata adapter.
+- Named beta email allowlist.
+- Named admin email allowlist.
+- Preview `APP_BASE_URL` and approved Supabase redirect URLs.
+- Confirmation after schema/RLS review before any staging migration is run.

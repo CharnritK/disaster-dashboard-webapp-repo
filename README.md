@@ -8,6 +8,8 @@ Start with these documents if you are reviewing, submitting, or adapting the pro
 
 - [Digital Public Good Guide](docs/digital-public-good-guide.md): plain-English overview, scope, extension guidance, starter prompts, and technical appendix.
 - [AI Mode Configuration](docs/AI_MODE.md): server-side AI setup, route behavior, task-specific model variables, and deterministic fallback.
+- [Data Retention Draft](docs/data-retention.md): metadata retention boundaries and automation gate.
+- [Release Readiness Checklist](docs/release-readiness.md): controlled-beta launch gates, rollback, and safety checks.
 - [Visualization Policy](docs/visualization-policy.md): deterministic chart, map, denominator, caveat, and accessibility guardrails.
 - [Codex Starter Prompts](docs/codex-starter-prompts.md): copy-ready prompts for adapting the project to new decision-support contexts.
 - [Showcase Script](docs/showcase-script.md): short demo path for explaining the workflow to a non-technical audience.
@@ -16,7 +18,7 @@ Start with these documents if you are reviewing, submitting, or adapting the pro
 
 ## Run Locally
 
-Use Node.js `26.1.0` as pinned in `.tool-versions`, then install from the
+Use Node.js `24.15.0` as pinned in `.tool-versions`, then install from the
 lockfile:
 
 ```bash
@@ -36,9 +38,11 @@ npm run build
 
 ## Production V1 Contract
 
-Production v1 is a controlled beta for non-sensitive, session-only disaster-response decision support. Response prioritization is the approved primary workflow. Service gap monitoring and preparedness risk screening are beta workflows until a domain reviewer approves their use.
+Production v1 is a controlled authenticated AI beta with session-only uploaded data. Response prioritization is the approved primary workflow. Service gap monitoring and preparedness risk screening are beta workflows until a domain reviewer approves their use.
 
-Deterministic mode is the default launch posture. AI may be enabled only after the safety/privacy review gate is closed or explicitly deferred by the named owner. The demo path remains onboarding and proof, not the definition of production readiness.
+Deterministic mode is the default launch posture. AI may be enabled only after the server verifies authentication, entitlement, and the daily quota. The demo path remains onboarding and proof, not the definition of production readiness.
+
+Persistent storage is allowed only for account/profile metadata, AI usage, AI events, feedback, custom templates, template versions, and non-sensitive eval metadata. Uploaded files, uploaded rows, prepared rows, full datasets, exported reports/files, full LLM request bodies, full prompts, API keys, service-role keys, private tokens, and sensitive operational data must not be persisted.
 
 Public launch remains blocked until product, domain, safety/privacy, export, accessibility, release, and support owners are named and their gates are closed or explicitly deferred.
 
@@ -69,6 +73,7 @@ LLM_WORKFLOW_REQUEST_TIMEOUT_MS=15000
 LLM_DASHBOARD_REQUEST_TIMEOUT_MS=45000
 LLM_HANDOFF_REQUEST_TIMEOUT_MS=30000
 LLM_MAX_COMPLETION_TOKENS=3200
+AI_DAILY_QUOTA=20
 MAX_UPLOAD_SIZE_MB=1
 RECOMMEND_REQUEST_MAX_BYTES=200000
 RECOMMEND_RATE_LIMIT_MAX_REQUESTS=20
@@ -87,7 +92,7 @@ Browser-exposed/static-build variable:
 NEXT_PUBLIC_COPILOT_API_ENABLED=false
 ```
 
-The browser never reads `LLM_API_KEY`. `NEXT_PUBLIC_COPILOT_API_ENABLED` is the only browser-exposed AI switch in this list. If the recommendation route cannot call an LLM, if `LLM_ENABLED` is unset or `false`, or if a request exceeds the configured limits, the app falls back to deterministic recommendations. Static Codex Sites builds should keep `NEXT_PUBLIC_COPILOT_API_ENABLED=false` so the browser uses deterministic in-page recommendations instead of calling unavailable API routes.
+The browser never reads `LLM_API_KEY`, `OPENAI_API_KEY`, `DATABASE_URL`, `AUTH_SECRET`, or `SUPABASE_SECRET_KEY`. `NEXT_PUBLIC_COPILOT_API_ENABLED` is the browser-exposed AI switch. If the recommendation route cannot call an LLM, if `LLM_ENABLED` is unset or `false`, if the user is unauthenticated, or if quota is exhausted, the app falls back to deterministic recommendations. Static Codex Sites builds should keep `NEXT_PUBLIC_COPILOT_API_ENABLED=false` so the browser uses deterministic in-page recommendations instead of calling unavailable API routes.
 
 AI copilot calls are routed server-side by task. Workflow harmonization and quality repair guidance default to the mini model because those tasks are bounded and schema-heavy. Dashboard synthesis and decision handoff summaries default to the full-size model because they require more judgment across readiness, caveats, and stakeholder-facing narrative. `LLM_MODEL` is still supported as a backward-compatible fallback when a task-specific model variable is omitted; task-specific variables take precedence.
 
@@ -103,7 +108,7 @@ When LLM recommendations are on, the app sends minimized dataset profile metadat
 - Bundled multi-dataset sample with needs assessment, population baseline, join coverage, trend, demographic, and quality-review signals.
 - Decision templates for response prioritization plus beta service gap monitoring and preparedness risk screening workflows.
 - Deterministic profiling, join recommendations, dashboard recommendations, combined preparation/quality checks, and scoped preparation transformation logging.
-- Vercel-compatible `/api/recommend` and `/api/copilot` routes for AI-assisted recommendations and export handoff summaries with configurable request limits and deterministic fallback.
+- Vercel-compatible `/api/recommend` and `/api/copilot` routes with an auth/entitlement gate abstraction, configurable request limits, daily AI quota checks, and deterministic fallback.
 - Workflow export page for CSV, PNG, PDF report, scoped transformation log JSON, review-ready decision handoff exports, and a dependency-free project kit JSON.
 - Vitest coverage for the core parsing, profiling, joining, dashboard, and recommendation-schema logic.
-- Session-only operation with no login or project persistence.
+- Session-only upload and prepared-data handling; authenticated AI/persistence work is limited to metadata-only beta scaffolding.

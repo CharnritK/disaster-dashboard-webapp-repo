@@ -2,6 +2,9 @@
 
 Use Postgres only after provider approval. Until then, implement interfaces and in-memory test adapters.
 
+Current SQL draft: `../../../db/schema.sql`. This is a review artifact only,
+not a production migration.
+
 ## Global rules
 
 - Use UUID primary keys.

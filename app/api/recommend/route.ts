@@ -11,12 +11,14 @@ import {
   clientKeyForRequest,
   readJsonRequest
 } from "@/lib/apiSecurity";
+import { getRequestAuthContext } from "@/lib/auth/requestAuth";
 import { cleaningRecommendationsForProfiles } from "@/lib/cleaningTransforms";
+import { getEntitlementService, type AiFallbackReason } from "@/lib/entitlement";
 import { requestStructuredRecommendations } from "@/lib/llmClient";
 import { parseWorkflowContext } from "@/lib/recommendationSchema";
 import {
   copilotTaskForRecommendationScope,
-  llmServerConfig,
+  getLlmServerConfig,
   recommendationApiConfig,
   resolveLlmTaskConfig,
 } from "@/lib/serverConfig";
@@ -55,15 +57,90 @@ export async function POST(request: Request) {
     }
 
     const fallback = generateServerFallback(parsed);
-    const useLlm = !isRecord(body) || body.useLlm !== false;
+    const useLlm = isRecord(body) && body.useLlm === true;
     const recommendationScope = parseRecommendationScope(body);
     const taskConfig = resolveLlmTaskConfig(
       copilotTaskForRecommendationScope(recommendationScope),
     );
-    if (!useLlm || !llmServerConfig.enabled) {
+    if (!useLlm) {
       return jsonNoStore(fallback);
     }
 
+    const llmServerConfig = getLlmServerConfig();
+    const entitlement = getEntitlementService();
+    const auth = await getRequestAuthContext(request);
+    if (!auth) {
+      await entitlement.recordAiEvent({
+        attemptedProviderCall: false,
+        fallbackReason: "unauthenticated",
+        route: "/api/recommend",
+        succeeded: false,
+        taskType: taskConfig.taskType,
+      });
+      return jsonNoStore(withFallbackReason(fallback, "unauthenticated"));
+    }
+
+    const entitlementDecision = await entitlement.checkAiEntitlement(
+      auth,
+      taskConfig.taskType,
+    );
+    if (!entitlementDecision.allowed) {
+      await entitlement.recordAiEvent({
+        attemptedProviderCall: false,
+        fallbackReason: entitlementDecision.reason ?? "not_entitled",
+        route: "/api/recommend",
+        succeeded: false,
+        taskType: taskConfig.taskType,
+        userId: auth.userId,
+      });
+      return jsonNoStore(
+        withFallbackReason(
+          fallback,
+          entitlementDecision.reason ?? "not_entitled",
+        ),
+      );
+    }
+
+    const preflightReason = preProviderFallbackReason(llmServerConfig);
+    if (preflightReason) {
+      await entitlement.recordAiEvent({
+        attemptedProviderCall: false,
+        fallbackReason: preflightReason,
+        model: llmServerConfig.model,
+        provider: llmServerConfig.provider,
+        route: "/api/recommend",
+        succeeded: false,
+        taskType: taskConfig.taskType,
+        userId: auth.userId,
+      });
+      return jsonNoStore(withFallbackReason(fallback, preflightReason));
+    }
+
+    const reservation = await entitlement.reserveAiUsage(
+      auth.userId,
+      entitlementDecision.usageDate,
+      taskConfig.taskType,
+    );
+    if (!reservation.reserved) {
+      await entitlement.recordAiEvent({
+        attemptedProviderCall: false,
+        fallbackReason: reservation.reason,
+        route: "/api/recommend",
+        succeeded: false,
+        taskType: taskConfig.taskType,
+        userId: auth.userId,
+      });
+      return jsonNoStore(withFallbackReason(fallback, reservation.reason));
+    }
+
+    const event = await entitlement.recordAiEvent({
+      attemptedProviderCall: true,
+      model: taskConfig.model,
+      provider: llmServerConfig.provider,
+      route: "/api/recommend",
+      taskType: taskConfig.taskType,
+      userId: auth.userId,
+    });
     const recommendations = await requestStructuredRecommendations(parsed, fallback, {
       apiKey: llmServerConfig.apiKey,
       provider: llmServerConfig.provider,
@@ -75,6 +152,10 @@ export async function POST(request: Request) {
       verbosity: taskConfig.verbosity,
       taskType: taskConfig.taskType,
       safetyIdentifier: anonymousSafetyIdentifier(clientKey)
+    });
+    await entitlement.markAiEventComplete(event.id, {
+      fallbackReason: recommendations.fallbackReason,
+      succeeded: recommendations.source === "llm" && !recommendations.fallbackReason,
     });
     return jsonNoStore(recommendations);
   } catch {
@@ -150,6 +231,22 @@ function parseRecommendationScope(body: unknown): RecommendationScope {
   return isRecord(body) && body.recommendationScope === "workflow"
     ? "workflow"
     : "dashboard";
+}
+
+function preProviderFallbackReason(
+  config: ReturnType<typeof getLlmServerConfig>,
+): AiFallbackReason | undefined {
+  if (!config.enabled) return "ai_disabled";
+  if (!config.apiKey) return "missing_api_key";
+  if (config.provider !== "openai") return "unsupported_provider";
+  return undefined;
+}
+
+function withFallbackReason(
+  fallback: AIRecommendationResponse,
+  fallbackReason: AiFallbackReason,
+): AIRecommendationResponse {
+  return { ...fallback, fallbackReason };
 }
 
 function jsonNoStore(body: unknown, init?: ResponseInit) {

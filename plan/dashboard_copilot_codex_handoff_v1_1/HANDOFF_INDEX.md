@@ -36,6 +36,46 @@
 - `qa/review_gates.md`
 - `qa/checklist.md`
 - `qa/challenger_closeout.md`
+- `qa/milestone_T010_report.md`
+- `qa/final_goal_status.md`
+
+## Implemented repo artifacts outside this package
+
+- `../../../db/schema.sql`
+- `../../../db/rls.sql`
+- `../../../db/README.md`
+- `../../../docs/deployment-smoke-tests.md`
+- `../../../docs/data-retention.md`
+- `../../../docs/release-readiness.md`
+- `../../../qa/checklist.md`
+- `../../../lib/supabase/env.ts`
+- `../../../lib/supabase/client.ts`
+- `../../../lib/supabase/server.ts`
+- `../../../lib/supabase/middleware.ts`
+- `../../../middleware.ts`
+- `../../../app/login/page.tsx`
+- `../../../app/auth/signin/route.ts`
+- `../../../app/auth/callback/route.ts`
+- `../../../app/auth/signout/route.ts`
+- `../../../app/app/page.tsx`
+- `../../../app/app/layout.tsx`
+- `../../../app/app/(workflow)/data/page.tsx`
+- `../../../app/app/(workflow)/prepare/page.tsx`
+- `../../../app/app/(workflow)/readiness/page.tsx`
+- `../../../app/app/(workflow)/dashboard/page.tsx`
+- `../../../app/app/(workflow)/export/page.tsx`
+- `../../../app/app/usage/page.tsx`
+- `../../../app/app/feedback/page.tsx`
+- `../../../components/workflow/WorkspaceWorkflowShell.tsx`
+- `../../../components/workflow/workspaceRoutes.ts`
+- `../../../components/TemplateBuilder.tsx`
+- `../../../app/demo/page.tsx`
+- `../../../app/admin/page.tsx`
+- `../../../app/api/coach/route.ts`
+- `../../../app/api/feedback/route.ts`
+- `../../../app/api/templates/route.ts`
+- `../../../app/api/templates/[id]/route.ts`
+- `../../../scripts/smoke-vercel.mjs`
 
 ## Evidence and limitations
 

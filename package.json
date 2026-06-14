@@ -2,12 +2,16 @@
   "name": "dashboard-copilot",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": "24.x",
+    "npm": ">=10"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build && node scripts/prepare-sites-dist.mjs",
     "start": "next start",
     "lint": "tsc --noEmit -p tsconfig.lint.json",
-    "test": "vitest run"
+    "test": "vitest run --configLoader runner"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.0",

@@ -23,13 +23,17 @@
     "daily_ai_quota": 20,
     "timezone": "Asia/Bangkok",
     "root_behavior": "/ redirects to /demo",
-    "anonymous_ai_visibility": "visible disabled CTA",
+    "anonymous_ai_visibility": "none in /demo",
     "provider_implementation": "approved only if explicit flag remains true",
     "schema_files": "approved as review artifacts only",
+    "preview_deployment": "approved for validation after target/env values are supplied",
     "production_deployment": "not approved",
     "production_migrations": "not approved",
     "ai_provider_model_changes": "not approved",
-    "data_retention_automation": "not approved"
+    "data_retention_automation": "not approved",
+    "open_signup": "not approved",
+    "beta_access": "named beta emails only",
+    "admin_access": "named admin emails only"
   },
   "forbidden_persistence": [
     "uploaded raw files",

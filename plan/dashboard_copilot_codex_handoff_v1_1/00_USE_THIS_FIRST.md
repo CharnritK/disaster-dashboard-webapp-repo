@@ -24,14 +24,18 @@ APPROVED_AUTH_PROVIDER=Supabase Auth
 APPROVED_PERSISTENCE_PROVIDER=Supabase Postgres
 APPROVED_DAILY_AI_QUOTA=20
 APPROVED_ROOT_BEHAVIOR=/ redirects to /demo
-APPROVED_ANONYMOUS_AI_VISIBILITY=visible disabled CTA
+APPROVED_ANONYMOUS_AI_VISIBILITY=none in /demo
 
 APPROVED_PROVIDER_IMPLEMENTATION=true
 APPROVED_SCHEMA_FILES=true
+APPROVED_PREVIEW_DEPLOYMENT=true
 APPROVED_PRODUCTION_DEPLOYMENT=false
 APPROVED_PRODUCTION_MIGRATIONS=false
 APPROVED_AI_PROVIDER_MODEL_CHANGES=false
 APPROVED_DATA_RETENTION_AUTOMATION=false
+APPROVED_OPEN_SIGNUP=false
+APPROVED_BETA_ACCESS=named beta emails only
+APPROVED_ADMIN_ACCESS=named admin emails only
 ```
 
 If you do not approve provider implementation, set:
@@ -49,7 +53,10 @@ Codex must then stop after:
 
 ## Safe execution rule
 
-Codex may write code in the repo. Codex must not deploy, run production database migrations, enter credentials, modify external systems, or claim tests passed unless it actually ran the commands and reports real output.
+Codex may write code in the repo and prepare preview-only validation. Codex must
+not deploy production, run production database migrations, enter credentials,
+modify external systems without supplied targets, or claim tests passed unless
+it actually ran the commands and reports real output.
 
 ## Stop immediately if
 
