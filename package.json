@@ -8,7 +8,8 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "next build && node scripts/prepare-sites-dist.mjs",
+    "build": "node scripts/guarded-next-build.mjs",
+    "build:unguarded": "next build && node scripts/prepare-sites-dist.mjs",
     "start": "next start",
     "lint": "tsc --noEmit -p tsconfig.lint.json",
     "test": "vitest run --configLoader runner"

@@ -10,6 +10,7 @@ Start with these documents if you are reviewing, submitting, or adapting the pro
 - [AI Mode Configuration](docs/AI_MODE.md): server-side AI setup, route behavior, task-specific model variables, and deterministic fallback.
 - [Data Retention Draft](docs/data-retention.md): metadata retention boundaries and automation gate.
 - [Release Readiness Checklist](docs/release-readiness.md): controlled-beta launch gates, rollback, and safety checks.
+- [Build Guard](docs/build-guard.md): guarded `npm run build` behavior, hard timeouts, and stuck-process cleanup rules.
 - [Visualization Policy](docs/visualization-policy.md): deterministic chart, map, denominator, caveat, and accessibility guardrails.
 - [Codex Starter Prompts](docs/codex-starter-prompts.md): copy-ready prompts for adapting the project to new decision-support contexts.
 - [Showcase Script](docs/showcase-script.md): short demo path for explaining the workflow to a non-technical audience.
@@ -36,6 +37,10 @@ npm run lint
 npm run test
 npm run build
 ```
+
+`npm run build` is guarded against forever-waiting Next build processes. Tune
+local timeout behavior with `NEXT_BUILD_TIMEOUT_MS` only when a slow machine
+needs more time.
 
 ## Controlled-Beta Contract And Current Status
 

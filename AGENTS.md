@@ -327,6 +327,10 @@ Notes:
   the default bundled config loader.
 - `vitest.config.ts` uses the thread pool and disables file parallelism to
   reduce `spawn EPERM` risk in constrained local runs.
+- `npm run build` is guarded by `scripts/guarded-next-build.mjs`; it exits with
+  code `124` after a hard timeout and terminates only the child process tree it
+  started. Use `NEXT_BUILD_TIMEOUT_MS` to tune, and reserve
+  `npm run build:unguarded` for explicit diagnosis.
 - There is no configured ESLint, Prettier, Playwright, Husky, or CONTRIBUTING
   workflow.
 

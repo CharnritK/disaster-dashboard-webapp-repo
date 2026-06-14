@@ -115,6 +115,52 @@ describe("AI route governance", () => {
     ).resolves.toMatchObject({ limit: 1, remaining: 0, used: 1 });
   });
 
+  it("caps configured AI provider attempts at five before falling back", async () => {
+    vi.stubEnv("AI_DAILY_QUOTA", "5");
+    vi.stubEnv("LLM_ENABLED", "true");
+    vi.stubEnv("LLM_API_KEY", "test-key");
+    const fetchMock = vi.fn(async () =>
+      Response.json({
+        output_text: JSON.stringify({
+          assumptions: ["profile-only"],
+          recommendedPath: {
+            actions: ["Accept"],
+            confidence: 0.7,
+            rationale: "Model summary was accepted after server validation.",
+            title: "Use model recommendation",
+          },
+          summary: "AI summary",
+        }),
+        status: "completed",
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const responses = [];
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      const response = await postRecommendRoute(
+        recommendationRequest(recommendationBody(), "analyst-5"),
+      );
+      responses.push(await response.json());
+    }
+    const sixth = await postCopilotRoute(
+      copilotRequest(copilotBody(), "analyst-5"),
+    );
+
+    expect(responses).toHaveLength(5);
+    for (const body of responses) {
+      expect(body).toMatchObject({ source: "llm" });
+    }
+    await expect(sixth.json()).resolves.toMatchObject({
+      fallbackReason: "quota_exceeded",
+      source: "deterministic",
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(5);
+    await expect(
+      getEntitlementService().getDailyUsage("analyst-5"),
+    ).resolves.toMatchObject({ limit: 5, remaining: 0, used: 5 });
+  });
+
   it("gates the copilot route with the same auth requirement", async () => {
     vi.stubEnv("LLM_ENABLED", "true");
     vi.stubEnv("LLM_API_KEY", "test-key");
