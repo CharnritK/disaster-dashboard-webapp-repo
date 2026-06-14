@@ -21,6 +21,9 @@ Date: 2026-06-14
   - `http://127.0.0.1:3003/auth/callback`
   - `http://localhost:3003/auth/callback`
   - `http://localhost:3000/auth/callback`
+- Added hosted preview auth callback redirect URLs:
+  - `https://disaster-dashboard-webapp-repo-charnritk-charnrit-k.vercel.app/auth/callback`
+  - `https://disaster-dashboard-webapp-repo-git-codex-dash-fd18aa-charnrit-k.vercel.app/auth/callback`
 
 ## Local App Smoke
 
@@ -60,11 +63,11 @@ Date: 2026-06-14
   deployment now excludes that standalone workspace from root TypeScript checks
   and Vercel upload.
 - Explicit Preview deployment with `--target preview` succeeded.
-- Latest deployment inspected:
+- Latest Git preview deployment inspected:
   - unique URL:
-    `https://disaster-dashboard-webapp-repo-r0sqgh8tp-charnrit-k.vercel.app`
-  - stable preview alias:
-    `https://disaster-dashboard-webapp-repo-charnritk-charnrit-k.vercel.app`
+    `https://disaster-dashboard-webapp-repo-apgnbi9on-charnrit-k.vercel.app`
+  - stable Git branch preview alias:
+    `https://disaster-dashboard-webapp-repo-git-codex-dash-fd18aa-charnrit-k.vercel.app`
   - target: `preview`
   - status: `Ready`
 - Vercel SSO deployment protection was disabled for this project because it
@@ -82,9 +85,9 @@ Date: 2026-06-14
 
 ## Hosted Preview Smoke
 
-- Supabase Auth redirect URL added:
-  `https://disaster-dashboard-webapp-repo-charnritk-charnrit-k.vercel.app/auth/callback`
-- Anonymous HTTP checks against the stable preview alias:
+- Supabase Auth redirect URL added for the canonical Git preview alias:
+  `https://disaster-dashboard-webapp-repo-git-codex-dash-fd18aa-charnrit-k.vercel.app/auth/callback`
+- Anonymous HTTP checks against the canonical Git preview alias:
   - `/demo`: `200`
   - `/api/recommend/status`: `200`,
     `{"ai":{"fallbackReason":"ai_disabled","mode":"deterministic_fallback"},"ok":true}`
