@@ -63,10 +63,8 @@ Date: 2026-06-14
   deployment now excludes that standalone workspace from root TypeScript checks
   and Vercel upload.
 - Explicit Preview deployment with `--target preview` succeeded.
-- Latest Git preview deployment inspected:
-  - unique URL:
-    `https://disaster-dashboard-webapp-repo-apgnbi9on-charnrit-k.vercel.app`
-  - stable Git branch preview alias:
+- Git preview deployment inspected. Unique deployment URLs rotate per build; use
+  the stable Git branch preview alias:
     `https://disaster-dashboard-webapp-repo-git-codex-dash-fd18aa-charnrit-k.vercel.app`
   - target: `preview`
   - status: `Ready`
