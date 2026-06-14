@@ -46,7 +46,8 @@ main {
 }
 
 button,
-.primary-action {
+.primary-action,
+.secondary-action {
   align-items: center;
   background: var(--paper);
   border: 1px solid var(--line-strong);
@@ -69,19 +70,22 @@ button,
 }
 
 button:hover:not(:disabled),
-.primary-action:hover {
+.primary-action:hover,
+.secondary-action:hover {
   border-color: #aeb2aa;
   background: #f7f7f4;
   transform: translateY(-1px);
 }
 
 button:active:not(:disabled),
-.primary-action:active {
+.primary-action:active,
+.secondary-action:active {
   transform: translateY(0);
 }
 
 button:focus-visible,
 .primary-action:focus-within,
+.secondary-action:focus-visible,
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible,
@@ -707,7 +711,16 @@ button:disabled {
   max-width: 760px;
 }
 
+.about-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 6px;
+}
+
 .about-grid,
+.entry-grid,
 .resource-grid {
   display: grid;
   gap: 16px;
@@ -715,6 +728,7 @@ button:disabled {
 }
 
 .about-panel,
+.entry-card,
 .about-note,
 .resource-card {
   background: rgba(255, 255, 255, 0.82);
@@ -723,12 +737,15 @@ button:disabled {
 }
 
 .about-panel,
+.entry-card,
 .about-note {
   padding: 20px;
 }
 
 .about-panel h2,
-.about-section h2 {
+.about-section h2,
+.entry-card h3,
+.tutorial-summary h3 {
   font-size: 1.18rem;
   font-weight: 720;
   letter-spacing: 0;
@@ -737,6 +754,7 @@ button:disabled {
 }
 
 .about-panel p,
+.entry-card p,
 .about-note p {
   color: var(--muted);
   line-height: 1.58;
@@ -746,6 +764,57 @@ button:disabled {
 .about-note {
   display: grid;
   gap: 12px;
+}
+
+.about-video-grid {
+  align-items: start;
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 340px);
+}
+
+.about-video-card {
+  background: #111;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.about-video-card video {
+  aspect-ratio: 16 / 9;
+  display: block;
+  width: 100%;
+}
+
+.tutorial-summary {
+  align-content: start;
+}
+
+.tutorial-summary ul {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding-left: 18px;
+}
+
+.tutorial-summary li {
+  color: var(--muted);
+}
+
+.tutorial-summary .secondary-action,
+.entry-card .secondary-action {
+  justify-self: start;
+}
+
+.entry-card {
+  align-content: start;
+  display: grid;
+  gap: 12px;
+}
+
+.entry-card h3 {
+  margin-bottom: 0;
 }
 
 .about-section {
@@ -3655,6 +3724,10 @@ tr:last-child td {
 
   .about-hero h1 {
     font-size: 3.2rem;
+  }
+
+  .about-video-grid {
+    grid-template-columns: 1fr;
   }
 
   .workflow-grid {
