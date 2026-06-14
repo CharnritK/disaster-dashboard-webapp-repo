@@ -35,10 +35,13 @@ export async function POST(request: Request) {
   }
 
   const config = getLlmServerConfig();
-  if (!config.enabled || !config.apiKey) {
+  const preflightReason = preProviderFallbackReason(config);
+  if (preflightReason) {
     await entitlement.recordAiEvent({
       attemptedProviderCall: false,
-      fallbackReason: config.enabled ? "missing_api_key" : "ai_disabled",
+      fallbackReason: preflightReason,
+      model: config.model,
+      provider: config.provider,
       route: "/api/coach",
       succeeded: false,
       taskType: "quality_repair_guidance",
@@ -47,7 +50,7 @@ export async function POST(request: Request) {
 
     return jsonNoStore({
       ...fallback,
-      fallbackReason: config.enabled ? "missing_api_key" : "ai_disabled",
+      fallbackReason: preflightReason,
     });
   }
 
@@ -104,6 +107,15 @@ export async function POST(request: Request) {
     ...fallback,
     fallbackReason: ai.fallbackReason,
   });
+}
+
+function preProviderFallbackReason(
+  config: ReturnType<typeof getLlmServerConfig>,
+) {
+  if (!config.enabled) return "ai_disabled";
+  if (!config.apiKey) return "missing_api_key";
+  if (config.provider !== "openai") return "unsupported_provider";
+  return undefined;
 }
 
 function jsonNoStore(body: unknown, init?: ResponseInit) {

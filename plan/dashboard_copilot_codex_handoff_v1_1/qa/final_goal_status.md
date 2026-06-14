@@ -2,12 +2,14 @@
 
 Date: 2026-06-14
 
-Verdict: `IMPLEMENTATION_COMPLETE_STAGING_AUTH_VERIFIED`
+Verdict: `IMPLEMENTATION_COMPLETE_T031_PARTIAL_STAGING_VALIDATION`
 
 The controlled-beta implementation is complete for local/reviewable code paths
-and the staging preview auth path has now been verified with a real
-Supabase-backed magic-link login. Production credentials, production migrations,
-production deployment, and production allowlist changes remain out of scope.
+and the staging preview has been partially revalidated. Earlier Supabase-backed
+magic-link login was user-confirmed for the approved beta/admin email, but the
+current T031 Codex recheck now blocks at `POST /auth/signin` with
+`error=auth_failed`. Production credentials, production migrations, production
+deployment, and production allowlist changes remain out of scope.
 
 ## Completed
 
@@ -104,9 +106,26 @@ production deployment, and production allowlist changes remain out of scope.
     `fallbackReason="ai_disabled"`;
   - unauthenticated `/api/usage` and `/api/templates` returned 401;
   - approved beta/admin email magic-link login was user-confirmed working.
+- T031 staging beta validation follow-up evidence lives in
+  `qa/t031_staging_beta_validation_2026-06-14.md`:
+  - current public `/demo` and unauthenticated protected-route behavior passed;
+  - unauthenticated feedback/template mutation APIs returned `401`;
+  - `/api/coach` returned deterministic unauthenticated fallback;
+  - branch-scoped Preview environment variable names were confirmed without
+    pulling or printing secret values;
+  - current magic-link initiation for the approved beta/admin email returned
+    `error=auth_failed`, so authenticated route rendering, metadata write
+    smoke, admin aggregate runtime smoke, and direct staging DB row checks
+    remain unverified in this pass.
 
 ## Remaining External Gates
 
+- Recheck staging Supabase Auth configuration and approved-user invite state so
+  `POST /auth/signin` returns `sent=1` again.
+- After auth is restored, verify authenticated `/app/usage`, `/app/templates`,
+  `/app/feedback`, and `/admin` against the staging preview.
+- Verify one safe metadata-only feedback write and one safe metadata-only
+  template write in staging, then confirm aggregate-only admin reporting.
 - No production migration was run.
 - No production deployment was run.
 - Production Supabase project configuration, redirect URLs, allowlists, and

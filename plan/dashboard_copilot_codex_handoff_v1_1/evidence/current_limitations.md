@@ -10,6 +10,10 @@
   production configuration remains review-gated.
 - The package began as a handoff and now also contains implementation evidence.
 - The package does not include credentials, API keys, or production environment values.
+- Current T031 authenticated staging recheck blocks at `POST /auth/signin` with
+  `error=auth_failed`, so authenticated route rendering, metadata write smoke,
+  admin aggregate runtime smoke, and direct staging DB row checks remain
+  pending.
 
 ## Assumptions
 
@@ -21,7 +25,7 @@
 
 ## Readiness
 
-`IMPLEMENTATION_COMPLETE_STAGING_AUTH_VERIFIED`
+`IMPLEMENTATION_COMPLETE_T031_PARTIAL_STAGING_VALIDATION`
 
 If the approval block is changed, future provider, production, migration, or
 allowlist work must stop for renewed review.

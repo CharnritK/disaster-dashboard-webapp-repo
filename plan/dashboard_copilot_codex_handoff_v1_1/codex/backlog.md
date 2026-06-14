@@ -2,10 +2,11 @@
 
 Status as of 2026-06-14: this is the historical execution backlog for the
 controlled-beta build. T001-T030 are implemented for local/reviewable paths,
-and staging Supabase-backed magic-link login is user-confirmed. Do not use this
-file as the next active task list without first checking
+and staging Supabase-backed magic-link login was previously user-confirmed.
+Current T031 recheck blocks at `error=auth_failed`. Do not use this file as
+the next active task list without first checking
 `../qa/final_goal_status.md` and
-`../qa/supabase_staging_project_check_2026-06-14.md`.
+`../qa/t031_staging_beta_validation_2026-06-14.md`.
 
 Original execution rule: use tasks in order. The first milestone ends after
 T010A so a human can review before provider SDKs, route split, AI coach,

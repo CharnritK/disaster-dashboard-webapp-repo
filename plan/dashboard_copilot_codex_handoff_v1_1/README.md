@@ -38,18 +38,21 @@ Persistent storage is forbidden for uploaded files, uploaded rows, prepared rows
 
 ## Status
 
-Readiness: `IMPLEMENTATION_COMPLETE_STAGING_AUTH_VERIFIED`.
+Readiness: `IMPLEMENTATION_COMPLETE_T031_PARTIAL_STAGING_VALIDATION`.
 
 Assumptions:
 
 - Supabase Auth and Supabase Postgres remain approved defaults.
 - Current Vercel docs must be verified before hard-coding new runtime/function settings.
-- Preview/staging Supabase configuration and Vercel Preview environment have been validated for the approved beta/admin email.
+- Preview/staging Supabase configuration and Vercel Preview environment were
+  previously user-confirmed for the approved beta/admin email, but the current
+  T031 Codex recheck blocks at `POST /auth/signin` with `error=auth_failed`.
 - No production deployment, production migrations, production credentials, or production environment changes are approved.
 
 The task backlog and task cards remain useful as the historical execution plan.
 For current state, use `qa/final_goal_status.md`,
 `qa/supabase_staging_project_check_2026-06-14.md`, and
+`qa/t031_staging_beta_validation_2026-06-14.md`, and
 `qa/document_consistency_audit_2026-06-14.md`.
 
 ## Key files

@@ -9,6 +9,7 @@ import {
 
 afterEach(() => {
   resetEntitlementServiceForTests();
+  vi.unstubAllGlobals();
   vi.unstubAllEnvs();
 });
 
@@ -73,6 +74,33 @@ describe("coach API", () => {
         attemptedProviderCall: true,
         route: "/api/coach",
         succeeded: true,
+      },
+    ]);
+  });
+
+  it("does not reserve quota for unsupported providers", async () => {
+    vi.stubEnv("LLM_ENABLED", "true");
+    vi.stubEnv("LLM_API_KEY", "test-key");
+    vi.stubEnv("LLM_PROVIDER", "unsupported-provider");
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+
+    const response = await postCoachRoute(coachRequest({ step: "dashboard" }, "analyst-1"));
+
+    await expect(response.json()).resolves.toMatchObject({
+      fallbackReason: "unsupported_provider",
+      source: "deterministic",
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
+    await expect(
+      getEntitlementService().getDailyUsage("analyst-1"),
+    ).resolves.toMatchObject({ used: 0 });
+    expect(getEntitlementService().eventRecordsForTests()).toMatchObject([
+      {
+        attemptedProviderCall: false,
+        fallbackReason: "unsupported_provider",
+        route: "/api/coach",
+        succeeded: false,
       },
     ]);
   });

@@ -1,10 +1,12 @@
 # Roadmap v1.1
 
 Status as of 2026-06-14: phases 0-12 are implemented for local/reviewable
-controlled-beta paths, and staging Supabase-backed magic-link login is
-user-confirmed. Treat this roadmap as the execution history and validation map.
-Production deployment, production migrations, added allowlists, anonymous AI,
-and retention automation remain blocked.
+controlled-beta paths. Staging Supabase-backed magic-link login was previously
+user-confirmed, but the current T031 recheck blocks at `POST /auth/signin` with
+`error=auth_failed`; see `qa/t031_staging_beta_validation_2026-06-14.md`.
+Treat this roadmap as the execution history and validation map. Production
+deployment, production migrations, added allowlists, anonymous AI, and
+retention automation remain blocked.
 
 ## Phase 0 — Baseline and Vercel compatibility
 

@@ -44,3 +44,17 @@ Choose one:
 
 Option 2 is the best short-term path if the goal is external validation without
 changing the billing plan.
+
+## Outcome Selected
+
+Option 2 was selected after this gate: a separate staging Supabase project was
+wired only to the branch-scoped Vercel Preview for
+`codex/dashboard-copilot-handoff-v1-1`.
+
+Follow-up evidence:
+
+- `qa/supabase_staging_project_check_2026-06-14.md`
+- `qa/t031_staging_beta_validation_2026-06-14.md`
+
+No Supabase preview branch was created, no production database migration was
+run, and production remained untouched.

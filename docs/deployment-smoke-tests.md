@@ -8,9 +8,12 @@ fallback smoke tests pass.
 
 Current preview status as of 2026-06-14: the staging Supabase project and
 branch-scoped Vercel Preview have been configured, schema/RLS was applied to
-staging only, and magic-link login was user-confirmed for the approved
-beta/admin email. Continue to use this checklist for the next authenticated
-metadata-persistence and admin-aggregate smoke pass.
+staging only, public and unauthenticated preview checks pass, and earlier
+magic-link login was user-confirmed for the approved beta/admin email. The
+current T031 recheck now blocks at `POST /auth/signin` with
+`error=auth_failed`; use this checklist for the next authenticated
+metadata-persistence and admin-aggregate smoke pass after auth-link initiation
+is restored.
 
 ## Preconditions
 
@@ -120,6 +123,24 @@ Only after schema/RLS review and approved preview DB setup:
 - Provider attempts create safe `ai_events` metadata only.
 - No uploaded rows, prepared rows, exported files, full prompts, full responses,
   screenshots, or operational incident details are stored.
+
+## T031 Pending Authenticated Checks
+
+After `POST /auth/signin` returns `sent=1` again for the approved beta/admin
+email:
+
+- Verify `/app/usage` renders for the signed-in user and exposes only that
+  user's usage metadata.
+- Submit one safe feedback record and confirm only allowed metadata fields are
+  stored.
+- Save one safe private draft template and confirm only schema/template metadata
+  is stored.
+- Verify `/admin` renders only for the approved admin email and displays
+  aggregate counts, fallback reasons, and feedback tags only.
+- Confirm no uploaded files, uploaded rows, prepared rows, exports, full
+  prompts, full model responses, screenshots, or reports are persisted.
+- Confirm Vercel preview logs contain no secrets, uploaded rows, or prepared
+  rows.
 
 ## Rollback
 

@@ -97,3 +97,29 @@ User-confirmed on 2026-06-14:
 Codex did not read the user's email inbox or inspect the one-time magic-link
 URL. This is recorded as user-confirmed external auth validation, not as a
 Codex-controlled email-link capture.
+
+## T031 Continuation Evidence
+
+Follow-up validation is recorded in
+`qa/t031_staging_beta_validation_2026-06-14.md`.
+
+Current Codex-verified staging behavior:
+
+- `/demo` still returns `200`.
+- `/api/recommend/status` still returns deterministic fallback with
+  `fallbackReason=ai_disabled`.
+- unauthenticated protected pages redirect to `/login`.
+- unauthenticated feedback/template mutation APIs return `401`.
+- branch-scoped Preview environment variable names are present for
+  `codex/dashboard-copilot-handoff-v1-1`; secret values were not pulled or
+  printed.
+
+Current blocker:
+
+- Re-submitting the approved beta/admin email during T031 returned
+  `/login?next=%2Fapp%2Fusage&error=auth_failed`.
+- Authenticated route rendering, metadata write smoke, admin aggregate runtime
+  smoke, and direct staging DB row checks remain unverified until magic-link
+  initiation returns `sent=1` again.
+
+Production remained untouched during the T031 recheck.

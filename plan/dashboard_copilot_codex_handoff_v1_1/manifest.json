@@ -5,11 +5,11 @@
   "repository": "CharnritK/disaster-dashboard-webapp-repo",
   "product": "Dashboard Copilot",
   "objective": "Build controlled authenticated AI beta with session-only uploaded data",
-  "readiness": "IMPLEMENTATION_COMPLETE_STAGING_AUTH_VERIFIED",
+  "readiness": "IMPLEMENTATION_COMPLETE_T031_PARTIAL_STAGING_VALIDATION",
   "current_status": {
     "as_of": "2026-06-14",
     "task_backlog": "T001-T030 implemented for local/reviewable controlled-beta paths",
-    "staging_auth": "Supabase-backed magic-link login user-confirmed for the approved beta/admin email",
+    "staging_auth": "Supabase-backed magic-link login was previously user-confirmed for the approved beta/admin email; current T031 recheck blocks at auth_failed",
     "production": "not deployed, not migrated, and not approved"
   },
   "primary_prompt": "codex/prompts/GOAL_FULL_BUILD.md",
@@ -124,6 +124,7 @@
     "qa/review_gates.md",
     "qa/supabase_preview_branch_gate_2026-06-14.md",
     "qa/supabase_staging_project_check_2026-06-14.md",
+    "qa/t031_staging_beta_validation_2026-06-14.md",
     "qa/testing_strategy.md"
   ]
 }

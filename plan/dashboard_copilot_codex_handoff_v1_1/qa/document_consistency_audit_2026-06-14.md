@@ -2,7 +2,7 @@
 
 Date: 2026-06-14
 
-Verdict: `CURRENT_DOCS_RECONCILED_FOR_T031`
+Verdict: `CURRENT_DOCS_UPDATED_WITH_T031_PARTIAL_EVIDENCE`
 
 ## Current Truth
 
@@ -11,8 +11,12 @@ Verdict: `CURRENT_DOCS_RECONCILED_FOR_T031`
   project, not a billed Supabase preview branch.
 - Staging schema/RLS was applied only to the staging project.
 - Branch-scoped Vercel Preview env values point to staging Supabase.
-- The approved beta/admin email completed magic-link login in the
-  staging-backed Vercel Preview.
+- The approved beta/admin email previously completed magic-link login in the
+  staging-backed Vercel Preview, but the current T031 recheck now blocks at
+  `POST /auth/signin` with `error=auth_failed`.
+- Current T031 evidence verifies public and unauthenticated staging behavior,
+  but authenticated route rendering, metadata write smoke, admin aggregate
+  runtime smoke, and direct staging DB row checks remain pending.
 - Production deployment, production environment variables, production Supabase
   configuration, production migrations, added allowlist entries, anonymous AI,
   provider-backed AI enablement, and retention automation remain blocked.
@@ -20,7 +24,7 @@ Verdict: `CURRENT_DOCS_RECONCILED_FOR_T031`
 ## Documents Reconciled
 
 - Root README now points to the active controlled-beta handoff and records the
-  staging-auth verified state.
+  partial T031 staging validation state.
 - `AGENTS.md`, `docs/README.md`, `docs/release-readiness.md`,
   `docs/deployment-smoke-tests.md`, `docs/vercel_free_readiness.md`,
   `docs/digital-public-good-guide.md`, and `docs/showcase-script.md` now
@@ -30,7 +34,10 @@ Verdict: `CURRENT_DOCS_RECONCILED_FOR_T031`
   implemented for staging preview while production remains gated.
 - Active handoff README, index, architecture, Vercel readiness, limitations,
   roadmap, prompt-version guidance, challenger closeout, backlog, manifest, and
-  QA checklist now distinguish historical task-plan language from current QA
+  QA checklist distinguish historical task-plan language from current QA
+  evidence.
+- `qa/t031_staging_beta_validation_2026-06-14.md` now records current T031
+  route/API, auth blocker, metadata boundary, and production-isolation
   evidence.
 - The earlier root `qa/supabase_vercel_preview_check_2026-06-14.md` is marked
   superseded for current staging state and points to the staging evidence file.
@@ -42,8 +49,8 @@ Verdict: `CURRENT_DOCS_RECONCILED_FOR_T031`
 The backlog, task cards, archived handoff packs, and original prompt files are
 left as historical execution-plan artifacts. They may contain stop conditions
 or implementation instructions that were true when written. Use
-`qa/final_goal_status.md`, the staging evidence file, and this audit file for
-current state before starting T031 staging beta validation.
+`qa/final_goal_status.md`, the staging evidence files, and this audit file for
+current state before continuing T031 staging beta validation.
 
 ## Remaining Documentation Boundary
 
