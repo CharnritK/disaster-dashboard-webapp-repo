@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 import { spawn } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -266,7 +265,9 @@ async function main() {
   }
 }
 
-if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+const invokedScriptUrl = process.argv[1] ? pathToFileURL(process.argv[1]).href : null;
+
+if (import.meta.url === invokedScriptUrl) {
   main().catch((error) => {
     console.error(`[guarded-build] Unexpected failure: ${error.message}`);
     process.exit(1);
