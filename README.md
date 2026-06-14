@@ -8,15 +8,19 @@ Start with these documents if you are reviewing, submitting, or adapting the pro
 
 - [Digital Public Good Guide](docs/digital-public-good-guide.md): plain-English overview, scope, extension guidance, starter prompts, and technical appendix.
 - [AI Mode Configuration](docs/AI_MODE.md): server-side AI setup, route behavior, task-specific model variables, and deterministic fallback.
+- [Data Retention Draft](docs/data-retention.md): metadata retention boundaries and automation gate.
+- [Release Readiness Checklist](docs/release-readiness.md): controlled-beta launch gates, rollback, and safety checks.
+- [Build Guard](docs/build-guard.md): guarded `npm run build` behavior, hard timeouts, and stuck-process cleanup rules.
 - [Visualization Policy](docs/visualization-policy.md): deterministic chart, map, denominator, caveat, and accessibility guardrails.
 - [Codex Starter Prompts](docs/codex-starter-prompts.md): copy-ready prompts for adapting the project to new decision-support contexts.
 - [Showcase Script](docs/showcase-script.md): short demo path for explaining the workflow to a non-technical audience.
 - [Repo-local Codex Skills](docs/copilot/): skills for visualization standards, bootstrapping another decision-support app, and adapting decision templates.
-- [Final Handoff Package](plan/final_handoff_package/README.md): current controlled-beta handoff, validation evidence, review gates, and archive index for older Codex handoffs.
+- [Controlled-Beta Handoff v1.1](plan/dashboard_copilot_codex_handoff_v1_1/README.md): active controlled-beta execution package, task history, QA evidence, and remaining gates.
+- [Final Handoff Package](plan/final_handoff_package/README.md): foundation and release-gate context for the controlled-beta work.
 
 ## Run Locally
 
-Use Node.js `26.1.0` as pinned in `.tool-versions`, then install from the
+Use Node.js `24.15.0` as pinned in `.tool-versions`, then install from the
 lockfile:
 
 ```bash
@@ -34,13 +38,19 @@ npm run test
 npm run build
 ```
 
-## Production V1 Contract
+`npm run build` is guarded against forever-waiting Next build processes. Tune
+local timeout behavior with `NEXT_BUILD_TIMEOUT_MS` only when a slow machine
+needs more time.
 
-Production v1 is a controlled beta for non-sensitive, session-only disaster-response decision support. Response prioritization is the approved primary workflow. Service gap monitoring and preparedness risk screening are beta workflows until a domain reviewer approves their use.
+## Controlled-Beta Contract And Current Status
 
-Deterministic mode is the default launch posture. AI may be enabled only after the safety/privacy review gate is closed or explicitly deferred by the named owner. The demo path remains onboarding and proof, not the definition of production readiness.
+Production v1 is a controlled authenticated AI beta with session-only uploaded data. Response prioritization is the approved primary workflow. Service gap monitoring and preparedness risk screening are beta workflows until a domain reviewer approves their use.
 
-Public launch remains blocked until product, domain, safety/privacy, export, accessibility, release, and support owners are named and their gates are closed or explicitly deferred.
+Deterministic mode is the default launch posture. AI may be enabled only after the server verifies authentication, entitlement, and the daily quota. The demo path remains onboarding and proof, not the definition of production readiness.
+
+Persistent storage is allowed only for account/profile metadata, AI usage, AI events, feedback, custom templates, template versions, and non-sensitive eval metadata. Uploaded files, uploaded rows, prepared rows, full datasets, exported reports/files, full LLM request bodies, full prompts, API keys, service-role keys, private tokens, and sensitive operational data must not be persisted.
+
+Current status as of 2026-06-14: the preview/staging path is configured, Supabase-backed magic-link login has been user-confirmed for the approved beta/admin email, and production remains untouched. Public launch remains blocked until product, domain, safety/privacy, export, accessibility, release, and support owners are named and their gates are closed or explicitly deferred.
 
 ## Configuration
 
@@ -69,6 +79,7 @@ LLM_WORKFLOW_REQUEST_TIMEOUT_MS=15000
 LLM_DASHBOARD_REQUEST_TIMEOUT_MS=45000
 LLM_HANDOFF_REQUEST_TIMEOUT_MS=30000
 LLM_MAX_COMPLETION_TOKENS=3200
+AI_DAILY_QUOTA=20
 MAX_UPLOAD_SIZE_MB=1
 RECOMMEND_REQUEST_MAX_BYTES=200000
 RECOMMEND_RATE_LIMIT_MAX_REQUESTS=20
@@ -87,13 +98,13 @@ Browser-exposed/static-build variable:
 NEXT_PUBLIC_COPILOT_API_ENABLED=false
 ```
 
-The browser never reads `LLM_API_KEY`. `NEXT_PUBLIC_COPILOT_API_ENABLED` is the only browser-exposed AI switch in this list. If the recommendation route cannot call an LLM, if `LLM_ENABLED` is unset or `false`, or if a request exceeds the configured limits, the app falls back to deterministic recommendations. Static Codex Sites builds should keep `NEXT_PUBLIC_COPILOT_API_ENABLED=false` so the browser uses deterministic in-page recommendations instead of calling unavailable API routes.
+The browser never reads `LLM_API_KEY`, `OPENAI_API_KEY`, `DATABASE_URL`, `AUTH_SECRET`, or `SUPABASE_SECRET_KEY`. `NEXT_PUBLIC_COPILOT_API_ENABLED` is the browser-exposed AI switch. If the recommendation route cannot call an LLM, if `LLM_ENABLED` is unset or `false`, if the user is unauthenticated, or if quota is exhausted, the app falls back to deterministic recommendations. Static Codex Sites builds should keep `NEXT_PUBLIC_COPILOT_API_ENABLED=false` so the browser uses deterministic in-page recommendations instead of calling unavailable API routes.
 
 AI copilot calls are routed server-side by task. Workflow harmonization and quality repair guidance default to the mini model because those tasks are bounded and schema-heavy. Dashboard synthesis and decision handoff summaries default to the full-size model because they require more judgment across readiness, caveats, and stakeholder-facing narrative. `LLM_MODEL` is still supported as a backward-compatible fallback when a task-specific model variable is omitted; task-specific variables take precedence.
 
 `LLM_MAX_COMPLETION_TOKENS` controls the Responses API output-token budget for workflow harmonization, quality guidance, dashboard synthesis, and handoff summaries. Increase it if the app reports that the model response was truncated before the structured JSON finished.
 
-`/api/recommend` and `/api/copilot` rate limits are anonymous and configurable. By default, each client IP bucket can make 20 recommendation or copilot requests per 60 seconds. Set `RECOMMEND_RATE_LIMIT_MAX_REQUESTS=0` to disable the in-memory limiter. For production deployments with multiple server instances, pair these settings with a hosting firewall or edge rate limit.
+`/api/recommend` and `/api/copilot` include anonymous/IP-bucket request limits as a safety limiter before auth is resolved. Provider-backed AI still requires authentication, entitlement, quota, server-side enablement, and a server-side key. By default, each client IP bucket can make 20 recommendation or copilot requests per 60 seconds. Set `RECOMMEND_RATE_LIMIT_MAX_REQUESTS=0` to disable the in-memory limiter. For production deployments with multiple server instances, pair these settings with a hosting firewall or edge rate limit.
 
 When LLM recommendations are on, the app sends minimized dataset profile metadata to the configured provider. This includes column names, inferred types, missingness, unique counts, and capped column sample values. Full uploaded rows are not sent to the LLM recommendation or handoff routes.
 
@@ -103,7 +114,7 @@ When LLM recommendations are on, the app sends minimized dataset profile metadat
 - Bundled multi-dataset sample with needs assessment, population baseline, join coverage, trend, demographic, and quality-review signals.
 - Decision templates for response prioritization plus beta service gap monitoring and preparedness risk screening workflows.
 - Deterministic profiling, join recommendations, dashboard recommendations, combined preparation/quality checks, and scoped preparation transformation logging.
-- Vercel-compatible `/api/recommend` and `/api/copilot` routes for AI-assisted recommendations and export handoff summaries with configurable request limits and deterministic fallback.
+- Vercel-compatible `/api/recommend` and `/api/copilot` routes with an auth/entitlement gate abstraction, configurable request limits, daily AI quota checks, and deterministic fallback.
 - Workflow export page for CSV, PNG, PDF report, scoped transformation log JSON, review-ready decision handoff exports, and a dependency-free project kit JSON.
 - Vitest coverage for the core parsing, profiling, joining, dashboard, and recommendation-schema logic.
-- Session-only operation with no login or project persistence.
+- Session-only upload and prepared-data handling; authenticated app, metadata-only persistence, feedback/templates, quota-aware coach, and admin aggregate reporting are implemented for controlled-beta validation. Production deployment and production database migration remain separate explicit approvals.

@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "About | Dashboard Copilot",
   description:
-    "How Dashboard Copilot helps turn humanitarian datasets into transparent dashboards.",
+    "How to use Dashboard Copilot to turn disaster-response datasets into reviewable decision-support packages.",
 };
 
 const resources = [
@@ -17,6 +17,24 @@ const resources = [
     href: "https://github.com/datakind/disaster-dashboard-webapp-repo/blob/main/docs/digital-public-good-guide.md",
     description:
       "Plain-English project tutorial, scope, extension guidance, and technical appendix.",
+  },
+  {
+    title: "Release Readiness",
+    href: "https://github.com/datakind/disaster-dashboard-webapp-repo/blob/main/docs/release-readiness.md",
+    description:
+      "Controlled-beta gates, current staging posture, and production approval boundary.",
+  },
+  {
+    title: "Showcase Script",
+    href: "https://github.com/datakind/disaster-dashboard-webapp-repo/blob/main/docs/showcase-script.md",
+    description:
+      "A short presenter path for explaining the workflow without overselling the demo.",
+  },
+  {
+    title: "Tutorial Video Source",
+    href: "https://github.com/datakind/disaster-dashboard-webapp-repo/tree/main/tutorial-video",
+    description:
+      "Remotion source project, captured walkthrough screens, and render notes for the embedded tutorial.",
   },
   {
     title: "License",
@@ -37,6 +55,58 @@ const resources = [
   },
 ];
 
+const workflowSteps = [
+  {
+    title: "Pick the decision",
+    body: "Start with the response-prioritization template, action owner, geography, timeframe, and evidence needs.",
+  },
+  {
+    title: "Load sample or local files",
+    body: "Use the public demo samples for a safe first run, or sign in to the workspace before uploading CSV/XLSX data.",
+  },
+  {
+    title: "Inspect evidence coverage",
+    body: "Review field roles, join keys, missingness, duplicate signals, and whether the data supports the decision.",
+  },
+  {
+    title: "Review harmonization",
+    body: "Accept or adjust join recommendations and row-preserving cleaning transforms before preparing the dataset.",
+  },
+  {
+    title: "Generate and export",
+    body: "Use the dashboard, caveats, PDF report, transformation log, handoff log, or project kit as review artifacts.",
+  },
+];
+
+const entryPoints = [
+  {
+    title: "Public demo",
+    href: "/demo",
+    action: "Open demo",
+    body: "No login. Uses bundled synthetic data and deterministic recommendations so a new user can learn the flow safely.",
+  },
+  {
+    title: "Authenticated workspace",
+    href: "/app",
+    action: "Open workspace",
+    body: "Login required. Use this path for uploaded CSV/XLSX files, optional AI attempts, usage metering, feedback, templates, and exports.",
+  },
+  {
+    title: "Progress and gates",
+    href: "/progress",
+    action: "View progress",
+    body: "Check what is implemented, what was locally verified, and what still needs approval before production.",
+  },
+];
+
+const tutorialChapters = [
+  "Start with the decision question and action owner.",
+  "Load bundled samples or authenticated workspace data.",
+  "Profile evidence quality before trusting recommendations.",
+  "Review joins, cleaning, readiness, dashboard output, and exports.",
+  "Use caveats and handoff logs to support human review.",
+];
+
 export default function AboutPage() {
   return (
     <main>
@@ -53,6 +123,9 @@ export default function AboutPage() {
             >
               About
             </a>
+            <a className="header-nav-link" href="/progress">
+              Progress
+            </a>
           </div>
         </div>
       </header>
@@ -60,107 +133,143 @@ export default function AboutPage() {
       <div className="about-shell">
         <section className="about-hero">
           <p className="eyebrow">About</p>
-          <h1>Dashboard Copilot for Humanitarian Aid</h1>
+          <h1>Dashboard Copilot for Disaster Response Decisions</h1>
           <p className="about-lede">
-            Dashboard Copilot helps teams turn CSV and XLSX datasets into a
-            prepared dataset, quality checks, recommended visualizations, and
-            exportable dashboard artifacts without hiding the data preparation
-            steps that shaped the result.
+            Dashboard Copilot helps response teams turn fragmented,
+            non-sensitive CSV and XLSX data into a reviewable decision-support
+            package: profiled evidence, safe preparation steps, readiness
+            checks, recommended visualizations, caveats, and exportable handoff
+            artifacts.
           </p>
+          <div className="about-actions" aria-label="Primary entry points">
+            <a className="primary-action" href="/demo">
+              Try the public demo
+            </a>
+            <a className="secondary-action" href="/app">
+              Open the workspace
+            </a>
+          </div>
         </section>
 
         <section className="about-grid" aria-label="Application overview">
           <article className="about-panel">
-            <h2>What It Does</h2>
+            <h2>What It Is</h2>
             <p>
-              The workflow profiles uploaded or sample data, recommends safe
-              harmonization steps, applies typed row-preserving cleaning
-              transforms, validates the prepared dataset, and generates a
-              dashboard with charts and insights tailored to the available
-              fields.
+              A controlled-beta decision-readiness workflow for humanitarian
+              and disaster-response teams. The product is built to support
+              human review, not to approve an operational action automatically.
             </p>
           </article>
           <article className="about-panel">
-            <h2>What Stays Visible</h2>
+            <h2>What It Produces</h2>
             <p>
-              Joins, cleaning operations, quality warnings, assumptions, and
-              exportable transformation logs remain visible so analysts can
-              review what changed before sharing a dashboard or prepared data.
+              Prepared data, quality warnings, recommended charts, dashboard
+              insights, PDF/image exports, transformation logs, decision
+              handoff logs, and a project kit for second-pass implementation.
             </p>
           </article>
           <article className="about-panel">
-            <h2>How AI is Used</h2>
+            <h2>How AI Fits</h2>
             <p>
-              When enabled, the server asks the configured LLM for structured
-              recommendations using minimized column summaries. The app keeps
-              deterministic fallbacks available when AI is off, unavailable,
-              rate limited, or unable to return valid structured output.
+              AI is optional and advisory. Provider calls require server-side
+              enablement, authentication, entitlement, and quota. Deterministic
+              recommendations remain the fallback and the validation anchor.
             </p>
           </article>
         </section>
 
         <section className="about-section">
           <div className="section-heading">
+            <p className="eyebrow">Tutorial</p>
+            <h2>Watch the Workflow Once, Then Try the Demo</h2>
+          </div>
+          <div className="about-video-grid">
+            <div className="about-video-card">
+              <video
+                controls
+                poster="/tutorial/dashboard-copilot-tutorial-poster.jpg"
+                preload="metadata"
+              >
+                <source
+                  src="/tutorial/dashboard-copilot-tutorial.mp4"
+                  type="video/mp4"
+                />
+                Your browser does not support embedded video. Open the
+                tutorial source from the resources section below.
+              </video>
+            </div>
+            <aside className="about-note tutorial-summary">
+              <h3>What the tutorial covers</h3>
+              <ul>
+                {tutorialChapters.map((chapter) => (
+                  <li key={chapter}>{chapter}</li>
+                ))}
+              </ul>
+              <a className="secondary-action" href="/demo">
+                Start with the deterministic demo
+              </a>
+            </aside>
+          </div>
+        </section>
+
+        <section className="about-section">
+          <div className="section-heading">
+            <p className="eyebrow">Start here</p>
+            <h2>Choose the Right Entry Point</h2>
+          </div>
+          <div className="entry-grid">
+            {entryPoints.map((entry) => (
+              <article className="entry-card" key={entry.href}>
+                <h3>{entry.title}</h3>
+                <p>{entry.body}</p>
+                <a className="secondary-action" href={entry.href}>
+                  {entry.action}
+                </a>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="about-section">
+          <div className="section-heading">
             <p className="eyebrow">Workflow</p>
-            <h2>Designed for Review Before Publication</h2>
+            <h2>Use It as a Review Workflow</h2>
           </div>
           <ol className="about-steps">
-            <li>
-              <strong>Upload data</strong>
-              <span>
-                Load CSV/XLSX files or use the bundled humanitarian sample
-                datasets.
-              </span>
-            </li>
-            <li>
-              <strong>Profile fields</strong>
-              <span>
-                Identify likely join keys, metrics, categories, missingness, and
-                duplicates.
-              </span>
-            </li>
-            <li>
-              <strong>Harmonize safely</strong>
-              <span>
-                Apply typed transforms such as trimming whitespace and
-                converting numeric strings.
-              </span>
-            </li>
-            <li>
-              <strong>Validate and generate</strong>
-              <span>
-                Review quality checks, then generate recommended charts and
-                insights.
-              </span>
-            </li>
-            <li>
-              <strong>Export artifacts</strong>
-              <span>
-                Download prepared data, dashboard images, PDF reports, and
-                decision handoff logs.
-              </span>
-            </li>
+            {workflowSteps.map((step) => (
+              <li key={step.title}>
+                <strong>{step.title}</strong>
+                <span>{step.body}</span>
+              </li>
+            ))}
           </ol>
         </section>
 
         <section className="about-section">
           <div className="section-heading">
             <p className="eyebrow">Data handling</p>
-            <h2>Current Prototype Boundaries</h2>
+            <h2>Controlled-Beta Boundaries</h2>
           </div>
           <div className="about-note">
             <p>
-              Uploaded files are held in browser session memory. The browser
-              never reads the server LLM API key. When AI recommendations are
-              enabled, the server sends minimized column summaries and capped
-              sample values to the configured provider; full uploaded rows are
-              not sent to the recommendation route.
+              Uploaded disaster data remains session-only. The app may persist
+              account/profile metadata, AI usage metadata, feedback, custom
+              templates, template versions, and non-sensitive admin/evaluation
+              metadata; it must not persist uploaded files, raw rows, prepared
+              rows, full datasets, exports, full prompts, row-like model
+              responses, or secrets.
+            </p>
+            <p>
+              The public demo uses synthetic sample data and does not make AI
+              calls. Authenticated workspace routes can use optional AI only
+              after the server verifies access and quota, and AI output remains
+              secondary to deterministic validation and visible caveats.
             </p>
             <p>
               This application does not replace operational review, statistical
-              validation, or accountability processes. Use it to speed up first
-              drafts, surface quality issues, and make preparation steps easier
-              to inspect.
+              validation, domain approval, or accountability processes. Use it
+              to standardize first drafts, surface quality issues, and make
+              preparation steps easier to inspect before stakeholders act.
             </p>
           </div>
         </section>

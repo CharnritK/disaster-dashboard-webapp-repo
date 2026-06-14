@@ -1,0 +1,150 @@
+# Deployment Smoke Tests
+
+Use this checklist for preview validation. It is intentionally safe for
+external validation without touching production.
+
+Approved path: preview-only first. Do not deploy production until auth, DB, and
+fallback smoke tests pass.
+
+Current preview status as of 2026-06-14: the staging Supabase project and
+branch-scoped Vercel Preview have been configured, schema/RLS was applied to
+staging only, public and unauthenticated preview checks pass, and earlier
+magic-link login was user-confirmed for the approved beta/admin email. The
+current preview can return `sent=1` for `POST /auth/signin`; immediate repeat
+requests may hit Supabase OTP resend protection. The app maps that cooldown to
+`auth_rate_limited` after the next preview redeploy. Use this checklist for the
+next authenticated metadata-persistence and admin-aggregate smoke pass after
+the latest magic link is clicked.
+
+## Preconditions
+
+- Use Node `24.x` on Vercel. Current Vercel docs list `24.x` as the default
+  supported Node runtime, with `22.x` and `20.x` also available.
+- Treat function-duration and Fluid Compute assumptions as `VERIFY_CURRENT_DOCS`
+  before launch because Vercel plan and function-limit pages can differ by
+  context.
+- Do not add production environment variables in local files.
+- Do not run production migrations from Codex.
+- Keep `NEXT_PUBLIC_COPILOT_API_ENABLED=false` for static/public deterministic
+  demos unless the API routes are available in the deployment target.
+
+## Environment Variables
+
+Required for deterministic preview:
+
+- `NEXT_PUBLIC_COPILOT_API_ENABLED=false`
+
+Required for authenticated Supabase-backed preview:
+
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+- `APP_BASE_URL`
+- `AI_BETA_ALLOWED_EMAILS` with named beta users
+- `ADMIN_EMAILS` with named admins only
+- `AI_DAILY_QUOTA=20`
+- `AI_USAGE_STORE=supabase`
+- `METADATA_STORE=supabase`
+- `SUPABASE_SECRET_KEY`
+
+Required only when intentionally enabling provider-backed AI:
+
+- `NEXT_PUBLIC_COPILOT_API_ENABLED=true`
+- `LLM_ENABLED=true`
+- exactly one server-side provider key, such as `LLM_API_KEY` or `OPENAI_API_KEY`
+- `AUTH_SECRET` if required by the selected auth/session path
+
+Server-only values:
+
+- `LLM_API_KEY`
+- `OPENAI_API_KEY`
+- `DATABASE_URL`
+- `AUTH_SECRET`
+- `SUPABASE_SECRET_KEY`
+
+Metadata storage switches:
+
+- Keep `AI_USAGE_STORE=memory` and `METADATA_STORE=memory` until the preview or
+  staging schema/RLS review passes.
+- Use `AI_USAGE_STORE=supabase` and `METADATA_STORE=supabase` only after the
+  reviewed Supabase project has schema and RLS applied outside production.
+
+Never expose server-only values through `NEXT_PUBLIC_*`.
+
+## Public Route Checks
+
+Run:
+
+```bash
+node scripts/smoke-vercel.mjs --url https://your-preview-url.vercel.app
+```
+
+Expected:
+
+- `/` returns 200.
+- `/api/recommend/status` returns 200 and no secret-bearing fields such as
+  `hasApiKey`, `provider`, `model`, or raw key names.
+- `/api/usage` returns 401 without authentication and does not expose usage
+  counts.
+
+## AI Fallback Checks
+
+For deterministic/public preview:
+
+- AI toggle is off or AI requests fall back deterministically.
+- Missing auth, missing keys, disabled AI, unsupported provider, and quota
+  denials do not consume quota.
+- UI copy says deterministic fallback is being used; it must not imply AI output
+  is authoritative.
+
+For authenticated AI preview:
+
+- Sign-in works with approved Supabase redirect URLs.
+- `/api/usage` returns the signed-in user's own usage only.
+- Provider attempts reserve quota before calling the provider.
+- Over-quota requests continue deterministically.
+
+## Logs
+
+In Vercel preview logs, confirm:
+
+- no server-only secrets appear in logs;
+- no uploaded rows or prepared rows appear in logs;
+- provider failures produce deterministic fallback, not uncaught errors;
+- status endpoint responses are `Cache-Control: no-store`.
+
+## DB Row Check
+
+Only after schema/RLS review and approved preview DB setup:
+
+- Public deterministic page load creates no metadata rows.
+- Unauthenticated `/api/usage` creates no usage row.
+- Pre-provider fallback caused by missing auth, disabled AI, missing key,
+  unsupported provider, invalid request, oversized request, or rate limit does
+  not increment `ai_usage_daily`.
+- Provider attempts create safe `ai_events` metadata only.
+- No uploaded rows, prepared rows, exported files, full prompts, full responses,
+  screenshots, or operational incident details are stored.
+
+## T031 Pending Authenticated Checks
+
+After clicking the latest magic link for the approved beta/admin email:
+
+- Verify `/app/usage` renders for the signed-in user and exposes only that
+  user's usage metadata.
+- Submit one safe feedback record and confirm only allowed metadata fields are
+  stored.
+- Save one safe private draft template and confirm only schema/template metadata
+  is stored.
+- Verify `/admin` renders only for the approved admin email and displays
+  aggregate counts, fallback reasons, and feedback tags only.
+- Confirm no uploaded files, uploaded rows, prepared rows, exports, full
+  prompts, full model responses, screenshots, or reports are persisted.
+- Confirm Vercel preview logs contain no secrets, uploaded rows, or prepared
+  rows.
+
+## Rollback
+
+- Set `LLM_ENABLED=false`.
+- Set `NEXT_PUBLIC_COPILOT_API_ENABLED=false`.
+- Remove preview Supabase env values if auth is not under test.
+- Do not run cleanup SQL against production unless a reviewed rollback exists.

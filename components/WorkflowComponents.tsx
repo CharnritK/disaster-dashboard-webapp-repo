@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import type {
   Dataset,
   ColumnProfile,
@@ -529,14 +529,16 @@ export function UploadStep({
   onSamples,
   onRemoveDataset,
   onUpdateDatasetInputHints,
+  sampleOnly = false,
 }: {
   datasets: Dataset[];
   decisionBrief: DecisionBrief;
   onProfile: () => void;
-  onFiles: (files: FileList | null) => void;
+  onFiles?: (files: FileList | null) => void;
   onSamples: (kind: SampleDatasetKind) => void;
   onRemoveDataset: (datasetId: string) => void;
   onUpdateDatasetInputHints: (datasetId: string, inputHints: DatasetInputHints) => void;
+  sampleOnly?: boolean;
 }) {
   return (
     <section className="workflow-step">
@@ -563,15 +565,17 @@ export function UploadStep({
             files, up to {MAX_UPLOAD_SIZE_MB}MB each.
           </p>
           <div className="action-row">
-            <label className="primary-action compact">
-              Upload files
-              <input
-                type="file"
-                multiple
-                accept=".csv,.xlsx"
-                onChange={(event) => onFiles(event.target.files)}
-              />
-            </label>
+            {!sampleOnly && (
+              <label className="primary-action compact">
+                Upload files
+                <input
+                  type="file"
+                  multiple
+                  accept=".csv,.xlsx"
+                  onChange={(event) => onFiles?.(event.target.files)}
+                />
+              </label>
+            )}
             <button onClick={() => onSamples("multi")}>Use sample data</button>
             <button onClick={() => onSamples("fragmented")}>
               Use fragmented demo data
@@ -590,19 +594,27 @@ export function UploadStep({
               <span>hazard + vulnerability + capacity</span>
             </button>
           </div>
+          {sampleOnly && (
+            <p className="helper-text">
+              Public demo uses bundled samples only. Sign in for private uploads
+              and AI-assisted workflow.
+            </p>
+          )}
         </div>
       ) : (
         <>
           <div className="action-row toolbar-row">
-            <label className="primary-action compact">
-              Upload files
-              <input
-                type="file"
-                multiple
-                accept=".csv,.xlsx"
-                onChange={(event) => onFiles(event.target.files)}
-              />
-            </label>
+            {!sampleOnly && (
+              <label className="primary-action compact">
+                Upload files
+                <input
+                  type="file"
+                  multiple
+                  accept=".csv,.xlsx"
+                  onChange={(event) => onFiles?.(event.target.files)}
+                />
+              </label>
+            )}
             <button onClick={() => onSamples("multi")}>
               Replace with sample data
             </button>
@@ -1475,7 +1487,17 @@ export function DashboardPreview({
   showInsightLinks?: boolean;
 }) {
   const [highlightedChartId, setHighlightedChartId] = useState<string>();
+  const [activeMobilePanel, setActiveMobilePanel] = useState("overview");
   const chartSections = groupChartsBySection(recommendation.charts);
+  const mobilePanels = [
+    { id: "overview", title: "Overview" },
+    { id: "insights", title: "Insights" },
+    ...chartSections.map((section) => ({
+      id: section.id,
+      title: section.title,
+    })),
+  ];
+
   function selectInsightChart(chartId: string) {
     setHighlightedChartId(chartId);
     window.requestAnimationFrame(() => {
@@ -1487,18 +1509,48 @@ export function DashboardPreview({
 
   return (
     <div ref={refNode} className="dashboard">
-      <DecisionReadinessPanel readiness={decisionReadiness} compact />
-      <SummaryMetrics
-        dataset={dataset}
-        metrics={recommendation.summaryMetrics}
-      />
-      <DashboardInsights
-        insights={recommendation.insights ?? []}
-        activeChartId={highlightedChartId}
-        onInsightSelect={selectInsightChart}
-        defaultOpen={expandInsights}
-        showChartLinks={showInsightLinks && interactive}
-      />
+      <div className="dashboard-mobile-tabs" role="tablist" aria-label="Dashboard sections">
+        {mobilePanels.map((panel) => (
+          <button
+            aria-controls={`dashboard-mobile-panel-${panel.id}`}
+            aria-selected={activeMobilePanel === panel.id}
+            className={activeMobilePanel === panel.id ? "selected" : undefined}
+            id={`dashboard-mobile-tab-${panel.id}`}
+            key={panel.id}
+            onClick={() => setActiveMobilePanel(panel.id)}
+            role="tab"
+            type="button"
+          >
+            {panel.title}
+          </button>
+        ))}
+      </div>
+      <section
+        aria-labelledby="dashboard-mobile-tab-overview"
+        className={`dashboard-mobile-panel ${activeMobilePanel === "overview" ? "active" : ""}`}
+        id="dashboard-mobile-panel-overview"
+        role="tabpanel"
+      >
+        <DecisionReadinessPanel readiness={decisionReadiness} compact />
+        <SummaryMetrics
+          dataset={dataset}
+          metrics={recommendation.summaryMetrics}
+        />
+      </section>
+      <section
+        aria-labelledby="dashboard-mobile-tab-insights"
+        className={`dashboard-mobile-panel ${activeMobilePanel === "insights" ? "active" : ""}`}
+        id="dashboard-mobile-panel-insights"
+        role="tabpanel"
+      >
+        <DashboardInsights
+          insights={recommendation.insights ?? []}
+          activeChartId={highlightedChartId}
+          onInsightSelect={selectInsightChart}
+          defaultOpen={expandInsights}
+          showChartLinks={showInsightLinks && interactive}
+        />
+      </section>
       {chartSections.map((section) => {
         const hasFeaturedCard =
           section.id === "comparisons" && section.charts.length > 0;
@@ -1506,7 +1558,13 @@ export function DashboardPreview({
           ? section.charts.length % 2 === 0
           : section.charts.length % 2 === 1;
         return (
-          <section className="dashboard-section" key={section.id}>
+          <section
+            aria-labelledby={`dashboard-mobile-tab-${section.id}`}
+            className={`dashboard-section dashboard-mobile-panel ${activeMobilePanel === section.id ? "active" : ""}`}
+            id={`dashboard-mobile-panel-${section.id}`}
+            key={section.id}
+            role="tabpanel"
+          >
             <div className="dashboard-section-heading">
               <h2>{section.title}</h2>
             </div>
@@ -3705,11 +3763,15 @@ export function LandingHero({
   llmEnabled,
   llmAvailable = true,
   onLlmEnabledChange,
+  usageSlot,
+  ctaSlot,
 }: {
   loading?: boolean;
   llmEnabled: boolean;
   llmAvailable?: boolean;
   onLlmEnabledChange: (enabled: boolean) => void;
+  usageSlot?: ReactNode;
+  ctaSlot?: ReactNode;
 }) {
   return (
     <header className={`app-header${loading ? " loading" : ""}`}>
@@ -3719,11 +3781,16 @@ export function LandingHero({
           <a className="header-nav-link" href="/about">
             About
           </a>
+          <a className="header-nav-link" href="/progress">
+            Progress
+          </a>
         </div>
         <div className="header-actions">
           <div className="header-status-slot">
             {loading && <LoadingStatus />}
           </div>
+          {usageSlot}
+          {ctaSlot}
           <label className="llm-toggle">
             <input
               type="checkbox"

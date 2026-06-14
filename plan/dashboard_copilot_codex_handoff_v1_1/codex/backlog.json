@@ -1,0 +1,1437 @@
+[
+  {
+    "id": "T001",
+    "title": "Verify repo, build, and test baseline",
+    "owner": "Repo Cartographer",
+    "goal": "Confirm current repo structure and command baseline before feature work.",
+    "target_files": [
+      "package.json",
+      ".tool-versions",
+      ".env.example",
+      "next.config.ts",
+      "app/page.tsx",
+      "app/api/**",
+      "lib/**",
+      "components/**"
+    ],
+    "implementation_notes": [
+      "List actual paths before editing.",
+      "Run baseline commands and capture actual output.",
+      "Do not start feature work in this task.",
+      "Add a baseline Vitest smoke test only if the runner has no tests and test command otherwise fails due no tests."
+    ],
+    "acceptance": [
+      "Repo map is documented.",
+      "Actual command output is captured.",
+      "No auth/DB/UI feature work is started."
+    ],
+    "tests": [
+      "No feature tests.",
+      "Baseline smoke test only if needed."
+    ],
+    "commands": [
+      "npm run lint",
+      "npm run test",
+      "npm run build"
+    ],
+    "non_goals": [
+      "No auth.",
+      "No DB.",
+      "No route split."
+    ],
+    "dependencies": [],
+    "risk": "Low",
+    "stop": "Stop if repo files differ materially from handoff or baseline fails for unrelated reasons.",
+    "status": "completed_local_reviewable",
+    "status_as_of": "2026-06-14",
+    "status_note": "Historical v1.1 task card. Current state is recorded in qa/final_goal_status.md and qa/supabase_staging_project_check_2026-06-14.md."
+  },
+  {
+    "id": "T002",
+    "title": "Fix deterministic env defaults and docs mismatch",
+    "owner": "Product Contract Editor",
+    "goal": "Make checked-in defaults deterministic-safe.",
+    "target_files": [
+      ".env.example",
+      "README.md",
+      "docs/AI_MODE.md"
+    ],
+    "implementation_notes": [
+      "Set LLM_ENABLED=false and NEXT_PUBLIC_COPILOT_API_ENABLED=false in examples.",
+      "Add placeholders for DATABASE_URL, AUTH_SECRET/SUPABASE env vars only as empty placeholders.",
+      "Document that secrets are server-side only."
+    ],
+    "acceptance": [
+      "Defaults disable AI.",
+      "Docs match env file.",
+      "Provider keys are not present or suggested as literal values."
+    ],
+    "tests": [
+      "Existing tests only."
+    ],
+    "commands": [
+      "npm run lint",
+      "npm run test",
+      "npm run build"
+    ],
+    "non_goals": [
+      "No provider SDK install.",
+      "No auth implementation."
+    ],
+    "dependencies": [
+      "T001"
+    ],
+    "risk": "Low",
+    "stop": "Stop if docs contradict the product contract.",
+    "status": "completed_local_reviewable",
+    "status_as_of": "2026-06-14",
+    "status_note": "Historical v1.1 task card. Current state is recorded in qa/final_goal_status.md and qa/supabase_staging_project_check_2026-06-14.md."
+  },
+  {
+    "id": "T003",
+    "title": "Add Vercel-compatible runtime and build config",
+    "owner": "Vercel Deployment Auditor",
+    "goal": "Remove repo-level build blockers for Vercel Free/Hobby without inventing current Vercel facts.",
+    "target_files": [
+      "package.json",
+      ".tool-versions",
+      "next.config.ts",
+      "scripts/prepare-sites-dist.mjs",
+      "README.md",
+      "docs/vercel_free_readiness.md"
+    ],
+    "implementation_notes": [
+      "Verify current official Vercel docs before hard-coding Node/runtime/function settings.",
+      "If docs cannot be checked, mark settings VERIFY_CURRENT_DOCS and continue only non-deployment-dependent local work.",
+      "Make Vercel path use standard Next output.",
+      "Make static/Codex post-build script conditional."
+    ],
+    "acceptance": [
+      "Vercel-specific assumptions are either verified or marked VERIFY_CURRENT_DOCS.",
+      "Static/Codex build path remains conditional.",
+      "Local build passes."
+    ],
+    "tests": [
+      "Add config test only if repo already has config tests."
+    ],
+    "commands": [
+      "npm run lint",
+      "npm run test",
+      "npm run build"
+    ],
+    "non_goals": [
+      "No production deployment.",
+      "No production setting changes."
+    ],
+    "dependencies": [
+      "T001",
+      "T002"
+    ],
+    "risk": "Medium",
+    "stop": "Stop before merging deployment-specific config if current Vercel docs cannot be checked.",
+    "status": "completed_local_reviewable",
+    "status_as_of": "2026-06-14",
+    "status_note": "Historical v1.1 task card. Current state is recorded in qa/final_goal_status.md and qa/supabase_staging_project_check_2026-06-14.md."
+  },
+  {
+    "id": "T004",
+    "title": "Add auth provider decision record",
+    "owner": "Auth & Entitlement Engineer",
+    "goal": "Document provider choice before implementation.",
+    "target_files": [
+      "docs/decisions/auth-provider.md"
+    ],
+    "implementation_notes": [
+      "Compare Supabase Auth default with at least one alternative.",
+      "State explicit approval flags.",
+      "Document no custom password storage if Supabase Auth is used."
+    ],
+    "acceptance": [
+      "Decision record exists.",
+      "Provider default is clear.",
+      "Approval gate is explicit."
+    ],
+    "tests": [
+      "No code tests."
+    ],
+    "commands": [],
+    "non_goals": [
+      "No provider SDK install.",
+      "No login UI."
+    ],
+    "dependencies": [
+      "T002"
+    ],
+    "risk": "Low",
+    "stop": "Stop before provider SDK install if approval missing.",
+    "status": "completed_local_reviewable",
+    "status_as_of": "2026-06-14",
+    "status_note": "Historical v1.1 task card. Current state is recorded in qa/final_goal_status.md and qa/supabase_staging_project_check_2026-06-14.md."
+  },
+  {
+    "id": "T005",
+    "title": "Add persistence provider decision record",
+    "owner": "Persistence Engineer",
+    "goal": "Document DB provider before implementation.",
+    "target_files": [
+      "docs/decisions/persistence-provider.md"
+    ],
+    "implementation_notes": [
+      "Compare Supabase Postgres default with at least one external managed Postgres alternative.",
+      "State metadata-only persistence boundary.",
+      "Call out no row/file/report storage."
+    ],
+    "acceptance": [
+      "Decision record exists.",
+      "Default provider is clear.",
+      "Approval gate is explicit."
+    ],
+    "tests": [
+      "No code tests."
+    ],
+    "commands": [],
+    "non_goals": [
+      "No provider SDK install.",
+      "No migrations."
+    ],
+    "dependencies": [
+      "T002"
+    ],
+    "risk": "Low",
+    "stop": "Stop before provider SDK install if approval missing.",
+    "status": "completed_local_reviewable",
+    "status_as_of": "2026-06-14",
+    "status_note": "Historical v1.1 task card. Current state is recorded in qa/final_goal_status.md and qa/supabase_staging_project_check_2026-06-14.md."
+  },
+  {
+    "id": "T007",
+    "title": "Add usage entitlement service interface and test auth abstraction",
+    "owner": "AI Governance Engineer",
+    "goal": "Make quota logic and authenticated/anonymous route tests possible before provider or DB integration.",
+    "target_files": [
+      "lib/entitlement/**",
+      "lib/auth/** or test auth abstraction",
+      "tests/entitlement.test.ts",
+      "tests/auth-context.test.ts"
+    ],
+    "implementation_notes": [
+      "Implement Asia/Bangkok date bucketing.",
+      "Expose checkAiEntitlement, reserveAiUsage, recordAiEvent, and markAiEventComplete interfaces.",
+      "Start with in-memory adapter.",
+      "Add test identity support that cannot be trusted in production.",
+      "Do not require Supabase or a real DB."
+    ],
+    "acceptance": [
+      "Unit tests pass.",
+      "No DB dependency.",
+      "No provider SDK dependency.",
+      "Quota deny reasons are typed.",
+      "Authenticated/anonymous route tests can use a safe abstraction."
+    ],
+    "tests": [
+      "date bucket",
+      "first use",
+      "reserve/increment",
+      "quota exceeded",
+      "different users",
+      "provider-attempt counted only after reserve",
+      "test identity only works in test mode"
+    ],
+    "commands": [
+      "npm run lint",
+      "npm run test",
+      "npm run build"
+    ],
+    "non_goals": [
+      "No provider SDK.",
+      "No route wiring."
+    ],
+    "dependencies": [
+      "T001",
+      "T002"
+    ],
+    "risk": "Medium",
+    "stop": "Stop if date bucketing or test identity would weaken production auth.",
+    "status": "completed_local_reviewable",
+    "status_as_of": "2026-06-14",
+    "status_note": "Historical v1.1 task card. Current state is recorded in qa/final_goal_status.md and qa/supabase_staging_project_check_2026-06-14.md."
+  },
+  {
+    "id": "T008",
+    "title": "Wrap /api/recommend with entitlement and quota check",
+    "owner": "Auth & Entitlement Engineer",
+    "goal": "Gate AI attempts while preserving deterministic fallback.",
+    "target_files": [
+      "app/api/recommend/route.ts",
+      "lib/entitlement/**",
+      "lib/auth/** or test auth abstraction",
+      "tests/api-recommend.test.ts"
+    ],
+    "implementation_notes": [
+      "Build deterministic fallback first.",
+      "Use auth abstraction/test identity before Supabase integration.",
+      "If unauthenticated or over quota, return deterministic fallback with reason and do not reserve usage.",
+      "Reserve usage atomically only before a provider call attempt.",
+      "Record safe event metadata."
+    ],
+    "acceptance": [
+      "Deterministic mode unchanged.",
+      "Unauth AI request returns fallback.",
+      "Over-quota AI request returns fallback.",
+      "Provider attempts are counted with reserve.",
+      "Missing key does not consume quota."
+    ],
+    "tests": [
+      "unauth useLlm true",
+      "auth under quota",
+      "auth over quota",
+      "missing key",
+      "invalid body",
+      "deterministic fallback shape preserved"
+    ],
+    "commands": [
+      "npm run lint",
+      "npm run test",
+      "npm run build"
+    ],
+    "non_goals": [
+      "No Supabase session required yet.",
+      "No full prompt persistence."
+    ],
+    "dependencies": [
+      "T007"
+    ],
+    "risk": "Medium",
+    "stop": "Stop if fallback shape cannot be preserved.",
+    "status": "completed_local_reviewable",
+    "status_as_of": "2026-06-14",
+    "status_note": "Historical v1.1 task card. Current state is recorded in qa/final_goal_status.md and qa/supabase_staging_project_check_2026-06-14.md."
+  },
+  {
+    "id": "T009",
+    "title": "Wrap /api/copilot with entitlement and quota check",
+    "owner": "Auth & Entitlement Engineer",
+    "goal": "Gate handoff summaries while preserving fallback.",
+    "target_files": [
+      "app/api/copilot/route.ts",
+      "lib/entitlement/**",
+      "lib/auth/** or test auth abstraction",
+      "tests/api-copilot.test.ts"
+    ],
+    "implementation_notes": [
+      "Apply same pattern as /api/recommend.",
+      "Do not consume quota for unauthenticated, over-quota, missing-key, invalid-request, or deterministic-mode fallback before provider call.",
+      "Record safe events."
+    ],
+    "acceptance": [
+      "Unauth AI returns fallback.",
+      "Over-quota returns fallback.",
+      "Deterministic handoff still works.",
+      "Provider attempts are reserved/countable."
+    ],
+    "tests": [
+      "auth under quota",
+      "over quota",
+      "unauth",
+      "missing key",
+      "invalid body"
+    ],
+    "commands": [
+      "npm run lint",
+      "npm run test",
+      "npm run build"
+    ],
+    "non_goals": [
+      "No Supabase session required yet."
+    ],
+    "dependencies": [
+      "T007",
+      "T008"
+    ],
+    "risk": "Medium",
+    "stop": "Stop if fallback object lacks reason field.",
+    "status": "completed_local_reviewable",
+    "status_as_of": "2026-06-14",
+    "status_note": "Historical v1.1 task card. Current state is recorded in qa/final_goal_status.md and qa/supabase_staging_project_check_2026-06-14.md."
+  },
+  {
+    "id": "T010",
+    "title": "Add usage meter and fallback copy",
+    "owner": "Workspace IA Engineer",
+    "goal": "Show daily AI usage in authenticated app shell or interim shell without breaking demo.",
+    "target_files": [
+      "components/UsageMeter.tsx",
+      "lib/useAiUsage.ts",
+      "app/api/usage/route.ts",
+      "app/page.tsx or new app shell"
+    ],
+    "implementation_notes": [
+      "Add usage endpoint backed by entitlement adapter.",
+      "Render used / limit.",
+      "Show quota exceeded copy and deterministic-continuation message.",
+      "Hide in /demo or render CTA-only.",
+      "This is the milestone checkpoint task. After completion, stop and report before provider SDK install, route split, AI coach, or internal dashboard work."
+    ],
+    "acceptance": [
+      "Authenticated UI shows usage.",
+      "Quota warning appears.",
+      "Demo remains deterministic.",
+      "Fallback copy is clear.",
+      "Milestone checkpoint report lists changed files, commands run, tests added, product-contract checks, privacy checks, and open approvals."
+    ],
+    "tests": [
+      "hook render",
+      "usage API",
+      "manual UI check"
+    ],
+    "commands": [
+      "npm run lint",
+      "npm run test",
+      "npm run build"
+    ],
+    "non_goals": [
+      "No route split.",
+      "No provider SDK install."
+    ],
+    "dependencies": [
+      "T007",
+      "T008",
+      "T009"
+    ],
+    "risk": "Low",
+    "stop": "Stop after T010 for human review before provider SDK install, route split, AI coach, or internal dashboard.",
+    "status": "completed_local_reviewable",
+    "status_as_of": "2026-06-14",
+    "status_note": "Historical v1.1 task card. Current state is recorded in qa/final_goal_status.md and qa/supabase_staging_project_check_2026-06-14.md."
+  },
+  {
+    "id": "T010A",
+    "title": "Milestone checkpoint before provider SDKs or large refactors",
+    "owner": "QA/Test Engineer + Security/Privacy Reviewer",
+    "goal": "Prevent one-shot Codex execution from turning into an unsafe giant PR.",
+    "target_files": [
+      "qa/milestone_T010_report.md",
+      "qa/challenger_closeout.md",
+      "HANDOFF_INDEX.md"
+    ],
+    "implementation_notes": [
+      "Summarize files changed, commands run, tests added, product-contract checks, privacy checks, and rollback notes.",
+      "Confirm explicit approval flags remain true before continuing.",
+      "Do not install provider SDKs before this checkpoint passes."
+    ],
+    "acceptance": [
+      "Checkpoint report exists.",
+      "Baseline commands are reported with actual output.",
+      "Entitlement route tests pass or blockers are documented.",
+      "No forbidden persistence introduced.",
+      "No provider SDKs, route split, AI coach, internal dashboard, or deployment-specific config has started."
+    ],
+    "tests": [
+      "No new code tests unless checkpoint detects missing coverage."
+    ],
+    "commands": [
+      "npm run lint",
+      "npm run test",
+      "npm run build"
+    ],
+    "non_goals": [
+      "No new feature work.",
+      "No provider SDK installation."
+    ],
+    "dependencies": [
+      "T010"
+    ],
+    "risk": "High",
+    "stop": "Stop before provider SDKs, route split, AI coach, internal dashboard, or deployment-specific config unless checkpoint passes.",
+    "status": "completed_local_reviewable",
+    "status_as_of": "2026-06-14",
+    "status_note": "Historical v1.1 task card. Current state is recorded in qa/final_goal_status.md and qa/supabase_staging_project_check_2026-06-14.md."
+  },
+  {
+    "id": "T011",
+    "title": "Implement Supabase auth integration after explicit approval",
+    "owner": "Auth & Entitlement Engineer",
+    "goal": "Add real auth after T010 checkpoint and approval.",
+    "target_files": [
+      "lib/auth/**",
+      "middleware.ts",
+      "app/login/**",
+      "app/auth/**",
+      "app/app/**"
+    ],
+    "implementation_notes": [
+      "Proceed only if APPROVED_PROVIDER_IMPLEMENTATION=true and APPROVED_AUTH_PROVIDER=Supabase Auth.",
+      "Use Supabase Auth as identity source.",
+      "Do not build custom password storage.",
+      "Map profile id to auth.users(id).",
+      "Protect /app/**; keep /demo public.",
+      "Do not proceed unless explicit approval flags remain true.",
+      "Do not create an app-owned password table."
+    ],
+    "acceptance": [
+      "Login works in dev when env vars are configured.",
+      "/demo public.",
+      "/app protected.",
+      "API routes can resolve user.",
+      "No provider secrets exposed to browser.",
+      "No custom password table exists."
+    ],
+    "tests": [
+      "auth helper",
+      "route guard",
+      "manual login"
+    ],
+    "commands": [
+      "npm run lint",
+      "npm run test",
+      "npm run build"
+    ],
+    "non_goals": [
+      "No production auth config changes.",
+      "No custom password table."
+    ],
+    "dependencies": [
+      "T010A"
+    ],
+    "risk": "High",
+    "stop": "Stop if provider env/credentials are needed or approval flags are not explicit.",
+    "status": "completed_local_reviewable",
+    "status_as_of": "2026-06-14",
+    "status_note": "Historical v1.1 task card. Current state is recorded in qa/final_goal_status.md and qa/supabase_staging_project_check_2026-06-14.md."
+  },
+  {
+    "id": "T006",
+    "title": "Draft metadata-only database schema",
+    "owner": "Persistence Engineer",
+    "goal": "Add schema draft for approved tables without running production migrations.",
+    "target_files": [
+      "db/schema.sql",
+      "docs/data_model.md"
+    ],
+    "implementation_notes": [
+      "Create SQL/schema draft for users/user_profiles, ai_usage_daily, ai_events, feedback, custom_templates, and template_versions.",
+      "Map app profiles to auth.users if Supabase remains approved.",
+      "Document forbidden persistence in schema comments."
+    ],
+    "acceptance": [
+      "Schema draft exists.",
+      "Forbidden data is documented.",
+      "No production migration is run."
+    ],
+    "tests": [
+      "Schema validation if tooling exists.",
+      "Static review if no schema tooling exists."
+    ],
+    "commands": [
+      "npm run lint",
+      "npm run test"
+    ],
+    "non_goals": [
+      "No production DB writes.",
+      "No provider SDK install unless explicitly approved."
+    ],
+    "dependencies": [
+      "T004",
+      "T005",
+      "T010A"
+    ],
+    "risk": "Medium",
+    "stop": "Stop before migration execution or if schema requires storing forbidden data.",
+    "status": "completed_local_reviewable",
+    "status_as_of": "2026-06-14",
+    "status_note": "Historical v1.1 task card. Current state is recorded in qa/final_goal_status.md and qa/supabase_staging_project_check_2026-06-14.md."
+  },
+  {
+    "id": "T006A",
+    "title": "Add Supabase RLS policy draft and server-only DB access rules",
+    "owner": "Persistence Engineer",
+    "goal": "Prevent insecure provider integration by defining RLS, auth.users mapping, and service-key boundaries before real DB code.",
+    "target_files": [
+      "db/rls.sql",
+      "db/README.md",
+      "docs/security_supabase_rls.md",
+      "lib/db/serverClient.ts or verified equivalent"
+    ],
+    "implementation_notes": [
+      "Enable RLS on user-owned tables in SQL draft.",
+      "Use auth.uid() owner policies.",
+      "Make ai_events/ai_usage writes server-controlled.",
+      "Document service-role key must never be imported into client modules.",
+      "Reviewed templates are read-only to normal users; custom templates are owner-scoped."
+    ],
+    "acceptance": [
+      "RLS policy draft exists.",
+      "Owner isolation rules are explicit.",
+      "Server-only DB client boundary is documented.",
+      "No client-side service-role key import path exists."
+    ],
+    "tests": [
+      "Add policy checks if Supabase local/test tooling exists.",
+      "Add static import guard test for service-role key helper if feasible."
+    ],
+    "commands": [
+      "npm run lint",
+      "npm run test"
+    ],
+    "non_goals": [
+      "No production migration.",
+      "No direct browser writes unless policies are tested."
+    ],
+    "dependencies": [
+      "T006"
+    ],
+    "risk": "High",
+    "stop": "Stop before provider integration if RLS ownership rules cannot be defined.",
+    "status": "completed_local_reviewable",
+    "status_as_of": "2026-06-14",
+    "status_note": "Historical v1.1 task card. Current state is recorded in qa/final_goal_status.md and qa/supabase_staging_project_check_2026-06-14.md."
+  },
+  {
+    "id": "T012",
+    "title": "Implement metadata DB adapter after explicit approval",
+    "owner": "Persistence Engineer",
+    "goal": "Connect approved Postgres provider safely while preserving metadata-only boundary.",
+    "target_files": [
+      "lib/db/**",
+      "db/**",
+      "tests/db-adapter.test.ts"
+    ],
+    "implementation_notes": [
+      "Proceed only after T006A and explicit approval.",
+      "Use server-only DB client for privileged access.",
+      "Adapter supports required tables only.",
+      "No row persistence method may exist."
+    ],
+    "acceptance": [
+      "Adapter supports required metadata tables.",
+      "Tests use memory or test DB.",
+      "No upload persistence API exists.",
+      "Service-role key is server-only."
+    ],
+    "tests": [
+      "CRUD metadata",
+      "no row persistence method",
+      "error handling",
+      "server-only import guard if feasible"
+    ],
+    "commands": [
+      "npm run lint",
+      "npm run test",
+      "npm run build"
+    ],
+    "non_goals": [
+      "No production DB writes.",
+      "No direct browser writes without RLS tests."
+    ],
+    "dependencies": [
+      "T006A",
+      "T011"
+    ],
+    "risk": "High",
+    "stop": "Stop before production DB writes or if server-only key handling is unclear.",
+    "status": "completed_local_reviewable",
+    "status_as_of": "2026-06-14",
+    "status_note": "Historical v1.1 task card. Current state is recorded in qa/final_goal_status.md and qa/supabase_staging_project_check_2026-06-14.md."
+  },
+  {
+    "id": "T014",
+    "title": "Add prompt/model version registry and safe AI event metadata",
+    "owner": "AI Governance Engineer",
+    "goal": "Track model/prompt metadata without sensitive prompt content.",
+    "target_files": [
+      "lib/ai/promptVersions.ts",
+      "lib/llmClient.ts",
+      "lib/serverConfig.ts",
+      "types/**",
+      "tests/ai-events.test.ts"
+    ],
+    "implementation_notes": [
+      "Create AI_PROMPT_VERSIONS source of truth.",
+      "Every AI task must map to a prompt version.",
+      "Events include prompt_version, model, provider, fallback reason, attempted_provider_call, succeeded.",
+      "Never store full prompt text."
+    ],
+    "acceptance": [
+      "Events include prompt/model versions.",
+      "Tests fail if an AI task lacks prompt_version.",
+      "No raw request body or full prompt persisted."
+    ],
+    "tests": [
+      "event metadata",
+      "prompt version coverage",
+      "no prompt persistence"
+    ],
+    "commands": [
+      "npm run lint",
+      "npm run test",
+      "npm run build"
+    ],
+    "non_goals": [
+      "No model/provider changes without approval.",
+      "No prompt registry UI."
+    ],
+    "dependencies": [
+      "T010A"
+    ],
+    "risk": "Medium",
+    "stop": "Stop if event payload includes user data, full prompts, or row-like values.",
+    "status": "completed_local_reviewable",
+    "status_as_of": "2026-06-14",
+    "status_note": "Historical v1.1 task card. Current state is recorded in qa/final_goal_status.md and qa/supabase_staging_project_check_2026-06-14.md."
+  },
+  {
+    "id": "T013",
+    "title": "Persist ai_usage_daily and ai_events with atomic reserve",
+    "owner": "AI Governance Engineer",
+    "goal": "Move usage/event logging from memory to DB adapter using provider-attempt accounting.",
+    "target_files": [
+      "lib/entitlement/**",
+      "lib/usage/**",
+      "lib/db/**",
+      "tests/usage-db.test.ts"
+    ],
+    "implementation_notes": [
+      "Reserve usage before provider call.",
+      "Count provider attempts, not just successes.",
+      "Do not increment for unauthenticated, not_entitled, quota_exceeded, ai_disabled, missing_api_key, invalid_request, or request_too_large.",
+      "Record attempted_provider_call and succeeded separately."
+    ],
+    "acceptance": [
+      "Usage rows upsert correctly.",
+      "Event rows store safe metadata.",
+      "Denied fallback does not increment.",
+      "Provider attempt increments/reserves."
+    ],
+    "tests": [
+      "upsert",
+      "atomic reserve/concurrent if feasible",
+      "privacy guard",
+      "denied fallback no increment"
+    ],
+    "commands": [
+      "npm run lint",
+      "npm run test",
+      "npm run build"
+    ],
+    "non_goals": [
+      "No full prompt or row persistence."
+    ],
+    "dependencies": [
+      "T012",
+      "T014"
+    ],
+    "risk": "High",
+    "stop": "Stop if transaction/reservation semantics are unsafe.",
+    "status": "completed_local_reviewable",
+    "status_as_of": "2026-06-14",
+    "status_note": "Historical v1.1 task card. Current state is recorded in qa/final_goal_status.md and qa/supabase_staging_project_check_2026-06-14.md."
+  },
+  {
+    "id": "T015",
+    "title": "Add feedback API route",
+    "owner": "Eval & Feedback Engineer",
+    "goal": "Persist first eval signals.",
+    "target_files": [
+      "app/api/feedback/route.ts",
+      "lib/feedback/**",
+      "types/feedback.ts",
+      "tests/feedback-api.test.ts"
+    ],
+    "implementation_notes": [
+      "Validate allowed tags server-side.",
+      "Require auth unless explicitly using safe demo no-op.",
+      "Limit comment length.",
+      "Reject row-like payloads."
+    ],
+    "acceptance": [
+      "Valid feedback saves.",
+      "Invalid tags rejected.",
+      "Unauth request rejected or safe fallback.",
+      "No row data accepted."
+    ],
+    "tests": [
+      "tag validation",
+      "comment length",
+      "auth check",
+      "row-like payload rejected"
+    ],
+    "commands": [
+      "npm run lint",
+      "npm run test",
+      "npm run build"
+    ],
+    "non_goals": [
+      "No internal eval dashboard."
+    ],
+    "dependencies": [
+      "T013"
+    ],
+    "risk": "Medium",
+    "stop": "Stop if comments need sensitive-data scanning beyond length/copy controls.",
+    "status": "completed_local_reviewable",
+    "status_as_of": "2026-06-14",
+    "status_note": "Historical v1.1 task card. Current state is recorded in qa/final_goal_status.md and qa/supabase_staging_project_check_2026-06-14.md."
+  },
+  {
+    "id": "T016",
+    "title": "Add feedback UI after dashboard and export",
+    "owner": "Eval & Feedback Engineer",
+    "goal": "Capture thumbs and tags in workflow.",
+    "target_files": [
+      "components/FeedbackForm.tsx",
+      "components/WorkflowComponents.tsx",
+      "app/**"
+    ],
+    "implementation_notes": [
+      "Render thumbs up/down, allowed tags, optional comment.",
+      "Warn users not to include sensitive data.",
+      "Post to feedback API.",
+      "Show success/error states."
+    ],
+    "acceptance": [
+      "User can submit feedback.",
+      "Success/error states render.",
+      "No demo-only noise."
+    ],
+    "tests": [
+      "component validation",
+      "manual export flow"
+    ],
+    "commands": [
+      "npm run lint",
+      "npm run test",
+      "npm run build"
+    ],
+    "non_goals": [
+      "No AI suggestion editing tracking yet."
+    ],
+    "dependencies": [
+      "T015"
+    ],
+    "risk": "Low",
+    "stop": "Stop if UI target changes in route split.",
+    "status": "completed_local_reviewable",
+    "status_as_of": "2026-06-14",
+    "status_note": "Historical v1.1 task card. Current state is recorded in qa/final_goal_status.md and qa/supabase_staging_project_check_2026-06-14.md."
+  },
+  {
+    "id": "T017",
+    "title": "Add template API routes",
+    "owner": "Template Builder Engineer",
+    "goal": "Create metadata-only template CRUD.",
+    "target_files": [
+      "app/api/templates/route.ts",
+      "app/api/templates/[id]/route.ts",
+      "lib/templates/**",
+      "types/templates.ts",
+      "tests/templates-api.test.ts"
+    ],
+    "implementation_notes": [
+      "Store user templates as draft/private by default.",
+      "Reviewed templates are read-only to normal users.",
+      "Validate template fields.",
+      "Do not store example rows."
+    ],
+    "acceptance": [
+      "Create draft works.",
+      "Update draft works.",
+      "Official/reviewed template cannot be edited by user.",
+      "Versions validate."
+    ],
+    "tests": [
+      "create",
+      "update",
+      "owner guard",
+      "version validation",
+      "example row rejection"
+    ],
+    "commands": [
+      "npm run lint",
+      "npm run test",
+      "npm run build"
+    ],
+    "non_goals": [
+      "No admin approval UI."
+    ],
+    "dependencies": [
+      "T012"
+    ],
+    "risk": "Medium",
+    "stop": "Stop if template schema conflicts with existing decision types.",
+    "status": "completed_local_reviewable",
+    "status_as_of": "2026-06-14",
+    "status_note": "Historical v1.1 task card. Current state is recorded in qa/final_goal_status.md and qa/supabase_staging_project_check_2026-06-14.md."
+  },
+  {
+    "id": "T018",
+    "title": "Build first Template Builder UI",
+    "owner": "Template Builder Engineer",
+    "goal": "Let users create private draft templates.",
+    "target_files": [
+      "app/app/templates/page.tsx",
+      "app/app/templates/new/page.tsx",
+      "components/TemplateBuilder.tsx"
+    ],
+    "implementation_notes": [
+      "Build form for decision question, intended action, decision-maker, geography/timeframe, required evidence, suggested fields, caveats, example schema.",
+      "AI may advise later but must not certify safety."
+    ],
+    "acceptance": [
+      "Draft form saves.",
+      "List shows user drafts and reviewed templates.",
+      "Validation errors render."
+    ],
+    "tests": [
+      "component validation",
+      "manual save flow"
+    ],
+    "commands": [
+      "npm run lint",
+      "npm run test",
+      "npm run build"
+    ],
+    "non_goals": [
+      "No official approval workflow."
+    ],
+    "dependencies": [
+      "T017"
+    ],
+    "risk": "Medium",
+    "stop": "Stop if route structure not split yet.",
+    "status": "completed_local_reviewable",
+    "status_as_of": "2026-06-14",
+    "status_note": "Historical v1.1 task card. Current state is recorded in qa/final_goal_status.md and qa/supabase_staging_project_check_2026-06-14.md."
+  },
+  {
+    "id": "T019",
+    "title": "Create /demo public deterministic route",
+    "owner": "Workspace IA Engineer",
+    "goal": "Separate public demo from authenticated workspace.",
+    "target_files": [
+      "app/demo/page.tsx",
+      "app/page.tsx",
+      "components/**"
+    ],
+    "implementation_notes": [
+      "Use sample/synthetic data only.",
+      "Force deterministic mode.",
+      "Add sign-in CTA for AI-assisted workflow.",
+      "Do not require auth."
+    ],
+    "acceptance": [
+      "/demo loads without auth.",
+      "Only deterministic mode.",
+      "CTA present."
+    ],
+    "tests": [
+      "manual demo flow",
+      "route render if test infra exists"
+    ],
+    "commands": [
+      "npm run lint",
+      "npm run test",
+      "npm run build"
+    ],
+    "non_goals": [
+      "No route split beyond demo/root."
+    ],
+    "dependencies": [
+      "T010"
+    ],
+    "risk": "Medium",
+    "stop": "Stop if app/page state extraction is too large for PR.",
+    "status": "completed_local_reviewable",
+    "status_as_of": "2026-06-14",
+    "status_note": "Historical v1.1 task card. Current state is recorded in qa/final_goal_status.md and qa/supabase_staging_project_check_2026-06-14.md."
+  },
+  {
+    "id": "T020",
+    "title": "Create authenticated /app shell",
+    "owner": "Workspace IA Engineer",
+    "goal": "Add protected app layout with usage meter.",
+    "target_files": [
+      "app/app/layout.tsx",
+      "app/app/page.tsx",
+      "components/AppShell.tsx"
+    ],
+    "implementation_notes": [
+      "Protect /app via auth middleware/helper.",
+      "Show usage meter.",
+      "Keep workflow starting point stable.",
+      "Do not move every step yet."
+    ],
+    "acceptance": [
+      "/app requires login.",
+      "Usage meter appears.",
+      "Workflow still starts."
+    ],
+    "tests": [
+      "route guard",
+      "manual app flow"
+    ],
+    "commands": [
+      "npm run lint",
+      "npm run test",
+      "npm run build"
+    ],
+    "non_goals": [
+      "No full workflow route split."
+    ],
+    "dependencies": [
+      "T011",
+      "T010"
+    ],
+    "risk": "Medium",
+    "stop": "Stop if auth session unavailable.",
+    "status": "completed_local_reviewable",
+    "status_as_of": "2026-06-14",
+    "status_note": "Historical v1.1 task card. Current state is recorded in qa/final_goal_status.md and qa/supabase_staging_project_check_2026-06-14.md."
+  },
+  {
+    "id": "T021",
+    "title": "Split workflow step routes",
+    "owner": "Workspace IA Engineer",
+    "goal": "Move monolithic page into operational pages after auth/entitlement is stable.",
+    "target_files": [
+      "app/app/data/page.tsx",
+      "app/app/prepare/page.tsx",
+      "app/app/readiness/page.tsx",
+      "app/app/dashboard/page.tsx",
+      "app/app/export/page.tsx",
+      "components/workflow/**"
+    ],
+    "implementation_notes": [
+      "Do not combine with auth/entitlement PR.",
+      "Preserve existing behavior.",
+      "Keep uploaded data in session/client state.",
+      "Add mobile tabs or bottom sheets rather than one giant stacked page."
+    ],
+    "acceptance": [
+      "Step navigation works.",
+      "State persists within session.",
+      "Mobile not one stacked report.",
+      "Deterministic fallback still works."
+    ],
+    "tests": [
+      "manual full flow",
+      "component smoke tests",
+      "mobile sanity check"
+    ],
+    "commands": [
+      "npm run lint",
+      "npm run test",
+      "npm run build"
+    ],
+    "non_goals": [
+      "No AI coach.",
+      "No saved projects."
+    ],
+    "dependencies": [
+      "T011",
+      "T013",
+      "T020"
+    ],
+    "risk": "High",
+    "stop": "Stop if route split would combine with auth/entitlement changes or risk session-only uploads.",
+    "status": "completed_local_reviewable",
+    "status_as_of": "2026-06-14",
+    "status_note": "Historical v1.1 task card. Current state is recorded in qa/final_goal_status.md and qa/supabase_staging_project_check_2026-06-14.md."
+  },
+  {
+    "id": "T022",
+    "title": "Add deterministic AI coach rail",
+    "owner": "AI Coach Engineer",
+    "goal": "Provide right-rail guidance without AI call dependency.",
+    "target_files": [
+      "components/AiCoachPanel.tsx",
+      "lib/coach/**",
+      "components/AppShell.tsx"
+    ],
+    "implementation_notes": [
+      "Generate deterministic hints by step.",
+      "Do not call provider.",
+      "Do not override deterministic readiness.",
+      "Keep hints concise and caveated."
+    ],
+    "acceptance": [
+      "Coach hints appear per step.",
+      "No provider calls.",
+      "No raw rows sent.",
+      "Readiness remains authoritative."
+    ],
+    "tests": [
+      "coach hint unit tests",
+      "component render"
+    ],
+    "commands": [
+      "npm run lint",
+      "npm run test",
+      "npm run build"
+    ],
+    "non_goals": [
+      "No chat agent.",
+      "No AI augmentation."
+    ],
+    "dependencies": [
+      "T021"
+    ],
+    "risk": "Low",
+    "stop": "Stop if guidance contradicts readiness logic.",
+    "status": "completed_local_reviewable",
+    "status_as_of": "2026-06-14",
+    "status_note": "Historical v1.1 task card. Current state is recorded in qa/final_goal_status.md and qa/supabase_staging_project_check_2026-06-14.md."
+  },
+  {
+    "id": "T023",
+    "title": "Add quota-aware AI coach augmentation",
+    "owner": "AI Coach Engineer",
+    "goal": "Allow authenticated AI hints under quota without overriding deterministic coach.",
+    "target_files": [
+      "lib/coach/**",
+      "app/api/recommend/route.ts or dedicated coach route",
+      "components/AiCoachPanel.tsx"
+    ],
+    "implementation_notes": [
+      "AI coach only behind auth/quota.",
+      "Fallback to deterministic hints on quota/provider failure.",
+      "Record events with prompt versions.",
+      "Never send row-like values."
+    ],
+    "acceptance": [
+      "AI coach only when auth/quota valid.",
+      "Quota exceeded keeps deterministic hints.",
+      "Events logged safely."
+    ],
+    "tests": [
+      "under quota",
+      "over quota",
+      "unauth",
+      "row-like payload guard"
+    ],
+    "commands": [
+      "npm run lint",
+      "npm run test",
+      "npm run build"
+    ],
+    "non_goals": [
+      "No autonomous decisions.",
+      "No readiness override."
+    ],
+    "dependencies": [
+      "T022",
+      "T013",
+      "T014"
+    ],
+    "risk": "Medium",
+    "stop": "Stop if prompt would include row-like values.",
+    "status": "completed_local_reviewable",
+    "status_as_of": "2026-06-14",
+    "status_note": "Historical v1.1 task card. Current state is recorded in qa/final_goal_status.md and qa/supabase_staging_project_check_2026-06-14.md."
+  },
+  {
+    "id": "T024",
+    "title": "Add internal eval and usage dashboard",
+    "owner": "AI Governance Engineer",
+    "goal": "Show aggregate usage and feedback to admins using metadata only.",
+    "target_files": [
+      "app/app/usage/page.tsx",
+      "app/admin/**",
+      "lib/adminMetrics/**"
+    ],
+    "implementation_notes": [
+      "Aggregate usage, fallback reasons, feedback tags, templates.",
+      "Protect with admin role.",
+      "Do not display row data or full prompts."
+    ],
+    "acceptance": [
+      "Admins see usage, fallbacks, tags.",
+      "Users cannot access admin view.",
+      "No row data shown."
+    ],
+    "tests": [
+      "admin guard",
+      "query functions",
+      "metadata-only checks"
+    ],
+    "commands": [
+      "npm run lint",
+      "npm run test",
+      "npm run build"
+    ],
+    "non_goals": [
+      "No export of eval data.",
+      "No saved datasets."
+    ],
+    "dependencies": [
+      "T015",
+      "T013"
+    ],
+    "risk": "Medium",
+    "stop": "Stop if dashboard could expose user data or row-like metadata.",
+    "status": "completed_local_reviewable",
+    "status_as_of": "2026-06-14",
+    "status_note": "Historical v1.1 task card. Current state is recorded in qa/final_goal_status.md and qa/supabase_staging_project_check_2026-06-14.md."
+  },
+  {
+    "id": "T025",
+    "title": "Harden status endpoint",
+    "owner": "Security/Privacy Reviewer",
+    "goal": "Ensure public status is safe.",
+    "target_files": [
+      "app/api/recommend/status/route.ts",
+      "tests/status-route.test.ts"
+    ],
+    "implementation_notes": [
+      "Return safe status only.",
+      "Do not expose raw provider key presence if product owner decides this is sensitive.",
+      "Keep Cache-Control no-store."
+    ],
+    "acceptance": [
+      "No secret fields.",
+      "Cache-Control no-store.",
+      "Tests pass."
+    ],
+    "tests": [
+      "safe status",
+      "no secret"
+    ],
+    "commands": [
+      "npm run lint",
+      "npm run test",
+      "npm run build"
+    ],
+    "non_goals": [
+      "No AI provider behavior changes."
+    ],
+    "dependencies": [
+      "T001"
+    ],
+    "risk": "Low",
+    "stop": "Stop if product owner wants model/provider hidden.",
+    "status": "completed_local_reviewable",
+    "status_as_of": "2026-06-14",
+    "status_note": "Historical v1.1 task card. Current state is recorded in qa/final_goal_status.md and qa/supabase_staging_project_check_2026-06-14.md."
+  },
+  {
+    "id": "T026",
+    "title": "Add privacy guard tests for no uploaded row persistence",
+    "owner": "Security/Privacy Reviewer",
+    "goal": "Prevent future row persistence regressions.",
+    "target_files": [
+      "tests/privacy-no-row-persistence.test.ts",
+      "lib/db/**",
+      "lib/llmClient.ts"
+    ],
+    "implementation_notes": [
+      "Test DB adapter has no raw row persistence methods.",
+      "Test event metadata rejects row-like arrays.",
+      "Test LLM payload uses minimized profiles only where feasible."
+    ],
+    "acceptance": [
+      "Tests fail if rows can be stored.",
+      "LLM payload minimization is covered.",
+      "Full prompt persistence is covered."
+    ],
+    "tests": [
+      "row array rejected",
+      "prompt body not persisted",
+      "uploaded row fixture not written to DB"
+    ],
+    "commands": [
+      "npm run lint",
+      "npm run test",
+      "npm run build"
+    ],
+    "non_goals": [
+      "No OCR or data inspection."
+    ],
+    "dependencies": [
+      "T012",
+      "T014"
+    ],
+    "risk": "Medium",
+    "stop": "Stop if test cannot detect meaningful regressions.",
+    "status": "completed_local_reviewable",
+    "status_as_of": "2026-06-14",
+    "status_note": "Historical v1.1 task card. Current state is recorded in qa/final_goal_status.md and qa/supabase_staging_project_check_2026-06-14.md."
+  },
+  {
+    "id": "T027",
+    "title": "Add deployment smoke test checklist and script",
+    "owner": "QA/Test Engineer",
+    "goal": "Make Vercel preview validation repeatable without production deployment.",
+    "target_files": [
+      "docs/deployment-smoke-tests.md",
+      "scripts/smoke-vercel.mjs"
+    ],
+    "implementation_notes": [
+      "Script must not require credentials.",
+      "Checklist covers env vars, status endpoint, fallback, logs, DB row check.",
+      "Mark Vercel assumptions VERIFY_CURRENT_DOCS if docs unavailable."
+    ],
+    "acceptance": [
+      "Checklist covers fresh deploy, env vars, status, fallback, logs, DB row check.",
+      "Script is safe and dry-run capable."
+    ],
+    "tests": [
+      "script dry run if possible"
+    ],
+    "commands": [
+      "npm run lint",
+      "npm run test",
+      "npm run build"
+    ],
+    "non_goals": [
+      "No deployment.",
+      "No production settings."
+    ],
+    "dependencies": [
+      "T003"
+    ],
+    "risk": "Low",
+    "stop": "Stop if script would need credentials.",
+    "status": "completed_local_reviewable",
+    "status_as_of": "2026-06-14",
+    "status_note": "Historical v1.1 task card. Current state is recorded in qa/final_goal_status.md and qa/supabase_staging_project_check_2026-06-14.md."
+  },
+  {
+    "id": "T028",
+    "title": "Add retention policy draft",
+    "owner": "Product Contract Editor",
+    "goal": "Document retention for metadata tables.",
+    "target_files": [
+      "docs/data-retention.md",
+      "README.md"
+    ],
+    "implementation_notes": [
+      "Draft retention periods for metadata tables.",
+      "Require approval before automation.",
+      "No deletion automation in v1 without explicit approval."
+    ],
+    "acceptance": [
+      "Policy draft exists.",
+      "Requires approval before automation."
+    ],
+    "tests": [
+      "No code tests."
+    ],
+    "commands": [],
+    "non_goals": [
+      "No retention automation."
+    ],
+    "dependencies": [
+      "T015"
+    ],
+    "risk": "Low",
+    "stop": "Stop before implementing retention automation.",
+    "status": "completed_local_reviewable",
+    "status_as_of": "2026-06-14",
+    "status_note": "Historical v1.1 task card. Current state is recorded in qa/final_goal_status.md and qa/supabase_staging_project_check_2026-06-14.md."
+  },
+  {
+    "id": "T029",
+    "title": "Add final release readiness checklist",
+    "owner": "QA/Test Engineer",
+    "goal": "Define beta launch gates.",
+    "target_files": [
+      "docs/release-readiness.md",
+      "qa/checklist.md"
+    ],
+    "implementation_notes": [
+      "Checklist should cover product, safety, privacy, auth, DB, AI governance, deployment, support, and rollback.",
+      "Include reviewer/pass/fallback for every gate."
+    ],
+    "acceptance": [
+      "Checklist is actionable.",
+      "Gates have pass conditions and fallbacks."
+    ],
+    "tests": [
+      "No code tests."
+    ],
+    "commands": [],
+    "non_goals": [
+      "No production launch."
+    ],
+    "dependencies": [
+      "T027",
+      "T028"
+    ],
+    "risk": "Low",
+    "stop": "Stop before production launch.",
+    "status": "completed_local_reviewable",
+    "status_as_of": "2026-06-14",
+    "status_note": "Historical v1.1 task card. Current state is recorded in qa/final_goal_status.md and qa/supabase_staging_project_check_2026-06-14.md."
+  },
+  {
+    "id": "T030",
+    "title": "Final integration pass and regression sweep",
+    "owner": "QA/Test Engineer",
+    "goal": "Verify product contract across entire build.",
+    "target_files": [
+      "all changed files"
+    ],
+    "implementation_notes": [
+      "Run full validation commands.",
+      "Document manual checks.",
+      "Confirm no forbidden persistence.",
+      "Confirm deterministic fallback."
+    ],
+    "acceptance": [
+      "lint/test/build pass.",
+      "Manual checks documented.",
+      "No forbidden persistence.",
+      "Deterministic fallback works."
+    ],
+    "tests": [
+      "full suite",
+      "manual smoke",
+      "privacy checks"
+    ],
+    "commands": [
+      "npm run lint",
+      "npm run test",
+      "npm run build"
+    ],
+    "non_goals": [
+      "No production deploy."
+    ],
+    "dependencies": [
+      "T001",
+      "T002",
+      "T003",
+      "T004",
+      "T005",
+      "T007",
+      "T008",
+      "T009",
+      "T010",
+      "T010A",
+      "T011",
+      "T006",
+      "T006A",
+      "T012",
+      "T014",
+      "T013",
+      "T015",
+      "T016",
+      "T017",
+      "T018",
+      "T019",
+      "T020",
+      "T021",
+      "T022",
+      "T023",
+      "T024",
+      "T025",
+      "T026",
+      "T027",
+      "T028",
+      "T029"
+    ],
+    "risk": "High",
+    "stop": "Stop on any product contract violation.",
+    "status": "completed_local_reviewable",
+    "status_as_of": "2026-06-14",
+    "status_note": "Historical v1.1 task card. Current state is recorded in qa/final_goal_status.md and qa/supabase_staging_project_check_2026-06-14.md."
+  }
+]

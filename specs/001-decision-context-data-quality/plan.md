@@ -10,7 +10,11 @@ Add a response-prioritization decision brief before data work, then evaluate pro
 
 ## Technical Context
 
-**Language/Version**: TypeScript, React 19, Next.js 15 App Router, Node.js 26.1.0.
+Historical status note: this plan belongs to the original decision-context
+feature spec. Current repo runtime is Node.js 24.x, with `.tool-versions`
+pinning `nodejs 24.15.0`.
+
+**Language/Version**: TypeScript, React 19, Next.js 15 App Router, Node.js 24.x.
 
 **Primary Dependencies**: Existing Next.js app, Vitest, `html-to-image`, `jspdf`, `read-excel-file`.
 
@@ -30,7 +34,12 @@ Add a response-prioritization decision brief before data work, then evaluate pro
 
 ## Constitution Check
 
-The project constitution is still placeholder-only. Runtime governance comes from `AGENTS.md`: recommendation-first prototype, session-only uploaded data, optional AI, deterministic fallback, visible quality caveats, no persistence/auth/background jobs/new storage, npm only.
+The project constitution is still placeholder-only. Runtime governance comes
+from `AGENTS.md`. For this historical feature spec, the relevant constraints
+were recommendation-first workflow, session-only uploaded data, optional AI,
+deterministic fallback, visible quality caveats, no new package manager, and no
+new feature-specific storage. Current app-wide controlled-beta auth and
+metadata-persistence boundaries are defined in `AGENTS.md`.
 
 ## Project Structure
 

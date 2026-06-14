@@ -1,14 +1,21 @@
 import path from "node:path";
-import { defineConfig } from "vitest/config";
+import { fileURLToPath } from "node:url";
+import type { ViteUserConfig } from "vitest/config";
 
-export default defineConfig({
+const repoRoot = fileURLToPath(new URL(".", import.meta.url));
+
+const config = {
   resolve: {
     alias: {
-      "@": path.resolve(__dirname)
+      "@": path.resolve(repoRoot)
     }
   },
   test: {
     environment: "node",
-    include: ["tests/**/*.test.ts"]
+    fileParallelism: false,
+    include: ["tests/**/*.test.ts"],
+    pool: "threads"
   }
-});
+} satisfies ViteUserConfig;
+
+export default config;

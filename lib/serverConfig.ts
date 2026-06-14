@@ -26,6 +26,14 @@ function numberFromEnv(name: string, fallback: number, min = 0) {
   return Number.isFinite(value) ? Math.max(min, value) : fallback;
 }
 
+function stringFromEnv(
+  env: NodeJS.ProcessEnv,
+  name: string,
+): string | undefined {
+  const raw = env[name];
+  return raw?.trim() ? raw : undefined;
+}
+
 export function booleanFromEnv(name: string, fallback: boolean) {
   const raw = process.env[name];
   if (!raw) return fallback;
@@ -64,20 +72,59 @@ export const recommendationApiConfig = {
   maxSummaryItems: numberFromEnv("RECOMMEND_MAX_SUMMARY_ITEMS", 8, 0)
 };
 
-const defaultLlmTimeoutMs = numberFromEnv("LLM_REQUEST_TIMEOUT_MS", 15_000, 1_000);
-const defaultMaxOutputTokens = numberFromEnv("LLM_MAX_COMPLETION_TOKENS", 3_200, 100);
+export function getLlmServerConfig(env: NodeJS.ProcessEnv = process.env) {
+  const defaultLlmTimeoutMs = numberFromRecord(
+    env,
+    "LLM_REQUEST_TIMEOUT_MS",
+    15_000,
+    1_000,
+  );
+  const defaultMaxOutputTokens = numberFromRecord(
+    env,
+    "LLM_MAX_COMPLETION_TOKENS",
+    3_200,
+    100,
+  );
 
-export const llmServerConfig = {
-  enabled: booleanFromEnv("LLM_ENABLED", false),
-  apiKey: process.env.LLM_API_KEY ?? process.env.OPENAI_API_KEY,
-  provider: process.env.LLM_PROVIDER ?? "openai",
-  model: process.env.LLM_MODEL ?? "gpt-5.4-mini",
-  workflowTimeoutMs: numberFromEnv("LLM_WORKFLOW_REQUEST_TIMEOUT_MS", defaultLlmTimeoutMs, 1_000),
-  dashboardTimeoutMs: numberFromEnv("LLM_DASHBOARD_REQUEST_TIMEOUT_MS", Math.max(defaultLlmTimeoutMs, 45_000), 1_000),
-  handoffTimeoutMs: numberFromEnv("LLM_HANDOFF_REQUEST_TIMEOUT_MS", Math.max(defaultLlmTimeoutMs, 30_000), 1_000),
-  maxCompletionTokens: defaultMaxOutputTokens,
-  maxOutputTokens: defaultMaxOutputTokens,
-};
+  return {
+    enabled: booleanFromEnvRecord(env, "LLM_ENABLED", false),
+    apiKey: stringFromEnv(env, "LLM_API_KEY") ?? stringFromEnv(env, "OPENAI_API_KEY"),
+    provider: env.LLM_PROVIDER ?? "openai",
+    model: env.LLM_MODEL ?? "gpt-5.4-mini",
+    workflowTimeoutMs: numberFromRecord(
+      env,
+      "LLM_WORKFLOW_REQUEST_TIMEOUT_MS",
+      defaultLlmTimeoutMs,
+      1_000,
+    ),
+    dashboardTimeoutMs: numberFromRecord(
+      env,
+      "LLM_DASHBOARD_REQUEST_TIMEOUT_MS",
+      Math.max(defaultLlmTimeoutMs, 45_000),
+      1_000,
+    ),
+    handoffTimeoutMs: numberFromRecord(
+      env,
+      "LLM_HANDOFF_REQUEST_TIMEOUT_MS",
+      Math.max(defaultLlmTimeoutMs, 30_000),
+      1_000,
+    ),
+    maxCompletionTokens: defaultMaxOutputTokens,
+    maxOutputTokens: defaultMaxOutputTokens,
+  };
+}
+
+export const llmServerConfig = getLlmServerConfig();
+
+function booleanFromEnvRecord(
+  env: NodeJS.ProcessEnv,
+  name: string,
+  fallback: boolean,
+) {
+  const raw = env[name];
+  if (!raw) return fallback;
+  return !["0", "false", "off", "no"].includes(raw.trim().toLowerCase());
+}
 
 export function copilotTaskForRecommendationScope(
   scope: RecommendationScope,
