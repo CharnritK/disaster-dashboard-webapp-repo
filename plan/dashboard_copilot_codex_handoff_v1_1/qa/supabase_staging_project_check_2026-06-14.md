@@ -66,3 +66,25 @@ Updated only the branch-scoped Preview environment for
 - `AI_USAGE_STORE=supabase`
 
 Production Vercel environment variables were not changed.
+
+## Preview Deployment Smoke
+
+Vercel Preview deployment for commit `6a7176c` reached `READY`.
+
+Stable preview alias:
+
+- `https://disaster-dashboard-webapp-repo-git-codex-dash-fd18aa-charnrit-k.vercel.app`
+
+Smoke results:
+
+- `/demo`: `200`
+- `/api/recommend/status`: `200`, `fallbackReason=ai_disabled`
+- `/api/usage`: `401`, `fallbackReason=unauthenticated`
+- `/api/templates`: `401`
+- `POST /auth/signin` for the approved beta/admin email:
+  - `307`
+  - redirect location:
+    `/login?next=%2Fapp%2Fusage&sent=1`
+
+Authenticated browser smoke is still pending the user clicking the one-time
+magic-link email. The email link was not read or used by Codex.
