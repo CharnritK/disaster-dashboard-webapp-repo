@@ -1,6 +1,15 @@
 # Codex Task Backlog v1.1
 
-Use tasks in order. The first milestone ends after T010A so a human can review before provider SDKs, route split, AI coach, internal dashboard work, or deployment-specific config.
+Status as of 2026-06-14: this is the historical execution backlog for the
+controlled-beta build. T001-T030 are implemented for local/reviewable paths,
+and staging Supabase-backed magic-link login is user-confirmed. Do not use this
+file as the next active task list without first checking
+`../qa/final_goal_status.md` and
+`../qa/supabase_staging_project_check_2026-06-14.md`.
+
+Original execution rule: use tasks in order. The first milestone ends after
+T010A so a human can review before provider SDKs, route split, AI coach,
+internal dashboard work, or deployment-specific config.
 
 ---
 
@@ -1362,7 +1371,7 @@ Commands:
 Non-goals:
 - `No production deploy.`
 
-Dependencies: T001, T002, T003, T004, T005, T006, T006A, T007, T008, T009, T010
+Dependencies: T001, T002, T003, T004, T005, T006, T006A, T007, T008, T009, T010, T010A, T011, T012, T013, T014, T015, T016, T017, T018, T019, T020, T021, T022, T023, T024, T025, T026, T027, T028, T029
 
 Risk: High
 

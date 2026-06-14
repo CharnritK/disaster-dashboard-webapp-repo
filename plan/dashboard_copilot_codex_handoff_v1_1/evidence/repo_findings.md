@@ -1,6 +1,8 @@
 # Repo Findings From Prior Inspection
 
-These findings are based on the prior repository inspection in this conversation. Codex must verify them again before editing.
+These findings were based on an early repository inspection. They are preserved
+as historical context and must not override current repo evidence. Current
+status is recorded in `../qa/final_goal_status.md`.
 
 ## Confirmed files and modules
 
@@ -42,17 +44,20 @@ These findings are based on the prior repository inspection in this conversation
 ## Important repo-specific facts
 
 - `package.json` build script runs `next build && node scripts/prepare-sites-dist.mjs`.
-- `.tool-versions` pins `nodejs 26.1.0`.
-- `next.config.ts` sets `distDir: "dist"`.
+- `.tool-versions` now pins `nodejs 24.15.0`; `package.json` declares Node
+  `24.x`.
+- `next.config.ts` sets `distDir: "dist"` only outside Vercel builds.
 - `app/page.tsx` is a large client-side single-page workflow.
 - AI routes are `/api/recommend`, `/api/copilot`, and `/api/recommend/status`.
 - AI calls are server-side through `lib/llmClient.ts`.
 - Deterministic fallback already exists.
-- `.env.example` previously set `LLM_ENABLED=true`, which conflicts with deterministic-safe defaults.
-- No auth layer was found.
-- No persistence layer was found.
-- No route split for `/demo` and `/app` was found.
-- Test runner exists, but test file coverage must be verified in repo.
+- `.env.example` now defaults to deterministic-safe mode with
+  `LLM_ENABLED=false`.
+- Auth, metadata-only persistence, `/demo` plus protected `/app/**`, feedback,
+  templates, coach, and admin aggregate surfaces were later implemented for
+  controlled-beta validation.
+- Current tests are tracked by the normal `npm run test` gate and current QA
+  status docs.
 
 ## Must verify before implementation
 

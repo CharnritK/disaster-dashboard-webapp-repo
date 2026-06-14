@@ -54,7 +54,10 @@ Leave `AI` off in the header, then run the main sample path. Use this talk track
 ## Limitations and next steps
 
 - Current templates cover response prioritization, service gap monitoring, and preparedness risk screening. Product/domain review is still needed before treating non-default templates as production-approved.
-- Uploaded data remains session-only; there is no persistence or account workflow.
+- Uploaded data remains session-only. The controlled beta has authenticated
+  `/app/**` routes and metadata-only persistence for usage, feedback,
+  templates, and admin aggregates; it does not save uploaded rows, uploaded
+  files, prepared rows, full projects, prompts, responses, or exports.
 - Recommendation AI receives minimized profile metadata; decision handoff AI receives derived summaries only. Full uploaded rows are not sent to either route, deterministic fallback remains available, and AI should remain disabled until safety/privacy review closes or is explicitly deferred.
 - The local demo uses synthetic sample data only.
 - Public launch remains blocked until product, domain, safety/privacy, export, accessibility, release, and support owners are named and their gates are closed or explicitly deferred.

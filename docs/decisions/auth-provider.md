@@ -1,6 +1,6 @@
 # Auth Provider Decision
 
-Status: approved default, implementation gated
+Status: approved default, implemented for staging preview; production gated
 
 ## Decision
 
@@ -24,10 +24,12 @@ Auth.js with OAuth is a viable alternative if the project later wants provider f
 - Do not build custom password storage.
 - Do not create an app-owned password table.
 - Keep `/demo` public and deterministic.
-- Protect `/app/**` only after the real auth integration is added.
+- Keep `/app/**` protected by Supabase-backed auth in configured preview/staging environments.
 - Keep test identities limited to `NODE_ENV=test`.
 - Do not request or handle credentials in code generation.
 
 ## Review Gate
 
-Before provider implementation, confirm the approval flags remain explicit, secrets stay server-side, and route protection can preserve the public deterministic demo.
+Before any additional auth-provider changes or production configuration,
+confirm the approval flags remain explicit, secrets stay server-side, and route
+protection preserves the public deterministic demo.

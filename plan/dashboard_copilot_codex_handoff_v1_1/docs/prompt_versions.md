@@ -2,20 +2,20 @@
 
 ## Source of truth
 
-Add a small module such as:
+The source of truth is:
 
 ```text
 lib/ai/promptVersions.ts
 ```
 
-Example:
+Current shape:
 
 ```ts
 export const AI_PROMPT_VERSIONS = {
-  workflow_harmonization: "workflow_harmonization.v1",
-  dashboard_synthesis: "dashboard_synthesis.v1",
-  decision_handoff_summary: "decision_handoff_summary.v1",
-  quality_repair_guidance: "quality_repair_guidance.v1",
+  workflow_harmonization: "workflow_harmonization:v1",
+  dashboard_synthesis: "dashboard_synthesis:v1",
+  decision_handoff_summary: "decision_handoff_summary:v1",
+  quality_repair_guidance: "quality_repair_guidance:v1",
 } as const;
 ```
 

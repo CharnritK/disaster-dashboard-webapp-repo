@@ -68,8 +68,10 @@ boundary, quota-gated AI attempts, safe feedback/templates, deterministic coach
 fallback, and admin aggregate metadata reporting.
 
 Remaining external gates include production deployment, production migrations,
-real Supabase email-login verification, production redirect URL review,
-production admin allowlist review, and any retention automation.
+production Supabase configuration, production redirect URL review, production
+admin allowlist review, additional beta/admin allowlist entries, and any
+retention automation. The staging Supabase-backed preview path and approved
+email magic-link login have been user-confirmed.
 
 ## Product Routes
 

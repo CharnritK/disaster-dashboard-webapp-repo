@@ -29,9 +29,10 @@ Controlled authenticated AI beta with session-only uploaded data.
 
 ## AI entitlement architecture
 
-- Implement entitlement service before provider integration.
-- Start with in-memory/test adapter.
-- Add auth abstraction so route tests can use a test identity before Supabase is wired.
+- Entitlement service exists before provider calls.
+- Keep in-memory/test adapter as the deterministic fallback and test path.
+- Auth abstraction lets route tests use a test identity while configured
+  preview/staging environments use Supabase Auth.
 - Check entitlement before every `/api/recommend` and `/api/copilot` AI attempt.
 - If denied, return deterministic fallback and preserve workflow continuation.
 
@@ -47,7 +48,7 @@ See `docs/quota_accounting_policy.md`.
 
 ## Supabase architecture
 
-Only after explicit approval:
+Approved and implemented for preview/staging validation:
 
 - use Supabase Auth as identity provider;
 - map app user profiles to Supabase `auth.users`;
@@ -81,7 +82,7 @@ See `docs/security_supabase_rls.md`.
 
 ## Workspace IA architecture
 
-Proposed routes:
+Implemented routes:
 
 - `/demo`
 - `/login`
@@ -95,6 +96,7 @@ Proposed routes:
 - `/app/export`
 - `/app/usage`
 - `/app/feedback`
+- `/admin`
 
 Layout:
 
@@ -104,4 +106,6 @@ Layout:
 - Right rail: AI coach, caveats, chart rationale, next actions.
 - Mobile: tabs or bottom sheets.
 
-Route split must happen after entitlement/auth foundations are stable and must not be bundled with auth/entitlement in one PR.
+Route split happened after entitlement/auth foundations were established.
+Future IA changes must preserve browser/session-only uploaded data and avoid
+bundling unrelated auth, DB, or AI-provider changes into the same patch.

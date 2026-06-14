@@ -1,5 +1,11 @@
 # Roadmap v1.1
 
+Status as of 2026-06-14: phases 0-12 are implemented for local/reviewable
+controlled-beta paths, and staging Supabase-backed magic-link login is
+user-confirmed. Treat this roadmap as the execution history and validation map.
+Production deployment, production migrations, added allowlists, anonymous AI,
+and retention automation remain blocked.
+
 ## Phase 0 — Baseline and Vercel compatibility
 
 Objective: Establish command baseline and remove deterministic deployment blockers.
@@ -80,4 +86,7 @@ Acceptance: status endpoint is safe; AI disabled by default; fallback works with
 
 ## Milestone checkpoint
 
-After T010, stop and report before provider SDK installation, route split, AI coach, or internal dashboard work unless all baseline and entitlement route tests pass and explicit approval flags remain approved.
+The T010 checkpoint was reached and then satisfied by explicit approval before
+T011+ continuation. Future work must still stop before production deployment,
+production migrations, production environment mutation, added allowlist entries,
+anonymous AI, or retention automation unless separately approved.

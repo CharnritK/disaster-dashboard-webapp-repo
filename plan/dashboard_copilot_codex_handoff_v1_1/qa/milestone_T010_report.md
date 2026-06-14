@@ -4,6 +4,11 @@ Date: 2026-06-14
 
 Verdict: `T011_AUTH_FOUNDATION_STAGING_VERIFIED`
 
+Status note: this began as a historical T010/T010A/T011 checkpoint report. It
+is now superseded for current completion state by `qa/final_goal_status.md` and
+the staging evidence files. Keep the original checkpoint details below as
+execution history.
+
 This pass completed the safe first implementation milestone through T010/T010A, then continued into the explicitly approved T011 Supabase Auth foundation only. It still stops before persistent database adapters, route split, AI coach work, internal dashboards, production deployment, or production migrations.
 
 ## Continuation Update
@@ -31,8 +36,8 @@ Supabase Auth provider wiring:
   `../../../app/demo/page.tsx`.
 - No production migration was run.
 - No production deployment was run.
-- No DB adapter, persistent usage ledger, workflow route split, AI coach, or
-  internal usage/eval dashboard was implemented.
+- At this checkpoint, no DB adapter, persistent usage ledger, workflow route
+  split, AI coach, or internal usage/eval dashboard had been implemented.
 - Supabase packages were already present in `package.json` before this pass;
   no provider SDK was installed during this continuation.
 
@@ -191,17 +196,18 @@ Auth continuation smoke:
 - Supabase secret keys are backend-only and bypass RLS; publishable keys are browser-safe but not authorization by themselves: https://supabase.com/docs/guides/getting-started/api-keys
 - New Supabase public tables are no longer automatically exposed to Data/GraphQL APIs in current projects; explicit grants must be planned: https://supabase.com/changelog/45329-breaking-change-tables-not-exposed-to-data-and-graphql-api-automatically
 
-## Open Approvals
+## Historical Checkpoint Approvals
 
-These remain blocked until human review passes this checkpoint:
+At the original T010/T010A checkpoint, the following items were blocked until
+human review: persistent Postgres/DB adapters, SQL migration, provider-specific
+AI SDKs, workflow route split, AI coach surfaces, internal eval/usage dashboard,
+Vercel deployment, and production configuration mutation.
 
-- Add persistent Postgres/DB adapters.
-- Add SQL migrations or run migrations.
-- Add provider-specific AI SDKs.
-- Split the workflow into `/demo` and `/app`.
-- Add AI coach surfaces.
-- Add internal eval or usage dashboards.
-- Deploy to Vercel or mutate production configuration.
+That stop was later satisfied for preview/staging work only. Current remaining
+blocked items are production deployment, production Supabase configuration,
+production migrations, added beta/admin allowlist entries, anonymous AI,
+provider-backed AI enablement, and retention automation unless separately
+approved.
 
 ## Rollback Notes
 

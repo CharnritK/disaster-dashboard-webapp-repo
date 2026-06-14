@@ -42,6 +42,9 @@ The workflow keeps uncertainty visible. If the data is incomplete, risky, or not
 The current controlled-beta product supports:
 
 - Session-only file upload and sample data loading.
+- Public deterministic `/demo` access and authenticated `/app/**` beta routes.
+- Metadata-only beta persistence for account/profile, AI usage/events,
+  feedback, templates, and non-sensitive aggregate/admin reporting.
 - CSV and Excel parsing.
 - Dataset profiling.
 - Decision-context checks for response prioritization, service gap monitoring, and preparedness risk screening.
@@ -58,8 +61,10 @@ The intended use is a reviewable first pass: a prepared dataset, a dashboard dra
 
 The current controlled-beta product does not provide:
 
-- User accounts or authentication.
-- Saved projects or long-term storage.
+- Public self-serve signup or anonymous AI.
+- Saved uploaded files, saved uploaded rows, saved prepared rows, or saved full
+  projects.
+- Production deployment or production database migrations.
 - Background jobs or scheduled refreshes.
 - Live operational data pipelines.
 - Automatic operational approval.
@@ -95,7 +100,10 @@ Best next extensions:
 - Strengthen accessibility and browser smoke testing.
 - Add more visualization rules for maps, rates, denominators, and uncertainty.
 
-Avoid starting with platform features such as accounts, persistence, or scheduled data sync. Those are larger product moves and should come after the workflow is clearly valuable.
+Avoid starting new adaptations with broader platform features such as team
+accounts, saved projects, billing, role hierarchies, or scheduled data sync.
+Those are larger product moves and should come after the workflow is clearly
+valuable.
 
 ## Starter Codex Prompts
 
@@ -104,7 +112,7 @@ Use these prompts to extend or adapt the project.
 ### Add A New Decision Template
 
 ```text
-Read the current Dashboard Copilot workflow and add a new decision template for [use case]. Preserve the session-only contract, deterministic fallback, and soft-gate readiness pattern. Update types, default template data, suggested collection fields, readiness checks, UI copy, and Vitest coverage. Do not add persistence, auth, background jobs, new package managers, or automatic row-deleting transforms.
+Read the current Dashboard Copilot workflow and add a new decision template for [use case]. Preserve the session-only uploaded-data contract, deterministic fallback, and soft-gate readiness pattern. Update types, default template data, suggested collection fields, readiness checks, UI copy, and Vitest coverage. Do not expand persistence beyond approved metadata, change auth policy, add background jobs, add new package managers, or add automatic row-deleting transforms.
 ```
 
 ### Adapt The Project To Another Public-Good Domain
@@ -154,7 +162,8 @@ These are not a replacement for product judgment. They are guardrails to help fu
 - Framework: Next.js 15 App Router.
 - UI: React 19 with TypeScript.
 - Package manager: npm only.
-- Node version: `26.1.0`, pinned in `.tool-versions`.
+- Node version: `24.15.0`, pinned in `.tool-versions`; `package.json`
+  declares Node `24.x`.
 - Tests: Vitest.
 - Main app entry: `app/page.tsx`.
 - Main workflow UI: `components/WorkflowComponents.tsx`.
@@ -230,6 +239,7 @@ Before accepting a major extension, check:
 - Does it keep quality caveats visible?
 - Does it preserve deterministic fallback?
 - Does it avoid sending full uploaded rows to AI services?
-- Does it avoid new persistence, auth, background jobs, or storage unless explicitly approved?
+- Does it avoid expanding persistence, auth, background jobs, or storage beyond
+  the approved controlled-beta boundaries unless explicitly approved?
 - Does it include tests for changed pipeline behavior?
 - Does the documentation explain the new use case in plain English?

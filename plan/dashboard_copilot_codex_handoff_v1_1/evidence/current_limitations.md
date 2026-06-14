@@ -2,10 +2,13 @@
 
 ## Limitations
 
-- Web search was not available while preparing this package.
-- Current Vercel docs must be checked by the implementation agent or a human.
-- Provider choices are included as defaults but remain review-gated.
-- The package is a handoff, not an implementation.
+- Original package preparation had no web search; later implementation passes
+  checked current provider docs where needed for preview/staging decisions.
+- Current Vercel docs must still be checked before changing runtime or function
+  duration assumptions.
+- Provider choices are approved defaults and implemented for preview/staging;
+  production configuration remains review-gated.
+- The package began as a handoff and now also contains implementation evidence.
 - The package does not include credentials, API keys, or production environment values.
 
 ## Assumptions
@@ -18,6 +21,7 @@
 
 ## Readiness
 
-`READY_WITH_ASSUMPTIONS`
+`IMPLEMENTATION_COMPLETE_STAGING_AUTH_VERIFIED`
 
-If the approval block is not accepted, the first implementation milestone should stop after provider decision records and in-memory entitlement tests.
+If the approval block is changed, future provider, production, migration, or
+allowlist work must stop for renewed review.

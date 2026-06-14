@@ -1,5 +1,10 @@
 # Tasks: Decision-Context Data Quality
 
+Status note: this is a completed feature-spec task list for the
+decision-context data-quality work. Its task IDs are spec-local and are not the
+same as the controlled-beta handoff T011-T030 IDs under
+`plan/dashboard_copilot_codex_handoff_v1_1/`.
+
 **Input**: Design documents from `specs/001-decision-context-data-quality/`
 
 **Prerequisites**: `plan.md`, `spec.md`

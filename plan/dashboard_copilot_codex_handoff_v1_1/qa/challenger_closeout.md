@@ -2,7 +2,7 @@
 
 ## Verdict
 
-`READY_WITH_ASSUMPTIONS`
+`IMPLEMENTATION_COMPLETE_STAGING_AUTH_VERIFIED`
 
 ## Scope reviewed
 
@@ -31,11 +31,13 @@
 
 ## Remaining critical issues
 
-### C1 — Vercel facts need current verification
+### C1 — Vercel facts need current verification before new deployment assumptions
 
 Severity: High
 
-Node runtime and Hobby limits may have changed. Codex or a human must check official Vercel docs before hard-coding runtime/function assumptions.
+Node runtime and Hobby limits may change. The current preview path has been
+validated, but Codex or a human must check official Vercel docs before
+hard-coding new runtime/function assumptions.
 
 ### C2 — Provider approvals are explicit but still high-impact
 
@@ -49,38 +51,40 @@ Severity: High
 
 Deployment and migrations are external, irreversible-risk actions. Codex must create code and docs only. A human must deploy and run production migrations.
 
-### C4 — Existing test coverage must be verified
+### C4 — Staging metadata behavior still needs authenticated smoke
 
 Severity: Medium
 
-Prior inspection did not find meaningful tests despite Vitest being configured. Codex must run `npm run test` and add unit/route tests before feature integration.
+The code and staging schema/RLS are in place, but the next validation phase
+must exercise authenticated feedback, templates, usage, and admin aggregate
+paths against staging.
 
 ## Unsupported or weak claims
 
 - Exact current Vercel Node versions.
 - Exact current Hobby function durations.
 - Current free-tier details for Supabase or other providers.
-- Current repo test count since prior inspection.
+- Production readiness; production has not been deployed or migrated.
 
 ## Required fixes before production
 
 - Verify Vercel docs.
 - Confirm provider approval flags.
-- Add unit and route tests.
-- Add RLS and privacy regression tests.
-- Review DB schema and RLS policies.
-- Run preview deployment smoke tests.
-- Complete security/privacy review.
+- Run authenticated staging metadata-persistence smoke tests.
+- Complete security/privacy review for production.
+- Obtain explicit production deployment and migration approvals.
 
 ## Release readiness
 
 Not production-ready.
 
-The handoff is ready for controlled Codex implementation with assumptions and review gates. Preview build readiness depends on baseline commands and provider setup. Production release remains blocked until review gates are closed.
+The controlled-beta implementation is complete for local/reviewable paths and
+the staging auth path has been user-confirmed. Production release remains
+blocked until review gates are closed.
 
 ## T010A checkpoint update
 
-Status: `CHECKPOINT_REACHED_STOP_REQUIRED`
+Status: `CHECKPOINT_SATISFIED_AND_CONTINUED`
 
 The first milestone implementation reached the mandated T010/T010A checkpoint. The new checkpoint report is `qa/milestone_T010_report.md`.
 
@@ -89,18 +93,21 @@ Validated:
 - lint, tests, and build pass after implementation;
 - browser smoke passes on desktop and mobile through local Next dev;
 - unauthenticated `/api/usage` returns deterministic fallback status;
-- no provider SDK, real auth integration, database adapter, route split, AI coach, internal dashboard, production deployment, or migration was started.
+- no provider SDK, real auth integration, database adapter, route split, AI coach, internal dashboard, production deployment, or migration was started at that checkpoint.
 
-Continue only after human review approves the checkpoint and confirms the next phase scope.
+That stop was later satisfied by explicit human approval.
 
 Continuation note:
 
 - T006/T006A SQL drafts, T025 status hardening, and T027 deployment smoke artifacts were added as credential-free review artifacts after the initial checkpoint.
 - T011 Supabase Auth foundation was added after confirming `APPROVED_PROVIDER_IMPLEMENTATION=true` and `APPROVED_AUTH_PROVIDER=Supabase Auth`.
 - `/app/**` is now protected by Supabase SSR middleware and a verified-claims server page check; `/`, `/about`, `/demo`, and API fallback routes remain public.
-- Magic-link login/callback/signout routes exist, but manual end-to-end Supabase email login is not claimed without reviewed provider credentials and redirect configuration.
+- Magic-link login/callback/signout routes exist, and staging Supabase-backed
+  magic-link login has been user-confirmed for the approved beta/admin email.
 - Current validation is recorded in `qa/milestone_T010_report.md`.
-- DB adapter, persistent usage ledger, route split, AI coach, internal dashboard, production deployment, and production migration remain blocked.
+- DB adapter, persistent usage ledger, route split, AI coach, internal dashboard,
+  and admin aggregate reporting are implemented for controlled-beta validation.
+  Production deployment and production migration remain blocked.
 
 ## Review gate
 
@@ -136,9 +143,8 @@ Fallback:
 
 ## Final goal update
 
-Status: `IMPLEMENTATION_COMPLETE_WITH_T021_STOP_GATE`
+Status: `IMPLEMENTATION_COMPLETE_STAGING_AUTH_VERIFIED`
 
 The final implementation status is recorded in `qa/final_goal_status.md`.
-T021 full workflow step-route split remains stop-gated because a correct split
-requires shared in-memory workflow state under `/app`; fake route aliases would
-not satisfy the product contract.
+The next recommended goal is staging beta validation of authenticated routes,
+metadata-only persistence, and admin aggregate reporting.

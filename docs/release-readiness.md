@@ -3,6 +3,12 @@
 This app is not production-ready until every gate below has an owner and a pass
 record.
 
+Current status as of 2026-06-14: preview/staging validation has started. The
+staging Supabase project and branch-scoped Vercel Preview are configured, and
+magic-link login has been user-confirmed for the approved beta/admin email.
+Production deployment, production environment variables, and production
+migrations remain blocked.
+
 ## Approved Beta Decisions
 
 - D1: Use preview-only deployment first. Production remains blocked until auth,
@@ -44,7 +50,7 @@ record.
 
 ## Deployment
 
-- Preview smoke tests pass.
+- Preview smoke tests pass before production approval.
 - `/api/recommend/status` reports safe public state only.
 - `/api/usage` rejects unauthenticated requests.
 - Production deployment and migrations remain separate explicit approvals.

@@ -1,3 +1,5 @@
+> Status note (2026-06-14): Historical v1.1 task card. T001-T030 are implemented for local/reviewable controlled-beta paths; check `../../qa/final_goal_status.md` and `../../qa/supabase_staging_project_check_2026-06-14.md` before treating this as active work.
+
 # T001 — Verify repo, build, and test baseline
 Owner: Repo Cartographer
 

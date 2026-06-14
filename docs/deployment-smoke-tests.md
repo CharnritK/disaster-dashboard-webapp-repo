@@ -6,6 +6,12 @@ external validation without touching production.
 Approved path: preview-only first. Do not deploy production until auth, DB, and
 fallback smoke tests pass.
 
+Current preview status as of 2026-06-14: the staging Supabase project and
+branch-scoped Vercel Preview have been configured, schema/RLS was applied to
+staging only, and magic-link login was user-confirmed for the approved
+beta/admin email. Continue to use this checklist for the next authenticated
+metadata-persistence and admin-aggregate smoke pass.
+
 ## Preconditions
 
 - Use Node `24.x` on Vercel. Current Vercel docs list `24.x` as the default
@@ -24,18 +30,24 @@ Required for deterministic preview:
 
 - `NEXT_PUBLIC_COPILOT_API_ENABLED=false`
 
-Required only when intentionally enabling authenticated AI:
+Required for authenticated Supabase-backed preview:
+
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+- `APP_BASE_URL`
+- `AI_BETA_ALLOWED_EMAILS` with named beta users
+- `ADMIN_EMAILS` with named admins only
+- `AI_DAILY_QUOTA=20`
+- `AI_USAGE_STORE=supabase`
+- `METADATA_STORE=supabase`
+- `SUPABASE_SECRET_KEY`
+
+Required only when intentionally enabling provider-backed AI:
 
 - `NEXT_PUBLIC_COPILOT_API_ENABLED=true`
 - `LLM_ENABLED=true`
 - exactly one server-side provider key, such as `LLM_API_KEY` or `OPENAI_API_KEY`
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
-- `APP_BASE_URL`
-- `AUTH_SECRET`
-- `AI_BETA_ALLOWED_EMAILS` with named beta users
-- `ADMIN_EMAILS` with named admins only
-- `AI_DAILY_QUOTA=20`
+- `AUTH_SECRET` if required by the selected auth/session path
 
 Server-only values:
 

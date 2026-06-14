@@ -1,5 +1,10 @@
 # QA Checklist
 
+Status note: this checklist is a reusable template for future PRs and staging
+passes. It is not the current completion record. Current state lives in
+`qa/final_goal_status.md`, `qa/supabase_staging_project_check_2026-06-14.md`,
+and `qa/document_consistency_audit_2026-06-14.md`.
+
 ## Pre-implementation
 
 - [ ] Confirm current branch.

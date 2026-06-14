@@ -6,6 +6,12 @@
 
 **Status**: Draft
 
+Historical status note: this spec describes the original decision-context
+feature and uses spec-local task IDs. It is not the current app-wide
+controlled-beta governance source. Current auth, metadata persistence, and
+staging-preview status live in `AGENTS.md` and
+`plan/dashboard_copilot_codex_handoff_v1_1/qa/final_goal_status.md`.
+
 **Input**: User description: "Improve data quality by starting from the decision question, action, data required, and decision-maker before judging uploaded data."
 
 ## User Scenarios & Testing *(mandatory)*

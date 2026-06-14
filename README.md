@@ -14,7 +14,8 @@ Start with these documents if you are reviewing, submitting, or adapting the pro
 - [Codex Starter Prompts](docs/codex-starter-prompts.md): copy-ready prompts for adapting the project to new decision-support contexts.
 - [Showcase Script](docs/showcase-script.md): short demo path for explaining the workflow to a non-technical audience.
 - [Repo-local Codex Skills](docs/copilot/): skills for visualization standards, bootstrapping another decision-support app, and adapting decision templates.
-- [Final Handoff Package](plan/final_handoff_package/README.md): current controlled-beta handoff, validation evidence, review gates, and archive index for older Codex handoffs.
+- [Controlled-Beta Handoff v1.1](plan/dashboard_copilot_codex_handoff_v1_1/README.md): active controlled-beta execution package, task history, QA evidence, and remaining gates.
+- [Final Handoff Package](plan/final_handoff_package/README.md): foundation and release-gate context for the controlled-beta work.
 
 ## Run Locally
 
@@ -36,7 +37,7 @@ npm run test
 npm run build
 ```
 
-## Production V1 Contract
+## Controlled-Beta Contract And Current Status
 
 Production v1 is a controlled authenticated AI beta with session-only uploaded data. Response prioritization is the approved primary workflow. Service gap monitoring and preparedness risk screening are beta workflows until a domain reviewer approves their use.
 
@@ -44,7 +45,7 @@ Deterministic mode is the default launch posture. AI may be enabled only after t
 
 Persistent storage is allowed only for account/profile metadata, AI usage, AI events, feedback, custom templates, template versions, and non-sensitive eval metadata. Uploaded files, uploaded rows, prepared rows, full datasets, exported reports/files, full LLM request bodies, full prompts, API keys, service-role keys, private tokens, and sensitive operational data must not be persisted.
 
-Public launch remains blocked until product, domain, safety/privacy, export, accessibility, release, and support owners are named and their gates are closed or explicitly deferred.
+Current status as of 2026-06-14: the preview/staging path is configured, Supabase-backed magic-link login has been user-confirmed for the approved beta/admin email, and production remains untouched. Public launch remains blocked until product, domain, safety/privacy, export, accessibility, release, and support owners are named and their gates are closed or explicitly deferred.
 
 ## Configuration
 
@@ -98,7 +99,7 @@ AI copilot calls are routed server-side by task. Workflow harmonization and qual
 
 `LLM_MAX_COMPLETION_TOKENS` controls the Responses API output-token budget for workflow harmonization, quality guidance, dashboard synthesis, and handoff summaries. Increase it if the app reports that the model response was truncated before the structured JSON finished.
 
-`/api/recommend` and `/api/copilot` rate limits are anonymous and configurable. By default, each client IP bucket can make 20 recommendation or copilot requests per 60 seconds. Set `RECOMMEND_RATE_LIMIT_MAX_REQUESTS=0` to disable the in-memory limiter. For production deployments with multiple server instances, pair these settings with a hosting firewall or edge rate limit.
+`/api/recommend` and `/api/copilot` include anonymous/IP-bucket request limits as a safety limiter before auth is resolved. Provider-backed AI still requires authentication, entitlement, quota, server-side enablement, and a server-side key. By default, each client IP bucket can make 20 recommendation or copilot requests per 60 seconds. Set `RECOMMEND_RATE_LIMIT_MAX_REQUESTS=0` to disable the in-memory limiter. For production deployments with multiple server instances, pair these settings with a hosting firewall or edge rate limit.
 
 When LLM recommendations are on, the app sends minimized dataset profile metadata to the configured provider. This includes column names, inferred types, missingness, unique counts, and capped column sample values. Full uploaded rows are not sent to the LLM recommendation or handoff routes.
 
@@ -111,4 +112,4 @@ When LLM recommendations are on, the app sends minimized dataset profile metadat
 - Vercel-compatible `/api/recommend` and `/api/copilot` routes with an auth/entitlement gate abstraction, configurable request limits, daily AI quota checks, and deterministic fallback.
 - Workflow export page for CSV, PNG, PDF report, scoped transformation log JSON, review-ready decision handoff exports, and a dependency-free project kit JSON.
 - Vitest coverage for the core parsing, profiling, joining, dashboard, and recommendation-schema logic.
-- Session-only upload and prepared-data handling; authenticated AI/persistence work is limited to metadata-only beta scaffolding.
+- Session-only upload and prepared-data handling; authenticated app, metadata-only persistence, feedback/templates, quota-aware coach, and admin aggregate reporting are implemented for controlled-beta validation. Production deployment and production database migration remain separate explicit approvals.

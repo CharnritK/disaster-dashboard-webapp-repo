@@ -14,7 +14,8 @@ automate retention deletion.
 Decision: approved preview-only first.
 
 Implication: use a preview deployment for external validation. Do not deploy
-production until auth, DB, and deterministic fallback smoke tests pass.
+production until auth, DB, and deterministic fallback smoke tests pass and
+explicit production approval is granted.
 
 ## D2 - Real Supabase Project
 

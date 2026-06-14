@@ -2,6 +2,15 @@
 
 Date: 2026-06-14
 
+Status: superseded for current staging state.
+
+This file records the earlier Supabase/Vercel preview setup pass against the
+original Supabase project and memory-backed preview environment. Current
+staging state is recorded in
+`plan/dashboard_copilot_codex_handoff_v1_1/qa/supabase_staging_project_check_2026-06-14.md`.
+Use that staging check for current DB/RLS, Supabase secret, and magic-link
+evidence.
+
 ## Supabase Project
 
 - Project: `Opensource: Dashboard Copilot`
@@ -78,10 +87,12 @@ Date: 2026-06-14
 
 ## Remaining Blockers
 
-- Apply `db/schema.sql` and `db/rls.sql` only after schema/RLS review and only
-  to a preview or staging database.
-- Enable `METADATA_STORE=supabase`, `AI_USAGE_STORE=supabase`, and
-  `SUPABASE_SECRET_KEY` only after the preview/staging database is prepared.
+- The earlier blocker to identify a non-production database target was resolved
+  by creating a separate Supabase staging project.
+- `db/schema.sql` and `db/rls.sql` were applied to staging only after review.
+- `METADATA_STORE=supabase`, `AI_USAGE_STORE=supabase`, and
+  `SUPABASE_SECRET_KEY` were enabled only in the branch-scoped Vercel Preview
+  environment after the staging database was prepared.
 
 ## Hosted Preview Smoke
 
@@ -108,8 +119,9 @@ Date: 2026-06-14
 - App magic-link request smoke:
   - `POST /auth/signin`
   - result: `307` to `/login?next=%2Fapp%2Fdata&sent=1`
-- Full end-to-end login remains user-action gated because the one-time
-  magic-link email must be opened from the recipient inbox.
+- Full end-to-end login was later user-confirmed from the recipient inbox in
+  the staging-backed preview path. Codex did not inspect the inbox or one-time
+  link.
 
 ## Schema And RLS Review
 
@@ -141,8 +153,7 @@ Date: 2026-06-14
 ## Still Not Performed
 
 - No production deployment was created successfully or promoted.
-- No SQL migration was run.
-- No staging/preview database target was identified in Supabase; the dashboard
-  project is still labeled `main Production`.
-- No Supabase service-role key or database URL was copied into Vercel.
+- No production SQL migration was run.
+- No production Supabase service-role key or database URL was copied into
+  Vercel.
 - No AI provider key was configured.

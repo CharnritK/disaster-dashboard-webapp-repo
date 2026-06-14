@@ -38,6 +38,13 @@
 - `qa/challenger_closeout.md`
 - `qa/milestone_T010_report.md`
 - `qa/final_goal_status.md`
+- `qa/supabase_preview_branch_gate_2026-06-14.md`
+- `qa/supabase_staging_project_check_2026-06-14.md`
+- `qa/document_consistency_audit_2026-06-14.md`
+
+Current status source of truth: `qa/final_goal_status.md`. The backlog and task
+cards describe the execution plan and may contain historical stop conditions;
+do not treat them as the current completion state without checking QA evidence.
 
 ## Implemented repo artifacts outside this package
 

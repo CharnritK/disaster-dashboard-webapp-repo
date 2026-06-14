@@ -41,7 +41,10 @@
     ],
     "dependencies": [],
     "risk": "Low",
-    "stop": "Stop if repo files differ materially from handoff or baseline fails for unrelated reasons."
+    "stop": "Stop if repo files differ materially from handoff or baseline fails for unrelated reasons.",
+    "status": "completed_local_reviewable",
+    "status_as_of": "2026-06-14",
+    "status_note": "Historical v1.1 task card. Current state is recorded in qa/final_goal_status.md and qa/supabase_staging_project_check_2026-06-14.md."
   },
   {
     "id": "T002",
@@ -79,7 +82,10 @@
       "T001"
     ],
     "risk": "Low",
-    "stop": "Stop if docs contradict the product contract."
+    "stop": "Stop if docs contradict the product contract.",
+    "status": "completed_local_reviewable",
+    "status_as_of": "2026-06-14",
+    "status_note": "Historical v1.1 task card. Current state is recorded in qa/final_goal_status.md and qa/supabase_staging_project_check_2026-06-14.md."
   },
   {
     "id": "T003",
@@ -122,7 +128,10 @@
       "T002"
     ],
     "risk": "Medium",
-    "stop": "Stop before merging deployment-specific config if current Vercel docs cannot be checked."
+    "stop": "Stop before merging deployment-specific config if current Vercel docs cannot be checked.",
+    "status": "completed_local_reviewable",
+    "status_as_of": "2026-06-14",
+    "status_note": "Historical v1.1 task card. Current state is recorded in qa/final_goal_status.md and qa/supabase_staging_project_check_2026-06-14.md."
   },
   {
     "id": "T004",
@@ -154,7 +163,10 @@
       "T002"
     ],
     "risk": "Low",
-    "stop": "Stop before provider SDK install if approval missing."
+    "stop": "Stop before provider SDK install if approval missing.",
+    "status": "completed_local_reviewable",
+    "status_as_of": "2026-06-14",
+    "status_note": "Historical v1.1 task card. Current state is recorded in qa/final_goal_status.md and qa/supabase_staging_project_check_2026-06-14.md."
   },
   {
     "id": "T005",
@@ -186,7 +198,10 @@
       "T002"
     ],
     "risk": "Low",
-    "stop": "Stop before provider SDK install if approval missing."
+    "stop": "Stop before provider SDK install if approval missing.",
+    "status": "completed_local_reviewable",
+    "status_as_of": "2026-06-14",
+    "status_note": "Historical v1.1 task card. Current state is recorded in qa/final_goal_status.md and qa/supabase_staging_project_check_2026-06-14.md."
   },
   {
     "id": "T007",
@@ -236,7 +251,10 @@
       "T002"
     ],
     "risk": "Medium",
-    "stop": "Stop if date bucketing or test identity would weaken production auth."
+    "stop": "Stop if date bucketing or test identity would weaken production auth.",
+    "status": "completed_local_reviewable",
+    "status_as_of": "2026-06-14",
+    "status_note": "Historical v1.1 task card. Current state is recorded in qa/final_goal_status.md and qa/supabase_staging_project_check_2026-06-14.md."
   },
   {
     "id": "T008",
@@ -284,7 +302,10 @@
       "T007"
     ],
     "risk": "Medium",
-    "stop": "Stop if fallback shape cannot be preserved."
+    "stop": "Stop if fallback shape cannot be preserved.",
+    "status": "completed_local_reviewable",
+    "status_as_of": "2026-06-14",
+    "status_note": "Historical v1.1 task card. Current state is recorded in qa/final_goal_status.md and qa/supabase_staging_project_check_2026-06-14.md."
   },
   {
     "id": "T009",
@@ -328,7 +349,10 @@
       "T008"
     ],
     "risk": "Medium",
-    "stop": "Stop if fallback object lacks reason field."
+    "stop": "Stop if fallback object lacks reason field.",
+    "status": "completed_local_reviewable",
+    "status_as_of": "2026-06-14",
+    "status_note": "Historical v1.1 task card. Current state is recorded in qa/final_goal_status.md and qa/supabase_staging_project_check_2026-06-14.md."
   },
   {
     "id": "T010",
@@ -375,7 +399,10 @@
       "T009"
     ],
     "risk": "Low",
-    "stop": "Stop after T010 for human review before provider SDK install, route split, AI coach, or internal dashboard."
+    "stop": "Stop after T010 for human review before provider SDK install, route split, AI coach, or internal dashboard.",
+    "status": "completed_local_reviewable",
+    "status_as_of": "2026-06-14",
+    "status_note": "Historical v1.1 task card. Current state is recorded in qa/final_goal_status.md and qa/supabase_staging_project_check_2026-06-14.md."
   },
   {
     "id": "T010A",
@@ -415,7 +442,10 @@
       "T010"
     ],
     "risk": "High",
-    "stop": "Stop before provider SDKs, route split, AI coach, internal dashboard, or deployment-specific config unless checkpoint passes."
+    "stop": "Stop before provider SDKs, route split, AI coach, internal dashboard, or deployment-specific config unless checkpoint passes.",
+    "status": "completed_local_reviewable",
+    "status_as_of": "2026-06-14",
+    "status_note": "Historical v1.1 task card. Current state is recorded in qa/final_goal_status.md and qa/supabase_staging_project_check_2026-06-14.md."
   },
   {
     "id": "T011",
@@ -464,7 +494,10 @@
       "T010A"
     ],
     "risk": "High",
-    "stop": "Stop if provider env/credentials are needed or approval flags are not explicit."
+    "stop": "Stop if provider env/credentials are needed or approval flags are not explicit.",
+    "status": "completed_local_reviewable",
+    "status_as_of": "2026-06-14",
+    "status_note": "Historical v1.1 task card. Current state is recorded in qa/final_goal_status.md and qa/supabase_staging_project_check_2026-06-14.md."
   },
   {
     "id": "T006",
@@ -503,7 +536,10 @@
       "T010A"
     ],
     "risk": "Medium",
-    "stop": "Stop before migration execution or if schema requires storing forbidden data."
+    "stop": "Stop before migration execution or if schema requires storing forbidden data.",
+    "status": "completed_local_reviewable",
+    "status_as_of": "2026-06-14",
+    "status_note": "Historical v1.1 task card. Current state is recorded in qa/final_goal_status.md and qa/supabase_staging_project_check_2026-06-14.md."
   },
   {
     "id": "T006A",
@@ -545,7 +581,10 @@
       "T006"
     ],
     "risk": "High",
-    "stop": "Stop before provider integration if RLS ownership rules cannot be defined."
+    "stop": "Stop before provider integration if RLS ownership rules cannot be defined.",
+    "status": "completed_local_reviewable",
+    "status_as_of": "2026-06-14",
+    "status_note": "Historical v1.1 task card. Current state is recorded in qa/final_goal_status.md and qa/supabase_staging_project_check_2026-06-14.md."
   },
   {
     "id": "T012",
@@ -589,7 +628,10 @@
       "T011"
     ],
     "risk": "High",
-    "stop": "Stop before production DB writes or if server-only key handling is unclear."
+    "stop": "Stop before production DB writes or if server-only key handling is unclear.",
+    "status": "completed_local_reviewable",
+    "status_as_of": "2026-06-14",
+    "status_note": "Historical v1.1 task card. Current state is recorded in qa/final_goal_status.md and qa/supabase_staging_project_check_2026-06-14.md."
   },
   {
     "id": "T014",
@@ -632,7 +674,10 @@
       "T010A"
     ],
     "risk": "Medium",
-    "stop": "Stop if event payload includes user data, full prompts, or row-like values."
+    "stop": "Stop if event payload includes user data, full prompts, or row-like values.",
+    "status": "completed_local_reviewable",
+    "status_as_of": "2026-06-14",
+    "status_note": "Historical v1.1 task card. Current state is recorded in qa/final_goal_status.md and qa/supabase_staging_project_check_2026-06-14.md."
   },
   {
     "id": "T013",
@@ -676,7 +721,10 @@
       "T014"
     ],
     "risk": "High",
-    "stop": "Stop if transaction/reservation semantics are unsafe."
+    "stop": "Stop if transaction/reservation semantics are unsafe.",
+    "status": "completed_local_reviewable",
+    "status_as_of": "2026-06-14",
+    "status_note": "Historical v1.1 task card. Current state is recorded in qa/final_goal_status.md and qa/supabase_staging_project_check_2026-06-14.md."
   },
   {
     "id": "T015",
@@ -719,7 +767,10 @@
       "T013"
     ],
     "risk": "Medium",
-    "stop": "Stop if comments need sensitive-data scanning beyond length/copy controls."
+    "stop": "Stop if comments need sensitive-data scanning beyond length/copy controls.",
+    "status": "completed_local_reviewable",
+    "status_as_of": "2026-06-14",
+    "status_note": "Historical v1.1 task card. Current state is recorded in qa/final_goal_status.md and qa/supabase_staging_project_check_2026-06-14.md."
   },
   {
     "id": "T016",
@@ -758,7 +809,10 @@
       "T015"
     ],
     "risk": "Low",
-    "stop": "Stop if UI target changes in route split."
+    "stop": "Stop if UI target changes in route split.",
+    "status": "completed_local_reviewable",
+    "status_as_of": "2026-06-14",
+    "status_note": "Historical v1.1 task card. Current state is recorded in qa/final_goal_status.md and qa/supabase_staging_project_check_2026-06-14.md."
   },
   {
     "id": "T017",
@@ -803,7 +857,10 @@
       "T012"
     ],
     "risk": "Medium",
-    "stop": "Stop if template schema conflicts with existing decision types."
+    "stop": "Stop if template schema conflicts with existing decision types.",
+    "status": "completed_local_reviewable",
+    "status_as_of": "2026-06-14",
+    "status_note": "Historical v1.1 task card. Current state is recorded in qa/final_goal_status.md and qa/supabase_staging_project_check_2026-06-14.md."
   },
   {
     "id": "T018",
@@ -840,7 +897,10 @@
       "T017"
     ],
     "risk": "Medium",
-    "stop": "Stop if route structure not split yet."
+    "stop": "Stop if route structure not split yet.",
+    "status": "completed_local_reviewable",
+    "status_as_of": "2026-06-14",
+    "status_note": "Historical v1.1 task card. Current state is recorded in qa/final_goal_status.md and qa/supabase_staging_project_check_2026-06-14.md."
   },
   {
     "id": "T019",
@@ -879,7 +939,10 @@
       "T010"
     ],
     "risk": "Medium",
-    "stop": "Stop if app/page state extraction is too large for PR."
+    "stop": "Stop if app/page state extraction is too large for PR.",
+    "status": "completed_local_reviewable",
+    "status_as_of": "2026-06-14",
+    "status_note": "Historical v1.1 task card. Current state is recorded in qa/final_goal_status.md and qa/supabase_staging_project_check_2026-06-14.md."
   },
   {
     "id": "T020",
@@ -919,7 +982,10 @@
       "T010"
     ],
     "risk": "Medium",
-    "stop": "Stop if auth session unavailable."
+    "stop": "Stop if auth session unavailable.",
+    "status": "completed_local_reviewable",
+    "status_as_of": "2026-06-14",
+    "status_note": "Historical v1.1 task card. Current state is recorded in qa/final_goal_status.md and qa/supabase_staging_project_check_2026-06-14.md."
   },
   {
     "id": "T021",
@@ -966,7 +1032,10 @@
       "T020"
     ],
     "risk": "High",
-    "stop": "Stop if route split would combine with auth/entitlement changes or risk session-only uploads."
+    "stop": "Stop if route split would combine with auth/entitlement changes or risk session-only uploads.",
+    "status": "completed_local_reviewable",
+    "status_as_of": "2026-06-14",
+    "status_note": "Historical v1.1 task card. Current state is recorded in qa/final_goal_status.md and qa/supabase_staging_project_check_2026-06-14.md."
   },
   {
     "id": "T022",
@@ -1007,7 +1076,10 @@
       "T021"
     ],
     "risk": "Low",
-    "stop": "Stop if guidance contradicts readiness logic."
+    "stop": "Stop if guidance contradicts readiness logic.",
+    "status": "completed_local_reviewable",
+    "status_as_of": "2026-06-14",
+    "status_note": "Historical v1.1 task card. Current state is recorded in qa/final_goal_status.md and qa/supabase_staging_project_check_2026-06-14.md."
   },
   {
     "id": "T023",
@@ -1051,7 +1123,10 @@
       "T014"
     ],
     "risk": "Medium",
-    "stop": "Stop if prompt would include row-like values."
+    "stop": "Stop if prompt would include row-like values.",
+    "status": "completed_local_reviewable",
+    "status_as_of": "2026-06-14",
+    "status_note": "Historical v1.1 task card. Current state is recorded in qa/final_goal_status.md and qa/supabase_staging_project_check_2026-06-14.md."
   },
   {
     "id": "T024",
@@ -1092,7 +1167,10 @@
       "T013"
     ],
     "risk": "Medium",
-    "stop": "Stop if dashboard could expose user data or row-like metadata."
+    "stop": "Stop if dashboard could expose user data or row-like metadata.",
+    "status": "completed_local_reviewable",
+    "status_as_of": "2026-06-14",
+    "status_note": "Historical v1.1 task card. Current state is recorded in qa/final_goal_status.md and qa/supabase_staging_project_check_2026-06-14.md."
   },
   {
     "id": "T025",
@@ -1129,7 +1207,10 @@
       "T001"
     ],
     "risk": "Low",
-    "stop": "Stop if product owner wants model/provider hidden."
+    "stop": "Stop if product owner wants model/provider hidden.",
+    "status": "completed_local_reviewable",
+    "status_as_of": "2026-06-14",
+    "status_note": "Historical v1.1 task card. Current state is recorded in qa/final_goal_status.md and qa/supabase_staging_project_check_2026-06-14.md."
   },
   {
     "id": "T026",
@@ -1169,7 +1250,10 @@
       "T014"
     ],
     "risk": "Medium",
-    "stop": "Stop if test cannot detect meaningful regressions."
+    "stop": "Stop if test cannot detect meaningful regressions.",
+    "status": "completed_local_reviewable",
+    "status_as_of": "2026-06-14",
+    "status_note": "Historical v1.1 task card. Current state is recorded in qa/final_goal_status.md and qa/supabase_staging_project_check_2026-06-14.md."
   },
   {
     "id": "T027",
@@ -1205,7 +1289,10 @@
       "T003"
     ],
     "risk": "Low",
-    "stop": "Stop if script would need credentials."
+    "stop": "Stop if script would need credentials.",
+    "status": "completed_local_reviewable",
+    "status_as_of": "2026-06-14",
+    "status_note": "Historical v1.1 task card. Current state is recorded in qa/final_goal_status.md and qa/supabase_staging_project_check_2026-06-14.md."
   },
   {
     "id": "T028",
@@ -1236,7 +1323,10 @@
       "T015"
     ],
     "risk": "Low",
-    "stop": "Stop before implementing retention automation."
+    "stop": "Stop before implementing retention automation.",
+    "status": "completed_local_reviewable",
+    "status_as_of": "2026-06-14",
+    "status_note": "Historical v1.1 task card. Current state is recorded in qa/final_goal_status.md and qa/supabase_staging_project_check_2026-06-14.md."
   },
   {
     "id": "T029",
@@ -1267,7 +1357,10 @@
       "T028"
     ],
     "risk": "Low",
-    "stop": "Stop before production launch."
+    "stop": "Stop before production launch.",
+    "status": "completed_local_reviewable",
+    "status_as_of": "2026-06-14",
+    "status_note": "Historical v1.1 task card. Current state is recorded in qa/final_goal_status.md and qa/supabase_staging_project_check_2026-06-14.md."
   },
   {
     "id": "T030",
@@ -1308,14 +1401,37 @@
       "T003",
       "T004",
       "T005",
-      "T006",
-      "T006A",
       "T007",
       "T008",
       "T009",
-      "T010"
+      "T010",
+      "T010A",
+      "T011",
+      "T006",
+      "T006A",
+      "T012",
+      "T014",
+      "T013",
+      "T015",
+      "T016",
+      "T017",
+      "T018",
+      "T019",
+      "T020",
+      "T021",
+      "T022",
+      "T023",
+      "T024",
+      "T025",
+      "T026",
+      "T027",
+      "T028",
+      "T029"
     ],
     "risk": "High",
-    "stop": "Stop on any product contract violation."
+    "stop": "Stop on any product contract violation.",
+    "status": "completed_local_reviewable",
+    "status_as_of": "2026-06-14",
+    "status_note": "Historical v1.1 task card. Current state is recorded in qa/final_goal_status.md and qa/supabase_staging_project_check_2026-06-14.md."
   }
 ]

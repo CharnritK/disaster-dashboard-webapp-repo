@@ -1,6 +1,6 @@
 # Vercel Free/Hobby Readiness
 
-Status: locally verified, deployment not performed
+Status: preview verified, production deployment not performed
 
 ## Current Checks
 
@@ -15,7 +15,7 @@ Status: locally verified, deployment not performed
 
 ## Deployment Boundary
 
-Codex must not deploy to production, edit production environment variables, or run production smoke tests with live credentials. Preview deployment should verify:
+Codex must not deploy to production, edit production environment variables, or run production smoke tests with live credentials. The branch-scoped Vercel Preview has been configured for staging validation; future preview deployment should verify:
 
 - `LLM_ENABLED=false` by default.
 - AI routes fall back without provider keys.

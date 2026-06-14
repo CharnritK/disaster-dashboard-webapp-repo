@@ -1,6 +1,6 @@
 # Persistence Provider Decision
 
-Status: approved default, implementation gated
+Status: approved default, implemented for staging preview; production gated
 
 ## Decision
 
@@ -31,4 +31,6 @@ Current Supabase guidance requires treating Data API grants and RLS as separate 
 
 ## Review Gate
 
-Before DB adapter implementation, review schema drafts, RLS policies, owner isolation, server-only import boundaries, and rollback notes. Codex must not run production migrations.
+Before production DB configuration or migration, review schema, RLS policies,
+owner isolation, server-only import boundaries, rollback notes, and current
+staging evidence. Codex must not run production migrations.
