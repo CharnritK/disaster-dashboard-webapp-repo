@@ -107,6 +107,14 @@ function loginMessage({
     };
   }
 
+  if (error === "auth_rate_limited") {
+    return {
+      tone: "warning",
+      copy:
+        "A sign-in link was requested recently. Use the latest email link or wait a minute before requesting another.",
+    };
+  }
+
   if (error === "auth_failed" || error === "callback_failed") {
     return {
       tone: "warning",

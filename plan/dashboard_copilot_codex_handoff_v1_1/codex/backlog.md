@@ -3,8 +3,10 @@
 Status as of 2026-06-14: this is the historical execution backlog for the
 controlled-beta build. T001-T030 are implemented for local/reviewable paths,
 and staging Supabase-backed magic-link login was previously user-confirmed.
-Current T031 recheck blocks at `error=auth_failed`. Do not use this file as
-the next active task list without first checking
+Current `POST /auth/signin` can return `sent=1`; OTP resend cooldown is mapped
+to `auth_rate_limited` after preview redeploy, and authenticated smoke still
+needs a clicked magic-link session. Do not use this file as the next active
+task list without first checking
 `../qa/final_goal_status.md` and
 `../qa/t031_staging_beta_validation_2026-06-14.md`.
 

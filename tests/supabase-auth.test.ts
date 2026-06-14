@@ -15,6 +15,7 @@ import {
   updateSupabaseSession,
 } from "@/lib/supabase/middleware";
 import { getSupabasePublicConfig } from "@/lib/supabase/env";
+import { signInErrorCode } from "@/lib/auth/signInErrors";
 
 describe("supabase auth helpers", () => {
   it("reads only public Supabase auth configuration", () => {
@@ -142,6 +143,28 @@ describe("supabase auth helpers", () => {
 
     expect(signinRoute).toContain("shouldCreateUser: false");
     expect(demoPage).toContain("forceDeterministic");
+  });
+
+  it("maps Supabase OTP resend limits to a user-actionable error", () => {
+    expect(signInErrorCode({ status: 429, message: "Too many requests" })).toBe(
+      "auth_rate_limited",
+    );
+    expect(
+      signInErrorCode({
+        message: "For security purposes, you can only request this after 60 seconds.",
+      }),
+    ).toBe("auth_rate_limited");
+    expect(signInErrorCode({ message: "User not found" })).toBe("auth_failed");
+  });
+
+  it("shows resend cooldown copy without blaming provider configuration", () => {
+    const loginPage = readFileSync(
+      join(process.cwd(), "app", "login", "page.tsx"),
+      "utf8",
+    );
+
+    expect(loginPage).toContain("auth_rate_limited");
+    expect(loginPage).toContain("Use the latest email link");
   });
 });
 

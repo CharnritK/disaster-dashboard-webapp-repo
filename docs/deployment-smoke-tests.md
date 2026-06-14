@@ -10,10 +10,11 @@ Current preview status as of 2026-06-14: the staging Supabase project and
 branch-scoped Vercel Preview have been configured, schema/RLS was applied to
 staging only, public and unauthenticated preview checks pass, and earlier
 magic-link login was user-confirmed for the approved beta/admin email. The
-current T031 recheck now blocks at `POST /auth/signin` with
-`error=auth_failed`; use this checklist for the next authenticated
-metadata-persistence and admin-aggregate smoke pass after auth-link initiation
-is restored.
+current preview can return `sent=1` for `POST /auth/signin`; immediate repeat
+requests may hit Supabase OTP resend protection. The app maps that cooldown to
+`auth_rate_limited` after the next preview redeploy. Use this checklist for the
+next authenticated metadata-persistence and admin-aggregate smoke pass after
+the latest magic link is clicked.
 
 ## Preconditions
 
@@ -126,8 +127,7 @@ Only after schema/RLS review and approved preview DB setup:
 
 ## T031 Pending Authenticated Checks
 
-After `POST /auth/signin` returns `sent=1` again for the approved beta/admin
-email:
+After clicking the latest magic link for the approved beta/admin email:
 
 - Verify `/app/usage` renders for the signed-in user and exposes only that
   user's usage metadata.

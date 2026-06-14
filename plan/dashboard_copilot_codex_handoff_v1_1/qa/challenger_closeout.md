@@ -55,10 +55,11 @@ Deployment and migrations are external, irreversible-risk actions. Codex must cr
 
 Severity: Medium
 
-The code and staging schema/RLS are in place, but current T031 recheck blocks
-at `POST /auth/signin` with `error=auth_failed`. The next validation phase must
-restore magic-link initiation, then exercise authenticated feedback, templates,
-usage, and admin aggregate paths against staging.
+The code and staging schema/RLS are in place. Current `POST /auth/signin` can
+return `sent=1`, and local code maps OTP resend cooldown to
+`auth_rate_limited` after preview redeploy. The next validation phase must
+complete the clicked magic-link session, then exercise authenticated feedback,
+templates, usage, and admin aggregate paths against staging.
 
 ## Unsupported or weak claims
 
@@ -81,8 +82,10 @@ Not production-ready.
 
 The controlled-beta implementation is complete for local/reviewable paths and
 the staging auth path was previously user-confirmed. Current T031 authenticated
-route and metadata persistence smoke remains blocked by `auth_failed`.
-Production release remains blocked until review gates are closed.
+route and metadata persistence smoke remains pending until a clicked magic-link
+session is available. OTP resend cooldown handling is fixed locally and awaits
+preview redeploy verification. Production release remains blocked until review
+gates are closed.
 
 ## T010A checkpoint update
 
@@ -106,7 +109,8 @@ Continuation note:
 - `/app/**` is now protected by Supabase SSR middleware and a verified-claims server page check; `/`, `/about`, `/demo`, and API fallback routes remain public.
 - Magic-link login/callback/signout routes exist, and staging Supabase-backed
   magic-link login was previously user-confirmed for the approved beta/admin
-  email. Current T031 recheck blocks at `error=auth_failed`.
+  email. Current `POST /auth/signin` can return `sent=1`, while immediate
+  repeat requests can hit OTP resend cooldown.
 - Current validation is recorded in `qa/milestone_T010_report.md`.
 - DB adapter, persistent usage ledger, route split, AI coach, internal dashboard,
   and admin aggregate reporting are implemented for controlled-beta validation.
@@ -149,6 +153,6 @@ Fallback:
 Status: `IMPLEMENTATION_COMPLETE_T031_PARTIAL_STAGING_VALIDATION`
 
 The final implementation status is recorded in `qa/final_goal_status.md`.
-The next recommended goal is to restore staging auth-link initiation, then
-complete validation of authenticated routes, metadata-only persistence, and
-admin aggregate reporting.
+The next recommended goal is to complete the staging magic-link session, then
+validate authenticated routes, metadata-only persistence, and admin aggregate
+reporting.

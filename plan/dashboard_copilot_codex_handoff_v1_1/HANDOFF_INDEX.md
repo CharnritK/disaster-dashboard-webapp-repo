@@ -61,6 +61,7 @@ completion state without checking QA evidence.
 - `../../../lib/supabase/client.ts`
 - `../../../lib/supabase/server.ts`
 - `../../../lib/supabase/middleware.ts`
+- `../../../lib/auth/signInErrors.ts`
 - `../../../middleware.ts`
 - `../../../app/login/page.tsx`
 - `../../../app/auth/signin/route.ts`

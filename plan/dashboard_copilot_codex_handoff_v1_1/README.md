@@ -45,8 +45,11 @@ Assumptions:
 - Supabase Auth and Supabase Postgres remain approved defaults.
 - Current Vercel docs must be verified before hard-coding new runtime/function settings.
 - Preview/staging Supabase configuration and Vercel Preview environment were
-  previously user-confirmed for the approved beta/admin email, but the current
-  T031 Codex recheck blocks at `POST /auth/signin` with `error=auth_failed`.
+  previously user-confirmed for the approved beta/admin email. Current
+  `POST /auth/signin` can return `sent=1`; immediate repeat requests can hit
+  Supabase OTP resend protection. Local code maps that cooldown to
+  `auth_rate_limited` after preview redeploy. Authenticated smoke still needs a
+  clicked magic-link session.
 - No production deployment, production migrations, production credentials, or production environment changes are approved.
 
 The task backlog and task cards remain useful as the historical execution plan.

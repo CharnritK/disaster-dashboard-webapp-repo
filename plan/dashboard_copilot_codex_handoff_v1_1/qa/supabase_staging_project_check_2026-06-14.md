@@ -114,12 +114,17 @@ Current Codex-verified staging behavior:
   `codex/dashboard-copilot-handoff-v1-1`; secret values were not pulled or
   printed.
 
-Current blocker:
+Current T031 continuation status:
 
-- Re-submitting the approved beta/admin email during T031 returned
-  `/login?next=%2Fapp%2Fusage&error=auth_failed`.
+- Re-submitting the approved beta/admin email against the current stable
+  preview returned `/login?next=%2Fapp%2Fusage&sent=1` once.
+- An immediate repeat request hit generic `auth_failed` on deployment
+  `dpl_2XqRJnp8NGAYFqRCKypez318c8aT`, consistent with Supabase OTP resend
+  cooldown/rate limiting.
+- Local code now maps that cooldown path to `auth_rate_limited` after preview
+  redeploy.
 - Authenticated route rendering, metadata write smoke, admin aggregate runtime
-  smoke, and direct staging DB row checks remain unverified until magic-link
-  initiation returns `sent=1` again.
+  smoke, and direct staging DB row checks remain unverified until the latest
+  magic link is clicked and a browser session is available.
 
 Production remained untouched during the T031 recheck.

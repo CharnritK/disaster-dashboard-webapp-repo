@@ -7,7 +7,7 @@ Branch: `codex/dashboard-copilot-handoff-v1-1`
 Preview URL:
 `https://disaster-dashboard-webapp-repo-git-codex-dash-fd18aa-charnrit-k.vercel.app`
 
-Verdict: `PARTIAL_STAGING_BETA_VALIDATION_PUBLIC_UNAUTH_VERIFIED_AUTH_RECHECK_BLOCKED`
+Verdict: `PARTIAL_STAGING_BETA_VALIDATION_AUTH_COOLDOWN_FIX_PENDING_REDEPLOY`
 
 ## Scope
 
@@ -73,17 +73,31 @@ Local code and test validation:
 - Uploaded files, uploaded rows, prepared rows, exports, full prompts, and full
   model responses are not represented in the schema or adapter surface.
 
-## Blocked Or Not Verified
+## Current Auth Recheck
 
-Current authenticated staging recheck is blocked:
+The earlier `auth_failed` blocker was narrowed to the sign-in request path:
 
-- Browser submission for `pointbcsc2000@hotmail.com` redirected to
-  `/login?next=%2Fapp%2Fusage&error=auth_failed`.
-- A direct `POST /auth/signin` probe also returned `307` to
-  `/login?next=%2Fapp%2Fusage&error=auth_failed`.
-- Because magic-link initiation currently fails, Codex could not verify
-  authenticated `/app/usage`, `/app/templates`, `/app/feedback`, or `/admin`
-  rendering in this pass.
+- Direct `POST /auth/signin` for `pointbcsc2000@hotmail.com` returned `307` to
+  `/login?next=%2Fapp%2Fusage&sent=1` once, confirming Supabase can issue a
+  magic link from the current staging preview.
+- An immediate repeat request returned the generic
+  `/login?next=%2Fapp%2Fusage&error=auth_failed` response on the pre-fix
+  deployment.
+- The current stable alias resolves to Vercel deployment
+  `dpl_2XqRJnp8NGAYFqRCKypez318c8aT`, created after the T031 evidence commit.
+- The observed succeed-then-fail pattern is consistent with Supabase OTP resend
+  cooldown or rate limiting rather than a permanently broken staging project.
+- Local code now maps Supabase OTP resend/rate-limit errors to
+  `auth_rate_limited` with actionable copy instead of the generic
+  `auth_failed` provider-configuration warning. This requires preview redeploy
+  before it can be verified on the stable alias.
+
+Authenticated session verification is still pending:
+
+- The Codex in-app browser has not received the clicked magic-link session and
+  still redirects `/app/usage` to `/login?next=%2Fapp%2Fusage`.
+- Codex has not yet verified authenticated `/app/usage`, `/app/templates`,
+  `/app/feedback`, or `/admin` rendering after the restored sign-in link.
 
 Credential-dependent staging DB checks were not performed:
 
@@ -130,12 +144,13 @@ Production remained untouched:
 
 ## Next Safe Actions
 
-1. Recheck Supabase Auth staging configuration for the approved email, invite
-   state, redirect URL, and current auth logs without exposing secrets.
-2. After magic-link initiation returns `sent=1`, complete the browser session
-   and verify authenticated `/app/usage`, `/app/templates`, `/app/feedback`,
-   and `/admin`.
-3. Perform read-only staging DB checks that summarize metadata categories only:
+1. Click the latest magic link for the approved beta/admin email and complete
+   the browser session.
+2. After redeploy, verify immediate OTP resend/cooldown returns
+   `auth_rate_limited` instead of generic `auth_failed`.
+3. Verify authenticated `/app/usage`, `/app/templates`, `/app/feedback`, and
+   `/admin`.
+4. Perform read-only staging DB checks that summarize metadata categories only:
    table counts, RLS/grant state, and absence of forbidden persistence tables.
-4. Exercise one safe feedback and one safe template write, then confirm only
+5. Exercise one safe feedback and one safe template write, then confirm only
    approved metadata was persisted.

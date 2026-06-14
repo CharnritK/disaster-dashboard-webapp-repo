@@ -12,11 +12,13 @@ Verdict: `CURRENT_DOCS_UPDATED_WITH_T031_PARTIAL_EVIDENCE`
 - Staging schema/RLS was applied only to the staging project.
 - Branch-scoped Vercel Preview env values point to staging Supabase.
 - The approved beta/admin email previously completed magic-link login in the
-  staging-backed Vercel Preview, but the current T031 recheck now blocks at
-  `POST /auth/signin` with `error=auth_failed`.
+  staging-backed Vercel Preview. Current `POST /auth/signin` can return
+  `sent=1`, and local code maps OTP resend cooldown to `auth_rate_limited`
+  after preview redeploy.
 - Current T031 evidence verifies public and unauthenticated staging behavior,
   but authenticated route rendering, metadata write smoke, admin aggregate
-  runtime smoke, and direct staging DB row checks remain pending.
+  runtime smoke, and direct staging DB row checks remain pending until a clicked
+  magic-link session is available.
 - Production deployment, production environment variables, production Supabase
   configuration, production migrations, added allowlist entries, anonymous AI,
   provider-backed AI enablement, and retention automation remain blocked.

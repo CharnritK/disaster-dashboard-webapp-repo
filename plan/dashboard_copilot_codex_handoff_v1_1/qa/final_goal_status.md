@@ -6,9 +6,13 @@ Verdict: `IMPLEMENTATION_COMPLETE_T031_PARTIAL_STAGING_VALIDATION`
 
 The controlled-beta implementation is complete for local/reviewable code paths
 and the staging preview has been partially revalidated. Earlier Supabase-backed
-magic-link login was user-confirmed for the approved beta/admin email, but the
-current T031 Codex recheck now blocks at `POST /auth/signin` with
-`error=auth_failed`. Production credentials, production migrations, production
+magic-link login was user-confirmed for the approved beta/admin email. Current
+`POST /auth/signin` evidence shows staging can issue a magic link (`sent=1`),
+while immediate repeat requests can hit Supabase OTP resend protection. Local
+code now maps that cooldown/rate-limit path to `auth_rate_limited` instead of
+generic `auth_failed`, pending preview redeploy verification. Authenticated
+route rendering and metadata/admin runtime smoke still need a clicked
+magic-link session. Production credentials, production migrations, production
 deployment, and production allowlist changes remain out of scope.
 
 ## Completed
@@ -114,16 +118,21 @@ deployment, and production allowlist changes remain out of scope.
   - branch-scoped Preview environment variable names were confirmed without
     pulling or printing secret values;
   - current magic-link initiation for the approved beta/admin email returned
-    `error=auth_failed`, so authenticated route rendering, metadata write
-    smoke, admin aggregate runtime smoke, and direct staging DB row checks
-    remain unverified in this pass.
+    `sent=1` once, while immediate repeat requests still hit generic
+    `auth_failed` on the pre-fix deployment;
+  - local code now maps OTP resend/rate-limit errors to `auth_rate_limited`
+    with actionable login copy;
+  - authenticated route rendering, metadata write smoke, admin aggregate
+    runtime smoke, and direct staging DB row checks remain unverified until the
+    clicked magic-link session is available.
 
 ## Remaining External Gates
 
-- Recheck staging Supabase Auth configuration and approved-user invite state so
-  `POST /auth/signin` returns `sent=1` again.
-- After auth is restored, verify authenticated `/app/usage`, `/app/templates`,
-  `/app/feedback`, and `/admin` against the staging preview.
+- Click the latest staging magic link for the approved beta/admin email.
+- Redeploy the branch preview, then verify OTP resend/cooldown returns
+  `auth_rate_limited` instead of generic `auth_failed`.
+- Verify authenticated `/app/usage`, `/app/templates`, `/app/feedback`, and
+  `/admin` against the staging preview.
 - Verify one safe metadata-only feedback write and one safe metadata-only
   template write in staging, then confirm aggregate-only admin reporting.
 - No production migration was run.

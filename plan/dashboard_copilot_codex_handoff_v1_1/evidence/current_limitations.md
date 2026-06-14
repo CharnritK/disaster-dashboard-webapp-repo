@@ -10,10 +10,12 @@
   production configuration remains review-gated.
 - The package began as a handoff and now also contains implementation evidence.
 - The package does not include credentials, API keys, or production environment values.
-- Current T031 authenticated staging recheck blocks at `POST /auth/signin` with
-  `error=auth_failed`, so authenticated route rendering, metadata write smoke,
-  admin aggregate runtime smoke, and direct staging DB row checks remain
-  pending.
+- Current `POST /auth/signin` can return `sent=1`, while immediate repeat
+  requests can hit Supabase OTP resend protection. Local code maps that
+  cooldown to `auth_rate_limited` after preview redeploy. Authenticated route
+  rendering, metadata write smoke, admin aggregate runtime smoke, and direct
+  staging DB row checks remain pending until a clicked magic-link session is
+  available.
 
 ## Assumptions
 

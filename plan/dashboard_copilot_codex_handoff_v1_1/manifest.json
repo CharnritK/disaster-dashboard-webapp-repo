@@ -9,7 +9,7 @@
   "current_status": {
     "as_of": "2026-06-14",
     "task_backlog": "T001-T030 implemented for local/reviewable controlled-beta paths",
-    "staging_auth": "Supabase-backed magic-link login was previously user-confirmed for the approved beta/admin email; current T031 recheck blocks at auth_failed",
+    "staging_auth": "Supabase-backed magic-link login was previously user-confirmed for the approved beta/admin email; current POST /auth/signin can return sent=1, OTP resend cooldown is mapped to auth_rate_limited after preview redeploy, and authenticated session smoke remains pending",
     "production": "not deployed, not migrated, and not approved"
   },
   "primary_prompt": "codex/prompts/GOAL_FULL_BUILD.md",

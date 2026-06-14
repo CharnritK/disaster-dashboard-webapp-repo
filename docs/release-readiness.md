@@ -5,11 +5,15 @@ record.
 
 Current status as of 2026-06-14: public and unauthenticated staging preview
 behavior is Codex-verified, and earlier magic-link login was user-confirmed for
-the approved beta/admin email. The current T031 Codex recheck blocks at
-`POST /auth/signin` with `error=auth_failed`, so authenticated route rendering,
-metadata write smoke, admin aggregate runtime smoke, and direct staging DB row
-checks remain pending. Production deployment, production environment variables,
-and production migrations remain blocked.
+the approved beta/admin email. Current `POST /auth/signin` evidence shows
+staging can issue a magic link (`sent=1`), while immediate repeat requests can
+hit Supabase OTP resend protection. Local code now maps that cooldown/rate-limit
+path to `auth_rate_limited` instead of generic `auth_failed`, pending preview
+redeploy verification. Authenticated route rendering, metadata write smoke,
+admin aggregate runtime smoke, and direct staging DB row checks remain pending
+until the latest magic link is clicked and a browser session is available.
+Production deployment, production environment variables, and production
+migrations remain blocked.
 
 ## Approved Beta Decisions
 
@@ -42,8 +46,8 @@ and production migrations remain blocked.
 - Beta access is invite/allowlist controlled.
 - RLS and grants are reviewed before any production migration.
 - Usage reservation uses the reviewed atomic function.
-- Recheck staging magic-link initiation before claiming authenticated beta smoke
-  is current.
+- Complete the staging magic-link session before claiming authenticated beta
+  smoke is current.
 
 ## AI Governance
 

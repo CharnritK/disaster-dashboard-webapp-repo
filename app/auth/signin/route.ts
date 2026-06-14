@@ -1,6 +1,7 @@
 import { getAuthAppBaseUrl } from "@/lib/auth/appBaseUrl";
 import { normalizeAuthRedirectPath } from "@/lib/auth/redirects";
 import { redirectNoStore } from "@/lib/auth/responses";
+import { signInErrorCode } from "@/lib/auth/signInErrors";
 import { getSupabasePublicConfig } from "@/lib/supabase/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -35,7 +36,7 @@ export async function POST(request: Request) {
   });
 
   if (error) {
-    return redirectToLogin(request, next, "auth_failed");
+    return redirectToLogin(request, next, signInErrorCode(error));
   }
 
   const url = new URL("/login", request.url);
