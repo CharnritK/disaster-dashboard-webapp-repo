@@ -81,11 +81,22 @@ create index if not exists template_versions_is_reviewed_idx
 create index if not exists template_versions_review_status_idx
   on public.template_versions (review_status);
 
-alter table public.custom_templates
-  add constraint custom_templates_latest_version_fk
-  foreign key (latest_version_id)
-  references public.template_versions(id)
-  on delete set null;
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_constraint
+    where conname = 'custom_templates_latest_version_fk'
+      and conrelid = 'public.custom_templates'::regclass
+  ) then
+    alter table public.custom_templates
+      add constraint custom_templates_latest_version_fk
+      foreign key (latest_version_id)
+      references public.template_versions(id)
+      on delete set null;
+  end if;
+end;
+$$;
 
 create table if not exists public.ai_usage_daily (
   id uuid primary key default gen_random_uuid(),
