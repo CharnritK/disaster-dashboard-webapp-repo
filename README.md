@@ -10,6 +10,12 @@ Dashboard Copilot helps humanitarian and public-good teams start from the decisi
 
 It is not an automated operational approval system. The product is a controlled-beta decision-support workflow: useful for demos, review, adaptation, and safe stakeholder handoff; not a substitute for analysts, domain leads, or accountability processes.
 
+## At A Glance
+
+![Dashboard Copilot workflow infographic](docs/assets/dashboard-copilot-workflow.png)
+
+![Dashboard Copilot architecture diagram](docs/assets/dashboard-copilot-architecture.png)
+
 ## Why Try It
 
 - Starts with a response decision, not a blank chart canvas.
