@@ -1,6 +1,46 @@
 # Dashboard Copilot
 
-Recommendation-first controlled-beta product for turning non-sensitive humanitarian and disaster-response datasets into transparent, reviewable decision-support packages.
+Turn messy disaster-response spreadsheets into a reviewable decision-support package.
+
+[Try the public demo on Vercel](https://disaster-dashboard-webapp-repo-git-codex-dash-fd18aa-charnrit-k.vercel.app/demo) · [Run it locally](#run-locally) · [Read the public-good guide](docs/digital-public-good-guide.md)
+
+No login required. The public demo uses synthetic sample data and keeps AI off.
+
+Dashboard Copilot helps humanitarian and public-good teams start from the decision they need to make, check whether their data can support it, prepare fragmented CSV/XLSX files safely, and export a dashboard-ready handoff with caveats still visible.
+
+It is not an automated operational approval system. The product is a controlled-beta decision-support workflow: useful for demos, review, adaptation, and safe stakeholder handoff; not a substitute for analysts, domain leads, or accountability processes.
+
+## Why Try It
+
+- Starts with a response decision, not a blank chart canvas.
+- Uses synthetic sample data in the public preview so you can explore without uploading sensitive files.
+- Profiles multiple files and shows which fields support each evidence need.
+- Recommends safe joins, cleaning steps, dashboard views, and readiness caveats.
+- Exports reviewable CSV, PNG, PDF, transformation log, decision handoff, and project-kit outputs.
+
+## 3-Minute Product Tour
+
+Open the [public Vercel demo](https://disaster-dashboard-webapp-repo-git-codex-dash-fd18aa-charnrit-k.vercel.app/demo), then:
+
+1. Choose the response prioritization template.
+2. Review the suggested data collection fields.
+3. Load the fragmented demo data.
+4. Profile the data and inspect evidence coverage.
+5. Harmonize the files, review the recommendation, and accept it.
+6. Generate the dashboard and export the handoff package.
+
+The fastest way to understand the product is to watch how the app handles incomplete or risky data: it keeps caveats visible instead of hiding weak evidence behind polished charts.
+
+## Who This Is For
+
+- Information management officers and humanitarian analysts.
+- Response coordinators preparing operational updates.
+- DataKind and civic-technology teams adapting decision-support workflows.
+- Reviewers evaluating a public-good, privacy-preserving dashboard prototype.
+
+## What Is Safe To Expect
+
+The public preview is for orientation and deterministic demo use. Authenticated AI remains controlled-beta only. Uploaded disaster data remains session-only in the app contract. Persistent storage is limited to approved metadata in the controlled beta, and production deployment, production database migration, admin access policy, provider/model changes, and retention automation remain explicit approval gates.
 
 ## Project Documentation
 
