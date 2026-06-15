@@ -26,7 +26,7 @@ const scripts = [
     file: "trust-risk-user-flow.mp3",
     title: "TrustRiskUserFlow",
     input:
-      "A trustworthy tutorial must show the uncomfortable path too. The risky sample is allowed to render because bad inputs should be visible, not hidden. Readiness blockers separate warnings from stops, and evidence comes before advice, whether the recommendation is deterministic or AI assisted. The handoff keeps assumptions and caveats attached. Uploaded rows stay in the browser session; controlled beta storage is limited to approved metadata.",
+      "Trustworthy review means showing the uncomfortable path too. The risky sample renders because bad inputs should be visible, not hidden. Readiness blockers separate warnings from stops, and evidence comes before advice, whether the recommendation is deterministic or AI assisted. The handoff keeps assumptions and caveats attached. Uploaded rows stay in the browser session; controlled beta storage is limited to approved metadata.",
   },
 ];
 

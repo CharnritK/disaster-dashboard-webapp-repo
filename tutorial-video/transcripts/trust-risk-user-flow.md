@@ -5,16 +5,16 @@ meaning depends on audio alone.
 
 ## Narration Transcript
 
-A trustworthy tutorial must show the uncomfortable path too. The risky sample
-is allowed to render because bad inputs should be visible, not hidden. Readiness
-blockers separate warnings from stops, and evidence comes before advice,
-whether the recommendation is deterministic or AI assisted. The handoff keeps
-assumptions and caveats attached. Uploaded rows stay in the browser session;
-controlled beta storage is limited to approved metadata.
+Trustworthy review means showing the uncomfortable path too. The risky sample
+renders because bad inputs should be visible, not hidden. Readiness blockers
+separate warnings from stops, and evidence comes before advice, whether the
+recommendation is deterministic or AI assisted. The handoff keeps assumptions
+and caveats attached. Uploaded rows stay in the browser session; controlled beta
+storage is limited to approved metadata.
 
 ## On-Screen Transcript
 
-Tutorial 2.
+Part 3 / Risk.
 
 Show when the data is not safe yet.
 
@@ -23,9 +23,9 @@ hiding them.
 
 Read: Missing evidence indicator.
 
-A trustworthy tutorial must show the failure path.
+Bad inputs stay visible before anyone acts.
 
-Tutorial 2.
+Part 3 / Risk.
 
 Let blockers stay uncomfortable.
 
@@ -36,7 +36,7 @@ Read: Readiness blockers.
 
 The app supports review. It does not approve action.
 
-Tutorial 2.
+Part 3 / Risk.
 
 Evidence comes before advice.
 
@@ -47,7 +47,7 @@ Read: Evidence map.
 
 Deterministic validation remains authoritative.
 
-Tutorial 2.
+Part 3 / Risk.
 
 Keep the risk in the package.
 
@@ -58,7 +58,7 @@ Read: Handoff narrative.
 
 Handoff is useful because it is reviewable.
 
-Tutorial 2.
+Part 3 / Risk.
 
 Close with the session boundary.
 
@@ -67,4 +67,4 @@ limited to approved metadata surfaces.
 
 Read: Export package boundary.
 
-Privacy claims must be exact, not comforting.
+The boundary is session-only rows and metadata-only beta storage.

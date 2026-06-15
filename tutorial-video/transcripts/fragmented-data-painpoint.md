@@ -14,7 +14,7 @@ evidence, attached caveats, and human-owned action.
 
 ## On-Screen Transcript
 
-The pain.
+Part 1 / Problem.
 
 The hardest part is knowing whether the chart can be trusted.
 
@@ -23,7 +23,7 @@ that cannot wait.
 
 Mismatched districts. Missing capacity. Late updates.
 
-Public demo.
+Part 1 / Proof.
 
 Show the fragmentation before solving it.
 
@@ -34,7 +34,7 @@ Click: Use fragmented demo data needs + population + capacity.
 
 Synthetic sample data only. No account or API key is needed.
 
-Step 2.
+Part 1 / Evidence.
 
 Make uncertainty visible early.
 
@@ -45,7 +45,7 @@ Read: Evidence coverage.
 
 The uncertainty becomes visible before the dashboard exists.
 
-Step 3.
+Part 1 / Review.
 
 Do not silently combine fragile data.
 
@@ -55,7 +55,7 @@ Click: Accept recommendation.
 
 No hidden row deletion, imputation, fuzzy matching, or recoding.
 
-Handoff.
+Part 1 / Handoff.
 
 Clearer evidence. Human-owned action.
 

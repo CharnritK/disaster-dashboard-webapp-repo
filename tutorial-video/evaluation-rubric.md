@@ -84,7 +84,16 @@ If any gate fails, do not publish the video even if the score is high.
 
 ## Video-Specific Success Criteria
 
-### Video 1: `FragmentedDataPainpoint`
+The current public tutorial release is a three-part series:
+
+1. `FragmentedDataPainpoint`
+2. `PublicDemoUserFlow`
+3. `TrustRiskUserFlow`
+
+The analyst deep dive and technical architecture explainer remain future modules
+until they are storyboarded, rendered, embedded, and pilot-tested.
+
+### Part 1: `FragmentedDataPainpoint`
 
 Purpose: emotional opener for judges, executives, partners, and public showcase.
 
@@ -108,7 +117,7 @@ Minimum release threshold:
 - 4 of 5 test viewers say the imagery feels respectful, not exploitative.
 - Average pilot retention is at least 50% of video length for cold viewers.
 
-### Video 2: `PublicDemoUserFlow`
+### Part 2: `PublicDemoUserFlow`
 
 Purpose: first-time user enablement for the deterministic public demo.
 
@@ -131,7 +140,7 @@ Minimum release threshold:
 - Median time to complete the demo after watching is under 5 minutes.
 - No more than one minor confusion per test participant.
 
-### Video 3: `AnalystWorkflowDeepDive`
+### Future Module: `AnalystWorkflowDeepDive`
 
 Purpose: train analysts and beta testers to use the workflow responsibly.
 
@@ -154,7 +163,7 @@ Minimum release threshold:
   points.
 - 80% can explain why "ready for review" is not operational approval.
 
-### Video 4: `TrustRiskUserFlow`
+### Part 3: `TrustRiskUserFlow`
 
 Purpose: reassure safety, privacy, and domain reviewers.
 
@@ -175,7 +184,7 @@ Minimum release threshold:
 - 5 of 5 safety reviewers can identify the privacy boundary.
 - 5 of 5 safety reviewers confirm the video does not imply automatic approval.
 
-### Video 5: `TechnicalArchitectureExplainer`
+### Future Module: `TechnicalArchitectureExplainer`
 
 Purpose: technical reviewer and buyer confidence.
 
@@ -257,7 +266,7 @@ Pass threshold:
 - Median completion time under 5 minutes.
 - 80% can find or name readiness, source notes, caveats, or handoff summary.
 
-### Scenario C: Analyst/Beta Tester
+### Future Scenario C: Analyst/Beta Tester
 
 Participant: spreadsheet or data-heavy user.
 
@@ -291,7 +300,7 @@ Pass threshold:
 - 5 of 5 identify AI is optional or off for public deterministic demo.
 - 5 of 5 identify the app supports review, not approval.
 
-### Scenario E: Technical Reviewer
+### Future Scenario E: Technical Reviewer
 
 Participant: engineer, architect, or technical buyer.
 
@@ -366,13 +375,14 @@ Use one row per participant.
 
 ## Recommended Pilot Plan
 
-Run one fast round before external release:
+Run one fast round before external release of the current three-part series:
 
 1. Five viewers for the emotional opener.
 2. Five first-time users for the public demo walkthrough.
-3. Three analysts for the deep dive.
-4. Three safety/privacy reviewers for the trust path.
-5. Three technical reviewers for the architecture video.
+3. Three safety/privacy reviewers for the trust path.
+
+Run the future analyst and technical reviewer pilots only after those modules
+are storyboarded, rendered, and embedded.
 
 Do not average away serious failures. Fix any repeated confusion after two
 participants, then retest the changed segment.

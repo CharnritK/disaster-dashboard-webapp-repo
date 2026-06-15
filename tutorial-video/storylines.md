@@ -27,7 +27,10 @@ responsibility under uncertainty.
 | `TrustRiskUserFlow` | 46s | Risk, caveats, and privacy boundary | None |
 | `DashboardCopilotTutorial` | 113s | Longer business/architecture walkthrough | None |
 
-## Video 1: The Pain Of Fragmented Data
+The production storyboard, capture source, motion plan, sound plan, and release
+gates live in `storyboard-capture-plan.md`.
+
+## Part 1: Why Trust Breaks Before The Chart
 
 - Composition id: `FragmentedDataPainpoint`
 - Length: 37 seconds
@@ -58,7 +61,7 @@ Scene plan:
    Capture: `captures/09-handoff-summary.png`
    Closing line: "Clearer evidence. Human-owned action."
 
-## Video 2: Public Demo User Flow
+## Part 2: Run The Public Demo
 
 - Composition id: `PublicDemoUserFlow`
 - Length: 67 seconds
@@ -104,7 +107,7 @@ Scene plan:
    Capture: `09-handoff-summary.png`
    Point: generate the handoff summary and export review assets.
 
-## Video 3: Trust And Risk User Flow
+## Part 3: When Data Is Not Ready
 
 - Composition id: `TrustRiskUserFlow`
 - Length: 46 seconds

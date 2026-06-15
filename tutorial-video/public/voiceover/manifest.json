@@ -1,23 +1,23 @@
 {
-  "generatedAt": "2026-06-14T19:47:57.119Z",
+  "generatedAt": "2026-06-15T14:18:45.189Z",
   "source": "OpenAI /v1/audio/speech",
   "tracks": [
     {
-      "bytes": 486528,
+      "bytes": 495360,
       "file": "public/voiceover/fragmented-data-painpoint.mp3",
       "model": "gpt-4o-mini-tts",
       "title": "FragmentedDataPainpoint",
       "voice": "coral"
     },
     {
-      "bytes": 571392,
+      "bytes": 538368,
       "file": "public/voiceover/public-demo-user-flow.mp3",
       "model": "gpt-4o-mini-tts",
       "title": "PublicDemoUserFlow",
       "voice": "coral"
     },
     {
-      "bytes": 519168,
+      "bytes": 469632,
       "file": "public/voiceover/trust-risk-user-flow.mp3",
       "model": "gpt-4o-mini-tts",
       "title": "TrustRiskUserFlow",

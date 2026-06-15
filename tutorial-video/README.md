@@ -24,9 +24,10 @@ asset.
 
 ## Storyline
 
-The series plan lives in `storylines.md`. The testing scenarios, thresholds,
-and scoring criteria live in `evaluation-rubric.md`. The production review log
-lives in `production-qa.md`.
+The production storyboard and screen/motion/sound capture map lives in
+`storyboard-capture-plan.md`. The narrative outline lives in `storylines.md`.
+The testing scenarios, thresholds, and scoring criteria live in
+`evaluation-rubric.md`. The production review log lives in `production-qa.md`.
 
 Core message:
 
@@ -72,6 +73,10 @@ Voiceover tracks live in `public/voiceover/`. Generate them with
 `npm run speech`, which calls OpenAI `POST /v1/audio/speech` using
 `OPENAI_API_KEY` or `LLM_API_KEY` from the environment or local env files. Do
 not commit API keys.
+
+When a narration script, visible part label, or on-screen scene copy changes,
+regenerate the affected MP3 and rendered MP4 before copying final assets to
+`../public/tutorial/`.
 
 ## Accessibility
 

@@ -18,6 +18,24 @@ The series uses generated imagery only for the first seven seconds of
 frame-driven cursor travel, click pulses, target rings, screenshot pan/zoom,
 progress indicators, and OpenAI-generated narration.
 
+The production storyboard, capture source, motion plan, sound plan, and release
+gates live in `storyboard-capture-plan.md`.
+
+## Coherence Pass Updates
+
+The 2026-06-15 coherence pass tightened the three-cut package:
+
+- About page titles now use Part 1 / Part 2 / Part 3 naming.
+- Remotion scene labels now match the three-part series.
+- The simulated browser chrome now reads `Dashboard Copilot /demo` instead of a
+  localhost URL for public-facing polish.
+- Trust/risk copy was revised to sound like product guidance, not internal QA
+  commentary.
+- `storyboard-capture-plan.md` now records screen, motion, sound, capture
+  source, and QA gates for every scene.
+- Voiceover MP3s, MP4 renders, and About page poster files were regenerated
+  after the source copy changes.
+
 ## Browser-Verified User Path
 
 Verified against the in-app browser at `http://localhost:3002/demo`:
@@ -82,7 +100,7 @@ Observed live headings and states included:
 | No sensitive-data exposure | Pass | Uses bundled synthetic captures and non-readable generated opener. |
 | Trust boundary explicit | Pass | Trust/risk video states session-only rows, metadata-only beta storage, deterministic authority. |
 | Workflow reproducible | Pass | Browser replay confirmed the actual `/demo` click path and headings. |
-| No dev artifacts | Pass | Reviewed stills show clean `localhost:3002/demo` UI with no dev overlay. |
+| No dev artifacts | Pass | Fresh posters show neutral `Dashboard Copilot /demo` chrome with no dev overlay. |
 | Accessibility baseline | Pass | Narration, on-screen text, and transcripts for all three current cuts. |
 | Ethical visual tone | Pass | One respectful, non-graphic generated opener; no disaster sensationalism. |
 | External viewer pilot | Not run | Required before broad external publication, not required for internal render handoff. |
@@ -125,17 +143,17 @@ Rendered files:
 
 | File | Size |
 | --- | ---: |
-| `out/fragmented-data-painpoint.mp4` | 21.5 MB |
-| `out/public-demo-user-flow.mp4` | 35.0 MB |
-| `out/trust-risk-user-flow.mp4` | 23.5 MB |
+| `out/fragmented-data-painpoint.mp4` | 21.6 MB |
+| `out/public-demo-user-flow.mp4` | 34.9 MB |
+| `out/trust-risk-user-flow.mp4` | 23.4 MB |
 
 Generated voiceover files:
 
 | File | Size |
 | --- | ---: |
-| `public/voiceover/fragmented-data-painpoint.mp3` | 0.46 MB |
-| `public/voiceover/public-demo-user-flow.mp3` | 0.54 MB |
-| `public/voiceover/trust-risk-user-flow.mp3` | 0.50 MB |
+| `public/voiceover/fragmented-data-painpoint.mp3` | 0.47 MB |
+| `public/voiceover/public-demo-user-flow.mp3` | 0.51 MB |
+| `public/voiceover/trust-risk-user-flow.mp3` | 0.45 MB |
 
 `ffprobe` is not installed on this machine. Duration and stream verification
 were checked with the installed `mediabunny` parser:
@@ -145,6 +163,19 @@ were checked with the installed `mediabunny` parser:
 | `out/fragmented-data-painpoint.mp4` | 37s | 1920x1080 | 48 kHz stereo |
 | `out/public-demo-user-flow.mp4` | 67s | 1920x1080 | 48 kHz stereo |
 | `out/trust-risk-user-flow.mp4` | 46s | 1920x1080 | 48 kHz stereo |
+
+The 2026-06-15 coherence pass also checked the copied public assets with
+`mediabunny`:
+
+| File | Duration | Video | Audio |
+| --- | ---: | --- | --- |
+| `public/tutorial/fragmented-data-painpoint.mp4` | 37s | 1920x1080 | Present |
+| `public/tutorial/public-demo-user-flow.mp4` | 67s | 1920x1080 | Present |
+| `public/tutorial/trust-risk-user-flow.mp4` | 46s | 1920x1080 | Present |
+
+Browser smoke was run against `http://localhost:3014/about`. The page rendered
+three tutorial videos with `readyState=4`, refreshed poster paths, and the
+updated Part 1 / Part 2 / Part 3 titles.
 
 ## Internal Scoring
 

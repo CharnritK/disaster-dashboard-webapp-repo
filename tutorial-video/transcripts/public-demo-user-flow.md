@@ -15,7 +15,7 @@ final handoff package preserves context for the response team.
 
 ## On-Screen Transcript
 
-Tutorial 1.
+Part 2 / Demo.
 
 Start with the decision, not the chart.
 
@@ -26,7 +26,7 @@ Review: Decision brief and map.
 
 Public demo uses bundled synthetic data.
 
-Tutorial 1.
+Part 2 / Demo.
 
 Load realistic fragmented evidence.
 
@@ -37,7 +37,7 @@ Click: Use fragmented demo data needs + population + capacity.
 
 No account or API key is required for this path.
 
-Tutorial 1.
+Part 2 / Demo.
 
 Make data quality visible early.
 
@@ -48,7 +48,7 @@ Hover: Review evidence coverage.
 
 Uncertainty is part of the workflow, not an afterthought.
 
-Tutorial 1.
+Part 2 / Demo.
 
 Review the join before combining files.
 
@@ -59,7 +59,7 @@ Click: Accept recommendation.
 
 No silent deletion, imputation, fuzzy matching, or hidden recoding.
 
-Tutorial 1.
+Part 2 / Demo.
 
 Use readiness as a review checkpoint.
 
@@ -70,7 +70,7 @@ Click: Generate dashboard.
 
 Ready for review is not operational approval.
 
-Tutorial 1.
+Part 2 / Demo.
 
 Generate a dashboard that keeps the caveats visible.
 
@@ -81,12 +81,12 @@ Click: Export step.
 
 The chart is a review surface, not a verdict.
 
-Tutorial 1.
+Part 2 / Demo.
 
 Package the decision handoff without losing context.
 
-On the export screen, the user generates the handoff summary and can download
-CSV, JSON, KIT, PNG, or PDF assets.
+On the export screen, the user generates the handoff summary and downloads
+review assets with context intact.
 
 Click: Generate handoff summary.
 

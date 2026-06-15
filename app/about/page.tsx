@@ -101,25 +101,25 @@ const entryPoints = [
 
 const tutorialVideos = [
   {
-    title: "Fragmented Data Painpoint",
+    title: "Part 1: Why Trust Breaks Before the Chart",
     duration: "37 seconds",
     src: "/tutorial/fragmented-data-painpoint.mp4",
     poster: "/tutorial/fragmented-data-painpoint-poster.png",
-    body: "Emotional opener showing why fragmented disaster-response data creates trust pressure before a dashboard exists.",
+    body: "The problem story: fragmented disaster-response data creates trust pressure before a dashboard exists.",
   },
   {
-    title: "Public Demo User Flow",
+    title: "Part 2: Run the Public Demo",
     duration: "67 seconds",
     src: "/tutorial/public-demo-user-flow.mp4",
     poster: "/tutorial/public-demo-user-flow-poster.png",
-    body: "Step-by-step walkthrough of the public deterministic demo: template, samples, profiling, harmonization, readiness, dashboard, and handoff.",
+    body: "The core walkthrough: template, synthetic samples, profiling, harmonization, readiness, dashboard, and handoff.",
   },
   {
-    title: "Trust and Risk Flow",
+    title: "Part 3: When Data Is Not Ready",
     duration: "46 seconds",
     src: "/tutorial/trust-risk-user-flow.mp4",
     poster: "/tutorial/trust-risk-user-flow-poster.png",
-    body: "Failure-mode walkthrough showing blockers, evidence-before-advice, caveats, and the session-only data boundary.",
+    body: "The trust walkthrough: blockers, evidence-before-advice, caveats, and the session-only data boundary.",
   },
 ];
 
