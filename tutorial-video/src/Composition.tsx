@@ -67,7 +67,7 @@ const sceneConfigs: SceneConfig[] = [
         accent="blue"
         image="captures/03-fragmented-data.png"
         kicker="Step 2"
-        subtitle="Teams can upload CSV or XLSX files, or use bundled synthetic samples to see how fragmented data gets aligned."
+        subtitle="For the public demo, use bundled synthetic samples to see how fragmented data gets aligned. Do not upload sensitive or live operational data."
         title="Load the evidence sources"
       />
     ),
@@ -307,7 +307,7 @@ function ArchitectureScene() {
   return (
     <SceneShell
       eyebrow="Technical side"
-      title="The architecture protects the prototype contract"
+      title="The architecture protects the controlled-beta contract"
       titleStyle={revealStyle(intro, 24)}
     >
       <div className="architecture-grid">
@@ -316,7 +316,7 @@ function ArchitectureScene() {
             label: "Browser",
             title: "Session workflow",
             body: "Uploaded rows, step state, dashboard rendering, and exports stay in the browser session.",
-            meta: "No account or project persistence.",
+            meta: "Approved account, usage, feedback, template, and admin metadata may persist.",
           },
           {
             label: "Server routes",

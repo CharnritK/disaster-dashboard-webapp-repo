@@ -34,7 +34,7 @@ const resources = [
     title: "Tutorial Video Source",
     href: "https://github.com/datakind/disaster-dashboard-webapp-repo/tree/main/tutorial-video",
     description:
-      "Remotion source project, captured walkthrough screens, and render notes for the embedded tutorial.",
+      "Remotion source project, captured walkthrough screens, narration scripts, and render notes for the embedded tutorial series.",
   },
   {
     title: "License",
@@ -99,12 +99,36 @@ const entryPoints = [
   },
 ];
 
+const tutorialVideos = [
+  {
+    title: "Fragmented Data Painpoint",
+    duration: "37 seconds",
+    src: "/tutorial/fragmented-data-painpoint.mp4",
+    poster: "/tutorial/fragmented-data-painpoint-poster.png",
+    body: "Emotional opener showing why fragmented disaster-response data creates trust pressure before a dashboard exists.",
+  },
+  {
+    title: "Public Demo User Flow",
+    duration: "67 seconds",
+    src: "/tutorial/public-demo-user-flow.mp4",
+    poster: "/tutorial/public-demo-user-flow-poster.png",
+    body: "Step-by-step walkthrough of the public deterministic demo: template, samples, profiling, harmonization, readiness, dashboard, and handoff.",
+  },
+  {
+    title: "Trust and Risk Flow",
+    duration: "46 seconds",
+    src: "/tutorial/trust-risk-user-flow.mp4",
+    poster: "/tutorial/trust-risk-user-flow-poster.png",
+    body: "Failure-mode walkthrough showing blockers, evidence-before-advice, caveats, and the session-only data boundary.",
+  },
+];
+
 const tutorialChapters = [
-  "Start with the decision question and action owner.",
-  "Load bundled samples or authenticated workspace data.",
+  "Start with the decision question before choosing charts.",
+  "Use bundled synthetic samples for a safe first run.",
   "Profile evidence quality before trusting recommendations.",
   "Review joins, cleaning, readiness, dashboard output, and exports.",
-  "Use caveats and handoff logs to support human review.",
+  "Keep blockers, caveats, and handoff context visible for human review.",
 ];
 
 export default function AboutPage() {
@@ -181,22 +205,32 @@ export default function AboutPage() {
         <section className="about-section">
           <div className="section-heading">
             <p className="eyebrow">Tutorial</p>
-            <h2>Watch the Workflow Once, Then Try the Demo</h2>
+            <h2>Watch the Three-Part Tutorial Series</h2>
           </div>
-          <div className="about-video-grid">
-            <div className="about-video-card">
-              <video
-                controls
-                poster="/tutorial/dashboard-copilot-tutorial-poster.jpg"
-                preload="metadata"
-              >
-                <source
-                  src="/tutorial/dashboard-copilot-tutorial.mp4"
-                  type="video/mp4"
-                />
-                Your browser does not support embedded video. Open the
-                tutorial source from the resources section below.
-              </video>
+          <div className="about-video-grid tutorial-series-grid">
+            <div className="tutorial-video-list">
+              {tutorialVideos.map((video) => (
+                <article className="about-video-card tutorial-video-card" key={video.src}>
+                  <video
+                    aria-label={`${video.title} tutorial video`}
+                    controls
+                    poster={video.poster}
+                    preload="metadata"
+                  >
+                    <source src={video.src} type="video/mp4" />
+                    Your browser does not support embedded video. Open the
+                    tutorial source from the resources section below.
+                  </video>
+                  <div className="tutorial-video-copy">
+                    <div className="tutorial-video-meta">
+                      <span>{video.duration}</span>
+                      <span>Narrated walkthrough</span>
+                    </div>
+                    <h3>{video.title}</h3>
+                    <p>{video.body}</p>
+                  </div>
+                </article>
+              ))}
             </div>
             <aside className="about-note tutorial-summary">
               <h3>What the tutorial covers</h3>

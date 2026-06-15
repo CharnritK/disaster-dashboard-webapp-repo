@@ -7,6 +7,7 @@
   "private": true,
   "dependencies": {
     "@remotion/cli": "4.0.475",
+    "@remotion/media": "4.0.475",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "remotion": "4.0.475"
@@ -23,7 +24,15 @@
     "dev": "remotion studio",
     "build": "remotion bundle",
     "render": "remotion render DashboardCopilotTutorial out/dashboard-copilot-tutorial.mp4",
+    "render:painpoint": "remotion render FragmentedDataPainpoint out/fragmented-data-painpoint.mp4",
+    "render:userflow": "remotion render PublicDemoUserFlow out/public-demo-user-flow.mp4",
+    "render:trust": "remotion render TrustRiskUserFlow out/trust-risk-user-flow.mp4",
+    "speech": "node scripts/generate-openai-speech.mjs",
     "still": "remotion still DashboardCopilotTutorial --frame=420 --scale=0.5 out/tutorial-preview.png",
+    "still:painpoint": "remotion still FragmentedDataPainpoint --frame=90 --scale=0.5 out/fragmented-data-painpoint-preview.png",
+    "still:painpoint:proof": "remotion still FragmentedDataPainpoint --frame=780 --scale=0.5 out/fragmented-data-painpoint-proof.png",
+    "still:userflow": "remotion still PublicDemoUserFlow --frame=420 --scale=0.5 out/public-demo-user-flow-preview.png",
+    "still:trust": "remotion still TrustRiskUserFlow --frame=420 --scale=0.5 out/trust-risk-user-flow-preview.png",
     "upgrade": "remotion upgrade",
     "lint": "eslint src && tsc"
   },
