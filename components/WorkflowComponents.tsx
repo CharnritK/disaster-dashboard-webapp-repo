@@ -50,6 +50,7 @@ import {
   fieldDisplayLabel,
   inferMetricAggregation,
   metricDisplayLabel,
+  sortGroupedMetricValues,
   toNumber,
   type GroupedMetricValue,
 } from "@/lib/chartMetrics";
@@ -68,12 +69,12 @@ const STEP_LABELS: Record<WorkflowStep, string> = {
 };
 
 const CHART_PALETTE = [
-  "#005ab5",
-  "#d55e00",
-  "#009e73",
-  "#7b3294",
-  "#b35c00",
-  "#4b5563",
+  "var(--chart-primary)",
+  "var(--chart-accent)",
+  "var(--chart-success)",
+  "var(--chart-compare)",
+  "var(--chart-warning)",
+  "var(--chart-neutral)",
 ];
 
 export function StepIndicator({
@@ -1493,7 +1494,7 @@ export function DashboardPreview({
     { id: "overview", title: "Overview" },
     { id: "insights", title: "Insights" },
     ...chartSections.map((section) => ({
-      id: section.id,
+      id: chartSectionPanelId(section.id),
       title: section.title,
     })),
   ];
@@ -1552,6 +1553,7 @@ export function DashboardPreview({
         />
       </section>
       {chartSections.map((section) => {
+        const panelId = chartSectionPanelId(section.id);
         const hasFeaturedCard =
           section.id === "comparisons" && section.charts.length > 0;
         const hasOrphanCard = hasFeaturedCard
@@ -1559,10 +1561,10 @@ export function DashboardPreview({
           : section.charts.length % 2 === 1;
         return (
           <section
-            aria-labelledby={`dashboard-mobile-tab-${section.id}`}
-            className={`dashboard-section dashboard-mobile-panel ${activeMobilePanel === section.id ? "active" : ""}`}
-            id={`dashboard-mobile-panel-${section.id}`}
-            key={section.id}
+            aria-labelledby={`dashboard-mobile-tab-${panelId}`}
+            className={`dashboard-section dashboard-mobile-panel ${activeMobilePanel === panelId ? "active" : ""}`}
+            id={`dashboard-mobile-panel-${panelId}`}
+            key={panelId}
             role="tabpanel"
           >
             <div className="dashboard-section-heading">
@@ -1593,6 +1595,10 @@ export function DashboardPreview({
       })}
     </div>
   );
+}
+
+function chartSectionPanelId(sectionId: string) {
+  return `charts-${sectionId}`;
 }
 
 function DashboardInsights({
@@ -1800,10 +1806,13 @@ function ChartPanel({
   const grouped = groupField
     ? aggregateRows(rows, groupField, metricField, effectiveAggregation)
     : [];
+  const sortedGrouped = sortGroupedMetricValues(grouped, chart.sortBy);
+  const categoryLimit = chartCategoryLimit(chart);
   const chartClassName = [
     featured ? "featured" : "",
     highlighted ? "highlighted" : "",
     `chart-card-${chart.chartType}`,
+    chart.mobileBehavior ? `mobile-${chart.mobileBehavior}` : "",
   ]
     .filter(Boolean)
     .join(" ");
@@ -1820,17 +1829,19 @@ function ChartPanel({
       <RankedTable dataset={dataset} chart={chart} />
     ) : chart.chartType === "pie" ? (
       <PieChart
-        grouped={grouped}
+        grouped={sortedGrouped}
+        maxCategories={categoryLimit ?? 5}
         metricLabel={metricLabel}
         title={chart.title}
         interactive={interactive}
       />
     ) : chart.chartType === "line" ? (
       <LineChart
-        grouped={grouped}
+        grouped={sortedGrouped}
         groupLabel={groupLabel}
         metricLabel={metricLabel}
         title={chart.title}
+        maxPoints={categoryLimit ?? 14}
         interactive={interactive}
       />
     ) : chart.chartType === "map" ? (
@@ -1846,10 +1857,11 @@ function ChartPanel({
       />
     ) : chart.chartType === "area" ? (
       <AreaIntensityChart
-        grouped={grouped}
+        grouped={sortedGrouped}
         groupLabel={groupLabel}
         metricLabel={metricLabel}
         title={chart.title}
+        maxCategories={categoryLimit ?? 12}
         interactive={interactive}
       />
     ) : chart.chartType === "scatter" ? (
@@ -1876,10 +1888,11 @@ function ChartPanel({
       )
     ) : (
       <BarChart
-        grouped={grouped}
+        grouped={sortedGrouped}
         groupLabel={groupLabel}
         metricLabel={metricLabel}
         title={chart.title}
+        maxCategories={categoryLimit ?? 10}
         interactive={interactive}
       />
     );
@@ -1904,16 +1917,18 @@ function BarChart({
   grouped,
   groupLabel,
   interactive = true,
+  maxCategories = 10,
   metricLabel,
   title,
 }: {
   grouped: GroupedMetricValue[];
   groupLabel: string;
   interactive?: boolean;
+  maxCategories?: number;
   metricLabel: string;
   title: string;
 }) {
-  const visible = grouped.slice(0, 10);
+  const visible = grouped.slice(0, maxCategories);
   const max = Math.max(...visible.map((item) => item.value), 1);
   const chartTabIndex = interactive ? 0 : -1;
   return (
@@ -1954,11 +1969,13 @@ function BarChart({
 function PieChart({
   grouped,
   interactive = true,
+  maxCategories = 5,
   metricLabel,
   title,
 }: {
   grouped: GroupedMetricValue[];
   interactive?: boolean;
+  maxCategories?: number;
   metricLabel: string;
   title: string;
 }) {
@@ -1966,9 +1983,9 @@ function PieChart({
   const [activeIndex, setActiveIndex] = useState<number>();
   const chartTabIndex = interactive ? 0 : -1;
   const total = grouped.reduce((sum, item) => sum + item.value, 0);
-  const visible = grouped.slice(0, 5);
+  const visible = grouped.slice(0, maxCategories);
   const otherValue = grouped
-    .slice(5)
+    .slice(maxCategories)
     .reduce((sum, item) => sum + item.value, 0);
   const slices =
     otherValue > 0
@@ -1977,8 +1994,8 @@ function PieChart({
           {
             label: "Other",
             value: otherValue,
-            count: grouped.slice(5).reduce((sum, item) => sum + item.count, 0),
-            total: grouped.slice(5).reduce((sum, item) => sum + item.total, 0),
+            count: grouped.slice(maxCategories).reduce((sum, item) => sum + item.count, 0),
+            total: grouped.slice(maxCategories).reduce((sum, item) => sum + item.total, 0),
             aggregation: grouped[0]?.aggregation ?? "count",
           },
         ]
@@ -2121,19 +2138,21 @@ function LineChart({
   grouped,
   groupLabel,
   interactive = true,
+  maxPoints = 14,
   metricLabel,
   title,
 }: {
   grouped: GroupedMetricValue[];
   groupLabel: string;
   interactive?: boolean;
+  maxPoints?: number;
   metricLabel: string;
   title: string;
 }) {
   const chartId = useId();
   const [activeIndex, setActiveIndex] = useState<number>();
   const chartTabIndex = interactive ? 0 : -1;
-  const points = grouped.slice().sort(compareChartLabels).slice(0, 14);
+  const points = grouped.slice().sort(compareChartLabels).slice(0, maxPoints);
   if (points.length < 2) {
     return (
       <BarChart
@@ -2279,7 +2298,7 @@ function LineChart({
               <circle
                 cx={point.x}
                 cy={point.y}
-                fill={activeIndex === index ? "#d55e00" : "#005ab5"}
+                fill={activeIndex === index ? "var(--chart-accent)" : "var(--chart-primary)"}
                 r={activeIndex === index ? 7 : 5}
                 stroke="#ffffff"
                 strokeWidth={activeIndex === index ? 3 : 2}
@@ -2467,7 +2486,7 @@ function ScatterChart({
               <circle
                 cx={point.cx}
                 cy={point.cy}
-                fill={activeIndex === index ? "#d55e00" : "#005ab5"}
+                fill={activeIndex === index ? "var(--chart-accent)" : "var(--chart-primary)"}
                 fillOpacity={activeIndex === index ? "0.96" : "0.68"}
                 r={activeIndex === index ? 7 : 5}
                 stroke="#ffffff"
@@ -2680,7 +2699,7 @@ function MapChart({
               <circle
                 cx={point.cx}
                 cy={point.cy}
-                fill={activeIndex === index ? "#d55e00" : "#005ab5"}
+                fill={activeIndex === index ? "var(--chart-accent)" : "var(--chart-primary)"}
                 fillOpacity={activeIndex === index ? "0.94" : "0.64"}
                 r={activeIndex === index ? point.radius + 2 : point.radius}
                 stroke="#ffffff"
@@ -2743,16 +2762,18 @@ function AreaIntensityChart({
   grouped,
   groupLabel,
   interactive = true,
+  maxCategories = 12,
   metricLabel,
   title,
 }: {
   grouped: GroupedMetricValue[];
   groupLabel: string;
   interactive?: boolean;
+  maxCategories?: number;
   metricLabel: string;
   title: string;
 }) {
-  const visible = grouped.slice(0, 12);
+  const visible = grouped.slice(0, maxCategories);
   const max = Math.max(...visible.map((item) => item.value), 1);
   const chartTabIndex = interactive ? 0 : -1;
   if (visible.length === 0) {
@@ -2781,8 +2802,10 @@ function AreaIntensityChart({
             style={{
               backgroundColor: `rgba(0, 90, 181, ${intensity})`,
               borderColor:
-                intensity > 0.45 ? "rgba(0, 67, 135, 0.62)" : "#bdd1ff",
-              color: intensity > 0.45 ? "white" : "#171717",
+                intensity > 0.45
+                  ? "rgba(0, 67, 135, 0.62)"
+                  : "var(--blue-border-alt)",
+              color: intensity > 0.45 ? "white" : "var(--color-text-primary)",
             }}
             tabIndex={chartTabIndex}
           >
@@ -2979,12 +3002,11 @@ function RankedTable({
     ...(dataset.columns ?? []),
   ].filter((field): field is string => Boolean(field));
   const columns = Array.from(new Set(preferredColumns)).slice(0, 5);
-  const rankedRows = metricField
-    ? rows
-        .slice()
-        .sort((a, b) => toNumber(b[metricField]) - toNumber(a[metricField]))
-        .slice(0, 6)
-    : rows.slice(0, 6);
+  const rowLimit = chartCategoryLimit(chart) ?? 6;
+  const rankedRows = sortRowsByChartPolicy(rows, chart, metricField).slice(
+    0,
+    rowLimit,
+  );
 
   if (columns.length === 0 || rankedRows.length === 0) {
     return <DatasetPreview dataset={dataset} />;
@@ -3261,23 +3283,60 @@ function uniqueValues(values: string[]) {
   return Array.from(new Set(values.filter(Boolean)));
 }
 
+function chartCategoryLimit(chart: DashboardRecommendation["charts"][number]) {
+  if (chart.maxCategories && chart.maxCategories > 0) return chart.maxCategories;
+  if (chart.mobileBehavior === "top5") return 5;
+  return undefined;
+}
+
+function sortRowsByChartPolicy(
+  rows: Record<string, unknown>[],
+  chart: DashboardRecommendation["charts"][number],
+  metricField?: string,
+) {
+  const labelField = chart.groupByField ?? chart.xField;
+  const values = rows.slice();
+  if (
+    (chart.sortBy === "label_asc" || chart.sortBy === "time_asc") &&
+    labelField
+  ) {
+    return values.sort((first, second) =>
+      compareChartLabelStrings(
+        String(first[labelField] ?? ""),
+        String(second[labelField] ?? ""),
+      ),
+    );
+  }
+  if (metricField) {
+    return values.sort(
+      (first, second) =>
+        toNumber(second[metricField]) - toNumber(first[metricField]),
+    );
+  }
+  return values;
+}
+
 function compareChartLabels(
   first: GroupedMetricValue,
   second: GroupedMetricValue,
 ) {
-  const firstDate = parseSortableDate(first.label);
-  const secondDate = parseSortableDate(second.label);
+  return compareChartLabelStrings(first.label, second.label);
+}
+
+function compareChartLabelStrings(firstLabel: string, secondLabel: string) {
+  const firstDate = parseSortableDate(firstLabel);
+  const secondDate = parseSortableDate(secondLabel);
   if (firstDate !== undefined && secondDate !== undefined) {
     return firstDate - secondDate;
   }
 
-  const firstNumber = Number(first.label);
-  const secondNumber = Number(second.label);
+  const firstNumber = Number(firstLabel);
+  const secondNumber = Number(secondLabel);
   if (Number.isFinite(firstNumber) && Number.isFinite(secondNumber)) {
     return firstNumber - secondNumber;
   }
 
-  return first.label.localeCompare(second.label, undefined, {
+  return firstLabel.localeCompare(secondLabel, undefined, {
     numeric: true,
     sensitivity: "base",
   });

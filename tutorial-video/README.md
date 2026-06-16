@@ -20,13 +20,15 @@ The current production target is a three-cut tutorial series:
 
 The older `DashboardCopilotTutorial` composition remains available as a longer
 business/architecture walkthrough, but it is not the preferred first tutorial
-asset.
+asset and should stay internal unless it receives the same storyboard,
+transcript, and pilot treatment as the three current cuts.
 
 ## Storyline
 
 The production storyboard and screen/motion/sound capture map lives in
 `storyboard-capture-plan.md`. The narrative outline lives in `storylines.md`.
-The testing scenarios, thresholds, and scoring criteria live in
+The pre-generation material brief lives in `pre-generation-brief.md`. The
+testing scenarios, thresholds, and scoring criteria live in
 `evaluation-rubric.md`. The production review log lives in `production-qa.md`.
 
 Core message:
@@ -43,6 +45,7 @@ Core message:
 ```bash
 npm install
 npm run dev
+npm run capture
 npm run speech
 npm run still:painpoint
 npm run still:userflow
@@ -61,8 +64,16 @@ Rendered MP4 outputs go to `out/`:
 
 ## Captured Assets
 
-Screenshots live in `public/captures/`. The final tutorial path was verified
-against the local in-app browser at `http://localhost:3002/demo`.
+Screenshots live in `public/captures/`. Regenerate them from a running local
+demo with `npm run capture`, which launches local Edge/Chrome headless through
+the Chrome DevTools Protocol and replays the deterministic `/demo` path. The
+default target is `http://localhost:3002/demo`; override it with `APP_URL` when
+needed.
+
+The capture script writes full-page screenshots plus
+`public/captures/capture-manifest.json`. The manifest records image dimensions
+and measured button/target rectangles so cursor clicks and spotlight overlays
+can stay attached to the real UI after Remotion pan/zoom.
 
 Generated emotional stills live in `public/generated/`. The current production
 series uses generated imagery only where it is important: the first seven
@@ -86,8 +97,10 @@ meaning does not depend on audio alone. Transcripts live in `transcripts/`.
 ## Notes
 
 - The video uses plain React/CSS plus Remotion primitives.
-- Cursor travel, target rings, click pulses, screenshot pan/zoom, and progress
-  bars are frame-driven through Remotion.
+- Cursor travel, target rings, click pulses, before/after screen transitions,
+  screenshot pan/zoom, and progress bars are frame-driven through Remotion.
 - Cursor target rings share the same pan/zoom transform as the captured UI, so
   click markers stay attached to the visible screenshot plane.
+- Fresh click/transition/spotlight proof stills from the latest motion pass live
+  under `out/qa/fresh-2026-06-16/`.
 - Render outputs go to `out/`, which is intentionally gitignored.

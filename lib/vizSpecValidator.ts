@@ -57,6 +57,14 @@ export function validateVizSpec(chart: ChartRecommendation): VizSpecIssue[] {
     });
   }
 
+  if (!chart.sourceNote) {
+    issues.push({
+      id: "source-note",
+      severity: "warning",
+      message: "Chart should include a source and method note after policy enforcement.",
+    });
+  }
+
   if (!chart.mobileBehavior) {
     issues.push({
       id: "mobile-behavior",

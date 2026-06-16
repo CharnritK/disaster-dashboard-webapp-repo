@@ -7,11 +7,11 @@ import type {
 
 export const vizColors = {
   neutral: {
-    text: "#111827",
-    mutedText: "#4B5563",
-    grid: "#E5E7EB",
-    panel: "#FFFFFF",
-    context: "#9CA3AF",
+    text: "#171717",
+    mutedText: "#5f656d",
+    grid: "#deded8",
+    panel: "#ffffff",
+    context: "#8a9098",
   },
   emphasis: {
     primary: "#005AB5",
@@ -74,9 +74,9 @@ export function defaultMobileBehavior(
 }
 
 export function qualityBadgeLabel(badge: QualityBadge) {
-  if (badge === "block") return "Review required";
-  if (badge === "warn") return "Use with caution";
-  return "Decision-ready";
+  if (badge === "block") return "Blocking";
+  if (badge === "warn") return "Caution";
+  return "Pass";
 }
 
 export function qualityBadgeTone(badge: QualityBadge) {

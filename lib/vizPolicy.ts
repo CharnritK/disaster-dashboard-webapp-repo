@@ -120,6 +120,10 @@ export function enforceVizPolicy(
   next.unit = next.unit ?? inferUnit(metricField, aggregation);
   next.subtitle = next.subtitle ?? buildSubtitle(next, groupField);
   next.screenReaderSummary = next.screenReaderSummary ?? buildScreenReaderSummary(next);
+  next.sourceNote = appendReason(
+    next.sourceNote,
+    buildSourceNote(dataset, next, groupField, metricField),
+  );
 
   return next;
 }
@@ -262,12 +266,55 @@ function buildScreenReaderSummary(chart: ChartRecommendation) {
     .filter((field): field is string => Boolean(field))
     .map(fieldDisplayLabel);
   const fieldSummary = fields.length ? ` Fields: ${fields.join(", ")}.` : "";
-  return `${chart.title}. ${chart.rationale}${fieldSummary}`;
+  const qualitySummary =
+    chart.qualityBadge && chart.qualityBadge !== "ok"
+      ? ` Quality status: ${chart.qualityBadge}.`
+      : "";
+  return `${chart.title}. ${chart.rationale}${fieldSummary}${qualitySummary}`;
 }
 
 function formatUnit(unit: string) {
   if (unit === "%") return "Percent";
   return fieldDisplayLabel(unit);
+}
+
+function buildSourceNote(
+  dataset: Dataset,
+  chart: ChartRecommendation,
+  groupField?: string,
+  metricField?: string,
+) {
+  const sourceName = dataset.originalFilename ?? dataset.name;
+  const rowCount = dataset.rowCount ?? dataset.data?.length ?? dataset.profile?.rowCount;
+  const rowCountNote = rowCount === undefined
+    ? "row count unavailable"
+    : `${rowCount.toLocaleString()} rows`;
+  const fieldNotes = [
+    groupField ? `grouped by ${fieldDisplayLabel(groupField)}` : undefined,
+    metricField ? `measured with ${fieldDisplayLabel(metricField)}` : undefined,
+  ].filter(Boolean);
+  const methodNote = fieldNotes.length
+    ? `Chart uses ${fieldNotes.join(" and ")}.`
+    : "Chart uses dataset-level summary fields.";
+  const mobileNote =
+    chart.mobileBehavior === "top5" && chart.maxCategories
+      ? `Mobile view limits categories to top ${chart.maxCategories}.`
+      : chart.mobileBehavior === "table-fallback"
+        ? "Mobile view may use a table-first fallback."
+        : undefined;
+  const fallbackNote =
+    chart.fallbackChartType && chart.chartType === chart.fallbackChartType
+      ? "This chart is a policy fallback from a higher-risk map view."
+      : undefined;
+  return [
+    `Source: ${sourceName} (${rowCountNote}).`,
+    methodNote,
+    mobileNote,
+    fallbackNote,
+    "Review caveats and validation results before operational use.",
+  ]
+    .filter(Boolean)
+    .join(" ");
 }
 
 function appendReason(existing: string | undefined, addition: string) {

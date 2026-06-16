@@ -21,6 +21,12 @@ Default timeouts:
 Use `npm run build:unguarded` only for manual diagnosis when you explicitly want
 the old behavior.
 
+If the guard reports that `Node child-process execution` was denied with
+`EPERM` or `EACCES`, treat it as a runner or shell permission problem until
+proven otherwise. The Next.js compiler did not start, so it is not evidence of a
+TypeScript, route, or app-code build failure. Rerun `npm run build` from a
+context that allows Node child processes before debugging application code.
+
 Do not broad-kill `node.exe` during cleanup. If a build is already stuck outside
 this guard, inspect command lines and stop only repo-local `next build`,
 `next dev`, or `next start` process trees.

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import path from "node:path";
+import { EventEmitter } from "node:events";
 
 import {
   DEFAULT_NEXT_BUILD_TIMEOUT_MS,
@@ -7,7 +8,9 @@ import {
   TIMEOUT_EXIT_CODE,
   createBuildSteps,
   formatDuration,
+  formatStepError,
   getBuildTimeouts,
+  isSpawnPermissionError,
   runCommandWithTimeout,
 } from "../scripts/guarded-next-build.mjs";
 
@@ -16,6 +19,26 @@ const silentStream = {
     return true;
   },
 };
+
+function createFakeChildProcess() {
+  const child = new EventEmitter() as EventEmitter & {
+    killed: boolean;
+    pid: number;
+    stderr: EventEmitter & { destroy: () => void };
+    stdout: EventEmitter & { destroy: () => void };
+    kill: () => void;
+    unref: () => void;
+  };
+  child.killed = false;
+  child.pid = 12345;
+  child.stderr = Object.assign(new EventEmitter(), { destroy() {} });
+  child.stdout = Object.assign(new EventEmitter(), { destroy() {} });
+  child.kill = () => {
+    child.killed = true;
+  };
+  child.unref = () => {};
+  return child;
+}
 
 describe("guarded Next build script", () => {
   it("uses bounded defaults and accepts explicit timeout overrides", () => {
@@ -78,12 +101,14 @@ describe("guarded Next build script", () => {
         command: process.execPath,
         cwd: process.cwd(),
         label: "intentional hang",
-        timeoutMs: 200,
+        timeoutMs: 10,
       },
       {
-        killGraceMs: 5000,
+        killGraceMs: 10,
         stderr: silentStream,
         stdout: silentStream,
+        spawnImpl: () => createFakeChildProcess(),
+        terminateProcessTreeImpl: async () => {},
       },
     );
 
@@ -104,6 +129,11 @@ describe("guarded Next build script", () => {
       },
       {
         stderr: silentStream,
+        spawnImpl: () => {
+          const child = createFakeChildProcess();
+          setTimeout(() => child.emit("exit", 0, null), 0);
+          return child;
+        },
         stdout: silentStream,
       },
     );
@@ -118,5 +148,51 @@ describe("guarded Next build script", () => {
     expect(formatDuration(60000)).toBe("1m");
     expect(formatDuration(5000)).toBe("5s");
     expect(formatDuration(250)).toBe("250ms");
+  });
+
+  it("returns a failed result when the child process cannot spawn", async () => {
+    const result = await runCommandWithTimeout(
+      {
+        args: ["-e", "process.exit(0)"],
+        command: process.execPath,
+        cwd: process.cwd(),
+        label: "spawn denied",
+        timeoutMs: 5000,
+      },
+      {
+        stderr: silentStream,
+        spawnImpl: () => {
+          const error = new Error("spawn EPERM") as Error & { code: string };
+          error.code = "EPERM";
+          throw error;
+        },
+        stdout: silentStream,
+      },
+    );
+
+    expect(result).toMatchObject({
+      exitCode: 1,
+      timedOut: false,
+    });
+    expect(result.error).toMatchObject({
+      code: "EPERM",
+    });
+  });
+
+  it("formats child-process permission failures as runner issues", () => {
+    const error = new Error("spawn C:\\Program Files\\nodejs\\node.exe EPERM") as Error & {
+      code: string;
+      syscall: string;
+    };
+    error.code = "EPERM";
+    error.syscall = "spawn C:\\Program Files\\nodejs\\node.exe";
+
+    expect(isSpawnPermissionError(error)).toBe(true);
+    expect(formatStepError({ label: "Next production build" }, error)).toContain(
+      "runner/permission problem",
+    );
+    expect(formatStepError({ label: "Next production build" }, error)).toContain(
+      "not evidence of a Next.js, TypeScript, or app-code build failure",
+    );
   });
 });

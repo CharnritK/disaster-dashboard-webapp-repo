@@ -25,9 +25,15 @@ export function ChartFrame({
 }: ChartFrameProps) {
   const titleId = `${id}-title`;
   const descriptionId = `${id}-description`;
-  const sourceId = sourceNote ? `${id}-source` : undefined;
-  const describedBy = [descriptionId, sourceId].filter(Boolean).join(" ");
+  const sourceId = `${id}-source`;
+  const describedBy = [descriptionId, sourceId].join(" ");
   const badgeLabel = qualityBadgeLabel(qualityBadge);
+  const effectiveScreenReaderSummary =
+    screenReaderSummary ??
+    `${title}. Review required because an accessible chart summary was not provided.`;
+  const effectiveSourceNote =
+    sourceNote ??
+    "Source and method note missing. Review the chart rationale and underlying dataset before using this view.";
 
   return createElement(
     "article",
@@ -68,15 +74,21 @@ export function ChartFrame({
     createElement(
       "p",
       { className: "sr-only", id: descriptionId },
-      screenReaderSummary ?? subtitle ?? title,
+      effectiveScreenReaderSummary,
     ),
     createElement("div", { className: "chart-body" }, children),
-    sourceNote
-      ? createElement(
-          "footer",
-          { className: "chart-source-note", id: sourceId },
-          sourceNote,
-        )
-      : null,
+    createElement(
+      "footer",
+      {
+        className: [
+          "chart-source-note",
+          sourceNote ? "" : "missing-metadata",
+        ]
+          .filter(Boolean)
+          .join(" "),
+        id: sourceId,
+      },
+      effectiveSourceNote,
+    ),
   );
 }

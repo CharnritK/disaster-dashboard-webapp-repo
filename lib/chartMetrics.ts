@@ -1,4 +1,4 @@
-import type { MetricAggregation } from "@/types/recommendations";
+import type { MetricAggregation, SortBy } from "@/types/recommendations";
 
 export type GroupedMetricValue = {
   label: string;
@@ -83,6 +83,20 @@ export function aggregateRows(
   })).sort((a, b) => b.value - a.value);
 }
 
+export function sortGroupedMetricValues(
+  grouped: GroupedMetricValue[],
+  sortBy: SortBy | undefined,
+) {
+  const values = grouped.slice();
+  if (sortBy === "label_asc" || sortBy === "time_asc") {
+    return values.sort(compareGroupedMetricLabels);
+  }
+  return values.sort(
+    (first, second) =>
+      second.value - first.value || compareGroupedMetricLabels(first, second),
+  );
+}
+
 export function aggregateField(
   rows: Record<string, unknown>[],
   metricField?: string,
@@ -112,6 +126,40 @@ function aggregateValue(total: number, count: number, aggregation: MetricAggrega
   if (aggregation === "average") return count > 0 ? total / count : 0;
   if (aggregation === "count") return count;
   return total;
+}
+
+function compareGroupedMetricLabels(
+  first: GroupedMetricValue,
+  second: GroupedMetricValue,
+) {
+  const firstDate = parseSortableDate(first.label);
+  const secondDate = parseSortableDate(second.label);
+  if (firstDate !== undefined && secondDate !== undefined) {
+    return firstDate - secondDate;
+  }
+
+  const firstNumber = Number(first.label);
+  const secondNumber = Number(second.label);
+  if (Number.isFinite(firstNumber) && Number.isFinite(secondNumber)) {
+    return firstNumber - secondNumber;
+  }
+
+  return first.label.localeCompare(second.label, undefined, {
+    numeric: true,
+    sensitivity: "base",
+  });
+}
+
+function parseSortableDate(label: string) {
+  if (
+    !/[/-]|\b(?:jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)\b/i.test(
+      label,
+    )
+  ) {
+    return undefined;
+  }
+  const parsed = Date.parse(label);
+  return Number.isNaN(parsed) ? undefined : parsed;
 }
 
 function labelFor(value: unknown) {

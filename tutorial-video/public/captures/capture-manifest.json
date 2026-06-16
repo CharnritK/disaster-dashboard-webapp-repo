@@ -1,0 +1,2595 @@
+{
+  "01-template.png": {
+    "capturedAt": "2026-06-15T20:29:07.713Z",
+    "height": 2204,
+    "interactiveElements": [
+      {
+        "centerPercent": [
+          27.47,
+          1.74
+        ],
+        "rectPercent": {
+          "height": 1.45,
+          "width": 3.22,
+          "x": 25.86,
+          "y": 1.01
+        },
+        "text": "About"
+      },
+      {
+        "centerPercent": [
+          31.75,
+          1.74
+        ],
+        "rectPercent": {
+          "height": 1.45,
+          "width": 4.01,
+          "x": 29.75,
+          "y": 1.01
+        },
+        "text": "Progress"
+      },
+      {
+        "centerPercent": [
+          69.35,
+          1.74
+        ],
+        "rectPercent": {
+          "height": 1.93,
+          "width": 14.55,
+          "x": 62.08,
+          "y": 0.77
+        },
+        "text": "Sign in to use AI-assisted workflow"
+      },
+      {
+        "centerPercent": [
+          20,
+          5.6
+        ],
+        "rectPercent": {
+          "height": 1.81,
+          "width": 5.67,
+          "x": 17.17,
+          "y": 4.7
+        },
+        "text": "1 Template"
+      },
+      {
+        "centerPercent": [
+          25.76,
+          5.6
+        ],
+        "rectPercent": {
+          "height": 1.81,
+          "width": 4.96,
+          "x": 23.27,
+          "y": 4.7
+        },
+        "text": "2 Upload"
+      },
+      {
+        "centerPercent": [
+          31.01,
+          5.6
+        ],
+        "rectPercent": {
+          "height": 1.81,
+          "width": 4.67,
+          "x": 28.68,
+          "y": 4.7
+        },
+        "text": "3 Profile"
+      },
+      {
+        "centerPercent": [
+          36.87,
+          5.6
+        ],
+        "rectPercent": {
+          "height": 1.81,
+          "width": 6.16,
+          "x": 33.79,
+          "y": 4.7
+        },
+        "text": "4 Harmonize"
+      },
+      {
+        "centerPercent": [
+          42.98,
+          5.6
+        ],
+        "rectPercent": {
+          "height": 1.81,
+          "width": 5.18,
+          "x": 40.39,
+          "y": 4.7
+        },
+        "text": "5 Dataset"
+      },
+      {
+        "centerPercent": [
+          49.14,
+          5.6
+        ],
+        "rectPercent": {
+          "height": 1.81,
+          "width": 6.24,
+          "x": 46.02,
+          "y": 4.7
+        },
+        "text": "6 Dashboard"
+      },
+      {
+        "centerPercent": [
+          55.08,
+          5.6
+        ],
+        "rectPercent": {
+          "height": 1.81,
+          "width": 4.76,
+          "x": 52.7,
+          "y": 4.7
+        },
+        "text": "7 Export"
+      },
+      {
+        "centerPercent": [
+          40.81,
+          24.8
+        ],
+        "rectPercent": {
+          "height": 1.93,
+          "width": 8.69,
+          "x": 36.47,
+          "y": 23.84
+        },
+        "text": "View decision map"
+      },
+      {
+        "centerPercent": [
+          55.48,
+          54.22
+        ],
+        "rectPercent": {
+          "height": 1.93,
+          "width": 10.78,
+          "x": 50.09,
+          "y": 53.25
+        },
+        "text": "Download CSV template"
+      },
+      {
+        "centerPercent": [
+          25.92,
+          94.14
+        ],
+        "rectPercent": {
+          "height": 1.93,
+          "width": 11.74,
+          "x": 20.05,
+          "y": 93.18
+        },
+        "text": "Use template and continue"
+      }
+    ],
+    "width": 1803
+  },
+  "02-upload.png": {
+    "capturedAt": "2026-06-15T20:29:09.233Z",
+    "height": 1272,
+    "interactiveElements": [
+      {
+        "centerPercent": [
+          27.66,
+          3.01
+        ],
+        "rectPercent": {
+          "height": 2.52,
+          "width": 3.2,
+          "x": 26.06,
+          "y": 1.75
+        },
+        "text": "About"
+      },
+      {
+        "centerPercent": [
+          31.9,
+          3.01
+        ],
+        "rectPercent": {
+          "height": 2.52,
+          "width": 3.98,
+          "x": 29.91,
+          "y": 1.75
+        },
+        "text": "Progress"
+      },
+      {
+        "centerPercent": [
+          69.19,
+          3.01
+        ],
+        "rectPercent": {
+          "height": 3.34,
+          "width": 14.43,
+          "x": 61.98,
+          "y": 1.34
+        },
+        "text": "Sign in to use AI-assisted workflow"
+      },
+      {
+        "centerPercent": [
+          20.25,
+          9.71
+        ],
+        "rectPercent": {
+          "height": 3.14,
+          "width": 5.62,
+          "x": 17.44,
+          "y": 8.14
+        },
+        "text": "1 Template"
+      },
+      {
+        "centerPercent": [
+          25.96,
+          9.71
+        ],
+        "rectPercent": {
+          "height": 3.14,
+          "width": 4.92,
+          "x": 23.5,
+          "y": 8.14
+        },
+        "text": "2 Upload"
+      },
+      {
+        "centerPercent": [
+          31.17,
+          9.71
+        ],
+        "rectPercent": {
+          "height": 3.14,
+          "width": 4.63,
+          "x": 28.86,
+          "y": 8.14
+        },
+        "text": "3 Profile"
+      },
+      {
+        "centerPercent": [
+          36.98,
+          9.71
+        ],
+        "rectPercent": {
+          "height": 3.14,
+          "width": 6.11,
+          "x": 33.92,
+          "y": 8.14
+        },
+        "text": "4 Harmonize"
+      },
+      {
+        "centerPercent": [
+          43.04,
+          9.71
+        ],
+        "rectPercent": {
+          "height": 3.14,
+          "width": 5.14,
+          "x": 40.47,
+          "y": 8.14
+        },
+        "text": "5 Dataset"
+      },
+      {
+        "centerPercent": [
+          49.15,
+          9.71
+        ],
+        "rectPercent": {
+          "height": 3.14,
+          "width": 6.19,
+          "x": 46.05,
+          "y": 8.14
+        },
+        "text": "6 Dashboard"
+      },
+      {
+        "centerPercent": [
+          55.04,
+          9.71
+        ],
+        "rectPercent": {
+          "height": 3.14,
+          "width": 4.72,
+          "x": 52.68,
+          "y": 8.14
+        },
+        "text": "7 Export"
+      },
+      {
+        "centerPercent": [
+          24.53,
+          46.34
+        ],
+        "rectPercent": {
+          "height": 4.97,
+          "width": 7.8,
+          "x": 20.63,
+          "y": 43.86
+        },
+        "text": "Use sample data"
+      },
+      {
+        "centerPercent": [
+          34.88,
+          46.34
+        ],
+        "rectPercent": {
+          "height": 4.97,
+          "width": 11.81,
+          "x": 28.98,
+          "y": 43.86
+        },
+        "text": "Use fragmented demo data needs + population + capacity"
+      },
+      {
+        "centerPercent": [
+          47.63,
+          46.34
+        ],
+        "rectPercent": {
+          "height": 4.97,
+          "width": 12.58,
+          "x": 41.34,
+          "y": 43.86
+        },
+        "text": "Use risky quality sample invalid values and missing evidence"
+      },
+      {
+        "centerPercent": [
+          25.81,
+          52.1
+        ],
+        "rectPercent": {
+          "height": 4.97,
+          "width": 10.37,
+          "x": 20.63,
+          "y": 49.61
+        },
+        "text": "Use service gap sample availability + gap + capacity"
+      },
+      {
+        "centerPercent": [
+          37.38,
+          52.1
+        ],
+        "rectPercent": {
+          "height": 4.97,
+          "width": 11.67,
+          "x": 31.55,
+          "y": 49.61
+        },
+        "text": "Use preparedness sample hazard + vulnerability + capacity"
+      }
+    ],
+    "width": 1818
+  },
+  "03-fragmented-data.png": {
+    "capturedAt": "2026-06-15T20:29:10.907Z",
+    "height": 2820,
+    "interactiveElements": [
+      {
+        "centerPercent": [
+          27.47,
+          1.36
+        ],
+        "rectPercent": {
+          "height": 1.13,
+          "width": 3.22,
+          "x": 25.86,
+          "y": 0.79
+        },
+        "text": "About"
+      },
+      {
+        "centerPercent": [
+          31.75,
+          1.36
+        ],
+        "rectPercent": {
+          "height": 1.13,
+          "width": 4.01,
+          "x": 29.75,
+          "y": 0.79
+        },
+        "text": "Progress"
+      },
+      {
+        "centerPercent": [
+          69.35,
+          1.36
+        ],
+        "rectPercent": {
+          "height": 1.51,
+          "width": 14.55,
+          "x": 62.08,
+          "y": 0.6
+        },
+        "text": "Sign in to use AI-assisted workflow"
+      },
+      {
+        "centerPercent": [
+          20,
+          4.38
+        ],
+        "rectPercent": {
+          "height": 1.42,
+          "width": 5.67,
+          "x": 17.17,
+          "y": 3.67
+        },
+        "text": "1 Template"
+      },
+      {
+        "centerPercent": [
+          25.76,
+          4.38
+        ],
+        "rectPercent": {
+          "height": 1.42,
+          "width": 4.96,
+          "x": 23.27,
+          "y": 3.67
+        },
+        "text": "2 Upload"
+      },
+      {
+        "centerPercent": [
+          31.01,
+          4.38
+        ],
+        "rectPercent": {
+          "height": 1.42,
+          "width": 4.67,
+          "x": 28.68,
+          "y": 3.67
+        },
+        "text": "3 Profile"
+      },
+      {
+        "centerPercent": [
+          36.87,
+          4.38
+        ],
+        "rectPercent": {
+          "height": 1.42,
+          "width": 6.16,
+          "x": 33.79,
+          "y": 3.67
+        },
+        "text": "4 Harmonize"
+      },
+      {
+        "centerPercent": [
+          42.98,
+          4.38
+        ],
+        "rectPercent": {
+          "height": 1.42,
+          "width": 5.18,
+          "x": 40.39,
+          "y": 3.67
+        },
+        "text": "5 Dataset"
+      },
+      {
+        "centerPercent": [
+          49.14,
+          4.38
+        ],
+        "rectPercent": {
+          "height": 1.42,
+          "width": 6.24,
+          "x": 46.02,
+          "y": 3.67
+        },
+        "text": "6 Dashboard"
+      },
+      {
+        "centerPercent": [
+          55.08,
+          4.38
+        ],
+        "rectPercent": {
+          "height": 1.42,
+          "width": 4.76,
+          "x": 52.7,
+          "y": 3.67
+        },
+        "text": "7 Export"
+      },
+      {
+        "centerPercent": [
+          24.39,
+          16.43
+        ],
+        "rectPercent": {
+          "height": 1.51,
+          "width": 11.23,
+          "x": 18.77,
+          "y": 15.68
+        },
+        "text": "Replace with sample data"
+      },
+      {
+        "centerPercent": [
+          36.52,
+          16.43
+        ],
+        "rectPercent": {
+          "height": 1.51,
+          "width": 11.91,
+          "x": 30.56,
+          "y": 15.68
+        },
+        "text": "Use fragmented demo data"
+      },
+      {
+        "centerPercent": [
+          48.36,
+          16.43
+        ],
+        "rectPercent": {
+          "height": 1.51,
+          "width": 10.67,
+          "x": 43.02,
+          "y": 15.68
+        },
+        "text": "Use risky quality sample"
+      },
+      {
+        "centerPercent": [
+          24,
+          18.29
+        ],
+        "rectPercent": {
+          "height": 1.51,
+          "width": 10.46,
+          "x": 18.77,
+          "y": 17.54
+        },
+        "text": "Use service gap sample"
+      },
+      {
+        "centerPercent": [
+          35.46,
+          18.29
+        ],
+        "rectPercent": {
+          "height": 1.51,
+          "width": 11.35,
+          "x": 29.79,
+          "y": 17.54
+        },
+        "text": "Use preparedness sample"
+      },
+      {
+        "centerPercent": [
+          37.11,
+          31.36
+        ],
+        "rectPercent": {
+          "height": 1.18,
+          "width": 3.7,
+          "x": 35.27,
+          "y": 30.77
+        },
+        "text": "Remove"
+      },
+      {
+        "centerPercent": [
+          29.4,
+          36.74
+        ],
+        "rectPercent": {
+          "height": 0.86,
+          "width": 17.69,
+          "x": 20.55,
+          "y": 36.31
+        },
+        "text": "Parsed data preview 4 rows, 14 columns"
+      },
+      {
+        "centerPercent": [
+          59.24,
+          31.36
+        ],
+        "rectPercent": {
+          "height": 1.18,
+          "width": 3.7,
+          "x": 57.4,
+          "y": 30.77
+        },
+        "text": "Remove"
+      },
+      {
+        "centerPercent": [
+          51.53,
+          36.74
+        ],
+        "rectPercent": {
+          "height": 0.86,
+          "width": 17.69,
+          "x": 42.68,
+          "y": 36.31
+        },
+        "text": "Parsed data preview 4 rows, 6 columns"
+      },
+      {
+        "centerPercent": [
+          37.11,
+          64.25
+        ],
+        "rectPercent": {
+          "height": 1.18,
+          "width": 3.7,
+          "x": 35.27,
+          "y": 63.66
+        },
+        "text": "Remove"
+      },
+      {
+        "centerPercent": [
+          29.4,
+          69.62
+        ],
+        "rectPercent": {
+          "height": 0.86,
+          "width": 17.69,
+          "x": 20.55,
+          "y": 69.19
+        },
+        "text": "Parsed data preview 4 rows, 6 columns"
+      },
+      {
+        "centerPercent": [
+          40.46,
+          96.24
+        ],
+        "rectPercent": {
+          "height": 1.51,
+          "width": 43.37,
+          "x": 18.77,
+          "y": 95.49
+        },
+        "text": "Profile data"
+      }
+    ],
+    "width": 1803
+  },
+  "04-profile-evidence.png": {
+    "capturedAt": "2026-06-15T20:29:12.982Z",
+    "height": 3838,
+    "interactiveElements": [
+      {
+        "centerPercent": [
+          27.47,
+          1
+        ],
+        "rectPercent": {
+          "height": 0.83,
+          "width": 3.22,
+          "x": 25.86,
+          "y": 0.58
+        },
+        "text": "About"
+      },
+      {
+        "centerPercent": [
+          31.75,
+          1
+        ],
+        "rectPercent": {
+          "height": 0.83,
+          "width": 4.01,
+          "x": 29.75,
+          "y": 0.58
+        },
+        "text": "Progress"
+      },
+      {
+        "centerPercent": [
+          69.35,
+          1
+        ],
+        "rectPercent": {
+          "height": 1.11,
+          "width": 14.55,
+          "x": 62.08,
+          "y": 0.44
+        },
+        "text": "Sign in to use AI-assisted workflow"
+      },
+      {
+        "centerPercent": [
+          20,
+          3.22
+        ],
+        "rectPercent": {
+          "height": 1.04,
+          "width": 5.67,
+          "x": 17.17,
+          "y": 2.7
+        },
+        "text": "1 Template"
+      },
+      {
+        "centerPercent": [
+          25.76,
+          3.22
+        ],
+        "rectPercent": {
+          "height": 1.04,
+          "width": 4.96,
+          "x": 23.27,
+          "y": 2.7
+        },
+        "text": "2 Upload"
+      },
+      {
+        "centerPercent": [
+          31.01,
+          3.22
+        ],
+        "rectPercent": {
+          "height": 1.04,
+          "width": 4.67,
+          "x": 28.68,
+          "y": 2.7
+        },
+        "text": "3 Profile"
+      },
+      {
+        "centerPercent": [
+          36.87,
+          3.22
+        ],
+        "rectPercent": {
+          "height": 1.04,
+          "width": 6.16,
+          "x": 33.79,
+          "y": 2.7
+        },
+        "text": "4 Harmonize"
+      },
+      {
+        "centerPercent": [
+          42.98,
+          3.22
+        ],
+        "rectPercent": {
+          "height": 1.04,
+          "width": 5.18,
+          "x": 40.39,
+          "y": 2.7
+        },
+        "text": "5 Dataset"
+      },
+      {
+        "centerPercent": [
+          49.14,
+          3.22
+        ],
+        "rectPercent": {
+          "height": 1.04,
+          "width": 6.24,
+          "x": 46.02,
+          "y": 2.7
+        },
+        "text": "6 Dashboard"
+      },
+      {
+        "centerPercent": [
+          55.08,
+          3.22
+        ],
+        "rectPercent": {
+          "height": 1.04,
+          "width": 4.76,
+          "x": 52.7,
+          "y": 2.7
+        },
+        "text": "7 Export"
+      },
+      {
+        "centerPercent": [
+          29.4,
+          11.59
+        ],
+        "rectPercent": {
+          "height": 0.59,
+          "width": 19.13,
+          "x": 19.83,
+          "y": 11.3
+        },
+        "text": "Recommendations"
+      },
+      {
+        "centerPercent": [
+          29.4,
+          12.49
+        ],
+        "rectPercent": {
+          "height": 0.59,
+          "width": 19.13,
+          "x": 19.83,
+          "y": 12.19
+        },
+        "text": "Column details and samples"
+      },
+      {
+        "centerPercent": [
+          29.4,
+          34.37
+        ],
+        "rectPercent": {
+          "height": 0.63,
+          "width": 17.69,
+          "x": 20.55,
+          "y": 34.06
+        },
+        "text": "Profile sample data4 rows, 14 columns"
+      },
+      {
+        "centerPercent": [
+          51.53,
+          11.59
+        ],
+        "rectPercent": {
+          "height": 0.59,
+          "width": 19.13,
+          "x": 41.96,
+          "y": 11.3
+        },
+        "text": "Recommendations"
+      },
+      {
+        "centerPercent": [
+          51.53,
+          12.49
+        ],
+        "rectPercent": {
+          "height": 0.59,
+          "width": 19.13,
+          "x": 41.96,
+          "y": 12.19
+        },
+        "text": "Column details and samples"
+      },
+      {
+        "centerPercent": [
+          51.53,
+          23.59
+        ],
+        "rectPercent": {
+          "height": 0.63,
+          "width": 17.69,
+          "x": 42.68,
+          "y": 23.28
+        },
+        "text": "Profile sample data4 rows, 6 columns"
+      },
+      {
+        "centerPercent": [
+          29.4,
+          17.57
+        ],
+        "rectPercent": {
+          "height": 0.59,
+          "width": 19.13,
+          "x": 19.83,
+          "y": 17.27
+        },
+        "text": "Recommendations"
+      },
+      {
+        "centerPercent": [
+          29.4,
+          18.47
+        ],
+        "rectPercent": {
+          "height": 0.59,
+          "width": 19.13,
+          "x": 19.83,
+          "y": 18.17
+        },
+        "text": "Column details and samples"
+      },
+      {
+        "centerPercent": [
+          29.4,
+          29.57
+        ],
+        "rectPercent": {
+          "height": 0.63,
+          "width": 17.69,
+          "x": 20.55,
+          "y": 29.26
+        },
+        "text": "Profile sample data4 rows, 6 columns"
+      },
+      {
+        "centerPercent": [
+          40.46,
+          93.26
+        ],
+        "rectPercent": {
+          "height": 0.63,
+          "width": 41.93,
+          "x": 19.5,
+          "y": 92.95
+        },
+        "text": "Data quality checks 5 flagged"
+      },
+      {
+        "centerPercent": [
+          40.46,
+          95.3
+        ],
+        "rectPercent": {
+          "height": 0.63,
+          "width": 41.93,
+          "x": 19.5,
+          "y": 94.98
+        },
+        "text": "Metadata and assumptions 3 sources"
+      },
+      {
+        "centerPercent": [
+          40.46,
+          97.23
+        ],
+        "rectPercent": {
+          "height": 1.11,
+          "width": 43.37,
+          "x": 18.77,
+          "y": 96.68
+        },
+        "text": "Harmonize data"
+      }
+    ],
+    "width": 1803
+  },
+  "05-harmonize-review.png": {
+    "capturedAt": "2026-06-15T20:29:14.204Z",
+    "height": 1272,
+    "interactiveElements": [
+      {
+        "centerPercent": [
+          27.66,
+          3.01
+        ],
+        "rectPercent": {
+          "height": 2.52,
+          "width": 3.2,
+          "x": 26.06,
+          "y": 1.75
+        },
+        "text": "About"
+      },
+      {
+        "centerPercent": [
+          31.9,
+          3.01
+        ],
+        "rectPercent": {
+          "height": 2.52,
+          "width": 3.98,
+          "x": 29.91,
+          "y": 1.75
+        },
+        "text": "Progress"
+      },
+      {
+        "centerPercent": [
+          69.19,
+          3.01
+        ],
+        "rectPercent": {
+          "height": 3.34,
+          "width": 14.43,
+          "x": 61.98,
+          "y": 1.34
+        },
+        "text": "Sign in to use AI-assisted workflow"
+      },
+      {
+        "centerPercent": [
+          20.25,
+          9.71
+        ],
+        "rectPercent": {
+          "height": 3.14,
+          "width": 5.62,
+          "x": 17.44,
+          "y": 8.14
+        },
+        "text": "1 Template"
+      },
+      {
+        "centerPercent": [
+          25.96,
+          9.71
+        ],
+        "rectPercent": {
+          "height": 3.14,
+          "width": 4.92,
+          "x": 23.5,
+          "y": 8.14
+        },
+        "text": "2 Upload"
+      },
+      {
+        "centerPercent": [
+          31.17,
+          9.71
+        ],
+        "rectPercent": {
+          "height": 3.14,
+          "width": 4.63,
+          "x": 28.86,
+          "y": 8.14
+        },
+        "text": "3 Profile"
+      },
+      {
+        "centerPercent": [
+          36.98,
+          9.71
+        ],
+        "rectPercent": {
+          "height": 3.14,
+          "width": 6.11,
+          "x": 33.92,
+          "y": 8.14
+        },
+        "text": "4 Harmonize"
+      },
+      {
+        "centerPercent": [
+          43.04,
+          9.71
+        ],
+        "rectPercent": {
+          "height": 3.14,
+          "width": 5.14,
+          "x": 40.47,
+          "y": 8.14
+        },
+        "text": "5 Dataset"
+      },
+      {
+        "centerPercent": [
+          49.15,
+          9.71
+        ],
+        "rectPercent": {
+          "height": 3.14,
+          "width": 6.19,
+          "x": 46.05,
+          "y": 8.14
+        },
+        "text": "6 Dashboard"
+      },
+      {
+        "centerPercent": [
+          55.04,
+          9.71
+        ],
+        "rectPercent": {
+          "height": 3.14,
+          "width": 4.72,
+          "x": 52.68,
+          "y": 8.14
+        },
+        "text": "7 Export"
+      },
+      {
+        "centerPercent": [
+          25.76,
+          47.42
+        ],
+        "rectPercent": {
+          "height": 3.34,
+          "width": 10.93,
+          "x": 20.3,
+          "y": 45.75
+        },
+        "text": "Accept recommendation"
+      },
+      {
+        "centerPercent": [
+          40.54,
+          55.07
+        ],
+        "rectPercent": {
+          "height": 1.9,
+          "width": 41.58,
+          "x": 19.75,
+          "y": 54.12
+        },
+        "text": "Review join/combine plan 2 joins, 3 of 3 sources"
+      }
+    ],
+    "width": 1818
+  },
+  "06-validation-readiness.png": {
+    "capturedAt": "2026-06-15T20:29:15.490Z",
+    "height": 1682,
+    "interactiveElements": [
+      {
+        "centerPercent": [
+          27.47,
+          2.27
+        ],
+        "rectPercent": {
+          "height": 1.9,
+          "width": 3.22,
+          "x": 25.86,
+          "y": 1.32
+        },
+        "text": "About"
+      },
+      {
+        "centerPercent": [
+          31.75,
+          2.27
+        ],
+        "rectPercent": {
+          "height": 1.9,
+          "width": 4.01,
+          "x": 29.75,
+          "y": 1.32
+        },
+        "text": "Progress"
+      },
+      {
+        "centerPercent": [
+          69.35,
+          2.27
+        ],
+        "rectPercent": {
+          "height": 2.53,
+          "width": 14.55,
+          "x": 62.08,
+          "y": 1.01
+        },
+        "text": "Sign in to use AI-assisted workflow"
+      },
+      {
+        "centerPercent": [
+          20,
+          7.34
+        ],
+        "rectPercent": {
+          "height": 2.38,
+          "width": 5.67,
+          "x": 17.17,
+          "y": 6.15
+        },
+        "text": "1 Template"
+      },
+      {
+        "centerPercent": [
+          25.76,
+          7.34
+        ],
+        "rectPercent": {
+          "height": 2.38,
+          "width": 4.96,
+          "x": 23.27,
+          "y": 6.15
+        },
+        "text": "2 Upload"
+      },
+      {
+        "centerPercent": [
+          31.01,
+          7.34
+        ],
+        "rectPercent": {
+          "height": 2.38,
+          "width": 4.67,
+          "x": 28.68,
+          "y": 6.15
+        },
+        "text": "3 Profile"
+      },
+      {
+        "centerPercent": [
+          36.87,
+          7.34
+        ],
+        "rectPercent": {
+          "height": 2.38,
+          "width": 6.16,
+          "x": 33.79,
+          "y": 6.15
+        },
+        "text": "4 Harmonize"
+      },
+      {
+        "centerPercent": [
+          42.98,
+          7.34
+        ],
+        "rectPercent": {
+          "height": 2.38,
+          "width": 5.18,
+          "x": 40.39,
+          "y": 6.15
+        },
+        "text": "5 Dataset"
+      },
+      {
+        "centerPercent": [
+          49.14,
+          7.34
+        ],
+        "rectPercent": {
+          "height": 2.38,
+          "width": 6.24,
+          "x": 46.02,
+          "y": 6.15
+        },
+        "text": "6 Dashboard"
+      },
+      {
+        "centerPercent": [
+          55.08,
+          7.34
+        ],
+        "rectPercent": {
+          "height": 2.38,
+          "width": 4.76,
+          "x": 52.7,
+          "y": 6.15
+        },
+        "text": "7 Export"
+      },
+      {
+        "centerPercent": [
+          24.73,
+          50.25
+        ],
+        "rectPercent": {
+          "height": 2.53,
+          "width": 9.36,
+          "x": 20.05,
+          "y": 48.98
+        },
+        "text": "Generate dashboard"
+      },
+      {
+        "centerPercent": [
+          40.46,
+          56.03
+        ],
+        "rectPercent": {
+          "height": 1.44,
+          "width": 41.93,
+          "x": 19.5,
+          "y": 55.32
+        },
+        "text": "Final prepared data preview 4 rows, 27 columns"
+      },
+      {
+        "centerPercent": [
+          40.4,
+          86.59
+        ],
+        "rectPercent": {
+          "height": 1.34,
+          "width": 43.26,
+          "x": 18.77,
+          "y": 85.92
+        },
+        "text": "Details"
+      },
+      {
+        "centerPercent": [
+          40.4,
+          94.29
+        ],
+        "rectPercent": {
+          "height": 1.34,
+          "width": 43.26,
+          "x": 18.77,
+          "y": 93.62
+        },
+        "text": "Details"
+      }
+    ],
+    "width": 1803
+  },
+  "07-dashboard.png": {
+    "capturedAt": "2026-06-15T20:29:17.300Z",
+    "height": 5075,
+    "interactiveElements": [
+      {
+        "centerPercent": [
+          27.47,
+          0.75
+        ],
+        "rectPercent": {
+          "height": 0.63,
+          "width": 3.22,
+          "x": 25.86,
+          "y": 0.44
+        },
+        "text": "About"
+      },
+      {
+        "centerPercent": [
+          31.75,
+          0.75
+        ],
+        "rectPercent": {
+          "height": 0.63,
+          "width": 4.01,
+          "x": 29.75,
+          "y": 0.44
+        },
+        "text": "Progress"
+      },
+      {
+        "centerPercent": [
+          69.35,
+          0.75
+        ],
+        "rectPercent": {
+          "height": 0.84,
+          "width": 14.55,
+          "x": 62.08,
+          "y": 0.33
+        },
+        "text": "Sign in to use AI-assisted workflow"
+      },
+      {
+        "centerPercent": [
+          20,
+          2.43
+        ],
+        "rectPercent": {
+          "height": 0.79,
+          "width": 5.67,
+          "x": 17.17,
+          "y": 2.04
+        },
+        "text": "1 Template"
+      },
+      {
+        "centerPercent": [
+          25.76,
+          2.43
+        ],
+        "rectPercent": {
+          "height": 0.79,
+          "width": 4.96,
+          "x": 23.27,
+          "y": 2.04
+        },
+        "text": "2 Upload"
+      },
+      {
+        "centerPercent": [
+          31.01,
+          2.43
+        ],
+        "rectPercent": {
+          "height": 0.79,
+          "width": 4.67,
+          "x": 28.68,
+          "y": 2.04
+        },
+        "text": "3 Profile"
+      },
+      {
+        "centerPercent": [
+          36.87,
+          2.43
+        ],
+        "rectPercent": {
+          "height": 0.79,
+          "width": 6.16,
+          "x": 33.79,
+          "y": 2.04
+        },
+        "text": "4 Harmonize"
+      },
+      {
+        "centerPercent": [
+          42.98,
+          2.43
+        ],
+        "rectPercent": {
+          "height": 0.79,
+          "width": 5.18,
+          "x": 40.39,
+          "y": 2.04
+        },
+        "text": "5 Dataset"
+      },
+      {
+        "centerPercent": [
+          49.14,
+          2.43
+        ],
+        "rectPercent": {
+          "height": 0.79,
+          "width": 6.24,
+          "x": 46.02,
+          "y": 2.04
+        },
+        "text": "6 Dashboard"
+      },
+      {
+        "centerPercent": [
+          55.08,
+          2.43
+        ],
+        "rectPercent": {
+          "height": 0.79,
+          "width": 4.76,
+          "x": 52.7,
+          "y": 2.04
+        },
+        "text": "7 Export"
+      },
+      {
+        "centerPercent": [
+          40.46,
+          18.29
+        ],
+        "rectPercent": {
+          "height": 0.89,
+          "width": 41.26,
+          "x": 19.83,
+          "y": 17.84
+        },
+        "text": "Recommended insights Evidence-backed observations and review prompts. 6 insights"
+      },
+      {
+        "centerPercent": [
+          24,
+          30.55
+        ],
+        "rectPercent": {
+          "height": 0.72,
+          "width": 6.57,
+          "x": 20.72,
+          "y": 30.19
+        },
+        "text": "Highlight chart"
+      },
+      {
+        "centerPercent": [
+          44.97,
+          30.55
+        ],
+        "rectPercent": {
+          "height": 0.72,
+          "width": 6.57,
+          "x": 41.68,
+          "y": 30.19
+        },
+        "text": "Highlight chart"
+      },
+      {
+        "centerPercent": [
+          24,
+          36.87
+        ],
+        "rectPercent": {
+          "height": 0.72,
+          "width": 6.57,
+          "x": 20.72,
+          "y": 36.51
+        },
+        "text": "Highlight chart"
+      },
+      {
+        "centerPercent": [
+          44.97,
+          37.36
+        ],
+        "rectPercent": {
+          "height": 0.72,
+          "width": 6.57,
+          "x": 41.68,
+          "y": 37
+        },
+        "text": "Highlight chart"
+      },
+      {
+        "centerPercent": [
+          40.46,
+          97.9
+        ],
+        "rectPercent": {
+          "height": 0.84,
+          "width": 43.37,
+          "x": 18.77,
+          "y": 97.48
+        },
+        "text": "Export dashboard"
+      }
+    ],
+    "width": 1803
+  },
+  "08-export-handoff.png": {
+    "capturedAt": "2026-06-15T20:29:18.767Z",
+    "height": 1921,
+    "interactiveElements": [
+      {
+        "centerPercent": [
+          27.47,
+          1.99
+        ],
+        "rectPercent": {
+          "height": 1.67,
+          "width": 3.22,
+          "x": 25.86,
+          "y": 1.16
+        },
+        "text": "About"
+      },
+      {
+        "centerPercent": [
+          31.75,
+          1.99
+        ],
+        "rectPercent": {
+          "height": 1.67,
+          "width": 4.01,
+          "x": 29.75,
+          "y": 1.16
+        },
+        "text": "Progress"
+      },
+      {
+        "centerPercent": [
+          69.35,
+          1.99
+        ],
+        "rectPercent": {
+          "height": 2.21,
+          "width": 14.55,
+          "x": 62.08,
+          "y": 0.88
+        },
+        "text": "Sign in to use AI-assisted workflow"
+      },
+      {
+        "centerPercent": [
+          20,
+          6.43
+        ],
+        "rectPercent": {
+          "height": 2.08,
+          "width": 5.67,
+          "x": 17.17,
+          "y": 5.39
+        },
+        "text": "1 Template"
+      },
+      {
+        "centerPercent": [
+          25.76,
+          6.43
+        ],
+        "rectPercent": {
+          "height": 2.08,
+          "width": 4.96,
+          "x": 23.27,
+          "y": 5.39
+        },
+        "text": "2 Upload"
+      },
+      {
+        "centerPercent": [
+          31.01,
+          6.43
+        ],
+        "rectPercent": {
+          "height": 2.08,
+          "width": 4.67,
+          "x": 28.68,
+          "y": 5.39
+        },
+        "text": "3 Profile"
+      },
+      {
+        "centerPercent": [
+          36.87,
+          6.43
+        ],
+        "rectPercent": {
+          "height": 2.08,
+          "width": 6.16,
+          "x": 33.79,
+          "y": 5.39
+        },
+        "text": "4 Harmonize"
+      },
+      {
+        "centerPercent": [
+          42.98,
+          6.43
+        ],
+        "rectPercent": {
+          "height": 2.08,
+          "width": 5.18,
+          "x": 40.39,
+          "y": 5.39
+        },
+        "text": "5 Dataset"
+      },
+      {
+        "centerPercent": [
+          49.14,
+          6.43
+        ],
+        "rectPercent": {
+          "height": 2.08,
+          "width": 6.24,
+          "x": 46.02,
+          "y": 5.39
+        },
+        "text": "6 Dashboard"
+      },
+      {
+        "centerPercent": [
+          55.08,
+          6.43
+        ],
+        "rectPercent": {
+          "height": 2.08,
+          "width": 4.76,
+          "x": 52.7,
+          "y": 5.39
+        },
+        "text": "7 Export"
+      },
+      {
+        "centerPercent": [
+          25.82,
+          44.06
+        ],
+        "rectPercent": {
+          "height": 2.21,
+          "width": 11.99,
+          "x": 19.83,
+          "y": 42.95
+        },
+        "text": "Generate handoff summary"
+      },
+      {
+        "centerPercent": [
+          26.48,
+          57.09
+        ],
+        "rectPercent": {
+          "height": 11.65,
+          "width": 13.31,
+          "x": 19.83,
+          "y": 51.26
+        },
+        "text": "CSV Prepared dataset Downloads the harmonized, cleaned rows used to generate the dashboard. 4 rows prepared for analysis."
+      },
+      {
+        "centerPercent": [
+          40.46,
+          57.09
+        ],
+        "rectPercent": {
+          "height": 11.65,
+          "width": 13.31,
+          "x": 33.8,
+          "y": 51.26
+        },
+        "text": "JSON Decision handoff log Includes evidence coverage, join review, quality caveats, and transformation history. 2 recorded steps available."
+      },
+      {
+        "centerPercent": [
+          54.44,
+          57.09
+        ],
+        "rectPercent": {
+          "height": 11.65,
+          "width": 13.31,
+          "x": 47.78,
+          "y": 51.26
+        },
+        "text": "KIT Project kit Downloads a JSON kit with README text, prepared CSV, schema, chart config, and handoff log. Built for second-pass review without saving data in the app."
+      },
+      {
+        "centerPercent": [
+          26.48,
+          68.88
+        ],
+        "rectPercent": {
+          "height": 10.7,
+          "width": 13.31,
+          "x": 19.83,
+          "y": 63.53
+        },
+        "text": "PNG Dashboard image Captures the full generated dashboard as a shareable static image. 10 charts with recommended insights expanded."
+      },
+      {
+        "centerPercent": [
+          40.46,
+          68.88
+        ],
+        "rectPercent": {
+          "height": 10.7,
+          "width": 13.31,
+          "x": 33.8,
+          "y": 63.53
+        },
+        "text": "PDF Dashboard report Packages the dashboard, quality checks, and transformation summary for review. Includes 0 quality issues and 2 transformations."
+      },
+      {
+        "centerPercent": [
+          21.13,
+          81.48
+        ],
+        "rectPercent": {
+          "height": 2.21,
+          "width": 2.61,
+          "x": 19.83,
+          "y": 80.38
+        },
+        "text": "Up"
+      },
+      {
+        "centerPercent": [
+          24.85,
+          81.48
+        ],
+        "rectPercent": {
+          "height": 2.21,
+          "width": 3.71,
+          "x": 23,
+          "y": 80.38
+        },
+        "text": "Down"
+      },
+      {
+        "centerPercent": [
+          23.83,
+          93.48
+        ],
+        "rectPercent": {
+          "height": 2.21,
+          "width": 8,
+          "x": 19.83,
+          "y": 92.38
+        },
+        "text": "Submit feedback"
+      },
+      {
+        "centerPercent": [
+          31.06,
+          19.36
+        ],
+        "rectPercent": {
+          "height": 2.35,
+          "width": 60.01,
+          "x": 1.05,
+          "y": 18.19
+        },
+        "text": "Recommended insights Evidence-backed observations and review prompts. 6 insights"
+      }
+    ],
+    "width": 1803
+  },
+  "09-handoff-summary.png": {
+    "capturedAt": "2026-06-15T20:29:20.146Z",
+    "height": 2356,
+    "interactiveElements": [
+      {
+        "centerPercent": [
+          27.47,
+          1.62
+        ],
+        "rectPercent": {
+          "height": 1.36,
+          "width": 3.22,
+          "x": 25.86,
+          "y": 0.94
+        },
+        "text": "About"
+      },
+      {
+        "centerPercent": [
+          31.75,
+          1.62
+        ],
+        "rectPercent": {
+          "height": 1.36,
+          "width": 4.01,
+          "x": 29.75,
+          "y": 0.94
+        },
+        "text": "Progress"
+      },
+      {
+        "centerPercent": [
+          69.35,
+          1.62
+        ],
+        "rectPercent": {
+          "height": 1.8,
+          "width": 14.55,
+          "x": 62.08,
+          "y": 0.72
+        },
+        "text": "Sign in to use AI-assisted workflow"
+      },
+      {
+        "centerPercent": [
+          20,
+          5.24
+        ],
+        "rectPercent": {
+          "height": 1.7,
+          "width": 5.67,
+          "x": 17.17,
+          "y": 4.39
+        },
+        "text": "1 Template"
+      },
+      {
+        "centerPercent": [
+          25.76,
+          5.24
+        ],
+        "rectPercent": {
+          "height": 1.7,
+          "width": 4.96,
+          "x": 23.27,
+          "y": 4.39
+        },
+        "text": "2 Upload"
+      },
+      {
+        "centerPercent": [
+          31.01,
+          5.24
+        ],
+        "rectPercent": {
+          "height": 1.7,
+          "width": 4.67,
+          "x": 28.68,
+          "y": 4.39
+        },
+        "text": "3 Profile"
+      },
+      {
+        "centerPercent": [
+          36.87,
+          5.24
+        ],
+        "rectPercent": {
+          "height": 1.7,
+          "width": 6.16,
+          "x": 33.79,
+          "y": 4.39
+        },
+        "text": "4 Harmonize"
+      },
+      {
+        "centerPercent": [
+          42.98,
+          5.24
+        ],
+        "rectPercent": {
+          "height": 1.7,
+          "width": 5.18,
+          "x": 40.39,
+          "y": 4.39
+        },
+        "text": "5 Dataset"
+      },
+      {
+        "centerPercent": [
+          49.14,
+          5.24
+        ],
+        "rectPercent": {
+          "height": 1.7,
+          "width": 6.24,
+          "x": 46.02,
+          "y": 4.39
+        },
+        "text": "6 Dashboard"
+      },
+      {
+        "centerPercent": [
+          55.08,
+          5.24
+        ],
+        "rectPercent": {
+          "height": 1.7,
+          "width": 4.76,
+          "x": 52.7,
+          "y": 4.39
+        },
+        "text": "7 Export"
+      },
+      {
+        "centerPercent": [
+          25.82,
+          35.92
+        ],
+        "rectPercent": {
+          "height": 1.8,
+          "width": 11.99,
+          "x": 19.83,
+          "y": 35.02
+        },
+        "text": "Generate handoff summary"
+      },
+      {
+        "centerPercent": [
+          26.48,
+          65.01
+        ],
+        "rectPercent": {
+          "height": 9.5,
+          "width": 13.31,
+          "x": 19.83,
+          "y": 60.26
+        },
+        "text": "CSV Prepared dataset Downloads the harmonized, cleaned rows used to generate the dashboard. 4 rows prepared for analysis."
+      },
+      {
+        "centerPercent": [
+          40.46,
+          65.01
+        ],
+        "rectPercent": {
+          "height": 9.5,
+          "width": 13.31,
+          "x": 33.8,
+          "y": 60.26
+        },
+        "text": "JSON Decision handoff log Includes evidence coverage, join review, quality caveats, and transformation history. 2 recorded steps available."
+      },
+      {
+        "centerPercent": [
+          54.44,
+          65.01
+        ],
+        "rectPercent": {
+          "height": 9.5,
+          "width": 13.31,
+          "x": 47.78,
+          "y": 60.26
+        },
+        "text": "KIT Project kit Downloads a JSON kit with README text, prepared CSV, schema, chart config, and handoff log. Built for second-pass review without saving data in the app."
+      },
+      {
+        "centerPercent": [
+          26.48,
+          74.63
+        ],
+        "rectPercent": {
+          "height": 8.73,
+          "width": 13.31,
+          "x": 19.83,
+          "y": 70.26
+        },
+        "text": "PNG Dashboard image Captures the full generated dashboard as a shareable static image. 10 charts with recommended insights expanded."
+      },
+      {
+        "centerPercent": [
+          40.46,
+          74.63
+        ],
+        "rectPercent": {
+          "height": 8.73,
+          "width": 13.31,
+          "x": 33.8,
+          "y": 70.26
+        },
+        "text": "PDF Dashboard report Packages the dashboard, quality checks, and transformation summary for review. Includes 0 quality issues and 2 transformations."
+      },
+      {
+        "centerPercent": [
+          21.13,
+          84.9
+        ],
+        "rectPercent": {
+          "height": 1.8,
+          "width": 2.61,
+          "x": 19.83,
+          "y": 84
+        },
+        "text": "Up"
+      },
+      {
+        "centerPercent": [
+          24.85,
+          84.9
+        ],
+        "rectPercent": {
+          "height": 1.8,
+          "width": 3.71,
+          "x": 23,
+          "y": 84
+        },
+        "text": "Down"
+      },
+      {
+        "centerPercent": [
+          23.83,
+          94.68
+        ],
+        "rectPercent": {
+          "height": 1.8,
+          "width": 8,
+          "x": 19.83,
+          "y": 93.78
+        },
+        "text": "Submit feedback"
+      },
+      {
+        "centerPercent": [
+          31.06,
+          15.79
+        ],
+        "rectPercent": {
+          "height": 1.92,
+          "width": 60.01,
+          "x": 1.05,
+          "y": 14.83
+        },
+        "text": "Recommended insights Evidence-backed observations and review prompts. 6 insights"
+      }
+    ],
+    "width": 1803
+  },
+  "10-risk-quality.png": {
+    "capturedAt": "2026-06-15T20:29:23.776Z",
+    "height": 2314,
+    "interactiveElements": [
+      {
+        "centerPercent": [
+          27.47,
+          1.65
+        ],
+        "rectPercent": {
+          "height": 1.38,
+          "width": 3.22,
+          "x": 25.86,
+          "y": 0.96
+        },
+        "text": "About"
+      },
+      {
+        "centerPercent": [
+          31.75,
+          1.65
+        ],
+        "rectPercent": {
+          "height": 1.38,
+          "width": 4.01,
+          "x": 29.75,
+          "y": 0.96
+        },
+        "text": "Progress"
+      },
+      {
+        "centerPercent": [
+          69.35,
+          1.65
+        ],
+        "rectPercent": {
+          "height": 1.84,
+          "width": 14.55,
+          "x": 62.08,
+          "y": 0.73
+        },
+        "text": "Sign in to use AI-assisted workflow"
+      },
+      {
+        "centerPercent": [
+          20,
+          5.34
+        ],
+        "rectPercent": {
+          "height": 1.73,
+          "width": 5.67,
+          "x": 17.17,
+          "y": 4.47
+        },
+        "text": "1 Template"
+      },
+      {
+        "centerPercent": [
+          25.76,
+          5.34
+        ],
+        "rectPercent": {
+          "height": 1.73,
+          "width": 4.96,
+          "x": 23.27,
+          "y": 4.47
+        },
+        "text": "2 Upload"
+      },
+      {
+        "centerPercent": [
+          31.01,
+          5.34
+        ],
+        "rectPercent": {
+          "height": 1.73,
+          "width": 4.67,
+          "x": 28.68,
+          "y": 4.47
+        },
+        "text": "3 Profile"
+      },
+      {
+        "centerPercent": [
+          36.87,
+          5.34
+        ],
+        "rectPercent": {
+          "height": 1.73,
+          "width": 6.16,
+          "x": 33.79,
+          "y": 4.47
+        },
+        "text": "4 Harmonize"
+      },
+      {
+        "centerPercent": [
+          42.98,
+          5.34
+        ],
+        "rectPercent": {
+          "height": 1.73,
+          "width": 5.18,
+          "x": 40.39,
+          "y": 4.47
+        },
+        "text": "5 Dataset"
+      },
+      {
+        "centerPercent": [
+          49.14,
+          5.34
+        ],
+        "rectPercent": {
+          "height": 1.73,
+          "width": 6.24,
+          "x": 46.02,
+          "y": 4.47
+        },
+        "text": "6 Dashboard"
+      },
+      {
+        "centerPercent": [
+          55.08,
+          5.34
+        ],
+        "rectPercent": {
+          "height": 1.73,
+          "width": 4.76,
+          "x": 52.7,
+          "y": 4.47
+        },
+        "text": "7 Export"
+      },
+      {
+        "centerPercent": [
+          40.46,
+          19.22
+        ],
+        "rectPercent": {
+          "height": 0.97,
+          "width": 41.26,
+          "x": 19.83,
+          "y": 18.73
+        },
+        "text": "Recommendations"
+      },
+      {
+        "centerPercent": [
+          40.46,
+          20.71
+        ],
+        "rectPercent": {
+          "height": 0.97,
+          "width": 41.26,
+          "x": 19.83,
+          "y": 20.23
+        },
+        "text": "Column details and samples"
+      },
+      {
+        "centerPercent": [
+          40.46,
+          34.66
+        ],
+        "rectPercent": {
+          "height": 1.04,
+          "width": 39.82,
+          "x": 20.55,
+          "y": 34.14
+        },
+        "text": "Profile sample data4 rows, 4 columns"
+      },
+      {
+        "centerPercent": [
+          40.46,
+          88.82
+        ],
+        "rectPercent": {
+          "height": 1.04,
+          "width": 41.93,
+          "x": 19.5,
+          "y": 88.3
+        },
+        "text": "Data quality checks 5 flagged"
+      },
+      {
+        "centerPercent": [
+          40.46,
+          92.2
+        ],
+        "rectPercent": {
+          "height": 1.04,
+          "width": 41.93,
+          "x": 19.5,
+          "y": 91.68
+        },
+        "text": "Metadata and assumptions 1 source"
+      },
+      {
+        "centerPercent": [
+          40.46,
+          95.41
+        ],
+        "rectPercent": {
+          "height": 1.84,
+          "width": 43.37,
+          "x": 18.77,
+          "y": 94.49
+        },
+        "text": "Harmonize data"
+      }
+    ],
+    "width": 1803
+  },
+  "10-risk-prepare.png": {
+    "capturedAt": "2026-06-15T20:29:24.979Z",
+    "height": 1272,
+    "interactiveElements": [
+      {
+        "centerPercent": [
+          27.66,
+          3.01
+        ],
+        "rectPercent": {
+          "height": 2.52,
+          "width": 3.2,
+          "x": 26.06,
+          "y": 1.75
+        },
+        "text": "About"
+      },
+      {
+        "centerPercent": [
+          31.9,
+          3.01
+        ],
+        "rectPercent": {
+          "height": 2.52,
+          "width": 3.98,
+          "x": 29.91,
+          "y": 1.75
+        },
+        "text": "Progress"
+      },
+      {
+        "centerPercent": [
+          69.19,
+          3.01
+        ],
+        "rectPercent": {
+          "height": 3.34,
+          "width": 14.43,
+          "x": 61.98,
+          "y": 1.34
+        },
+        "text": "Sign in to use AI-assisted workflow"
+      },
+      {
+        "centerPercent": [
+          20.25,
+          9.71
+        ],
+        "rectPercent": {
+          "height": 3.14,
+          "width": 5.62,
+          "x": 17.44,
+          "y": 8.14
+        },
+        "text": "1 Template"
+      },
+      {
+        "centerPercent": [
+          25.96,
+          9.71
+        ],
+        "rectPercent": {
+          "height": 3.14,
+          "width": 4.92,
+          "x": 23.5,
+          "y": 8.14
+        },
+        "text": "2 Upload"
+      },
+      {
+        "centerPercent": [
+          31.17,
+          9.71
+        ],
+        "rectPercent": {
+          "height": 3.14,
+          "width": 4.63,
+          "x": 28.86,
+          "y": 8.14
+        },
+        "text": "3 Profile"
+      },
+      {
+        "centerPercent": [
+          36.98,
+          9.71
+        ],
+        "rectPercent": {
+          "height": 3.14,
+          "width": 6.11,
+          "x": 33.92,
+          "y": 8.14
+        },
+        "text": "4 Harmonize"
+      },
+      {
+        "centerPercent": [
+          43.04,
+          9.71
+        ],
+        "rectPercent": {
+          "height": 3.14,
+          "width": 5.14,
+          "x": 40.47,
+          "y": 8.14
+        },
+        "text": "5 Dataset"
+      },
+      {
+        "centerPercent": [
+          49.15,
+          9.71
+        ],
+        "rectPercent": {
+          "height": 3.14,
+          "width": 6.19,
+          "x": 46.05,
+          "y": 8.14
+        },
+        "text": "6 Dashboard"
+      },
+      {
+        "centerPercent": [
+          55.04,
+          9.71
+        ],
+        "rectPercent": {
+          "height": 3.14,
+          "width": 4.72,
+          "x": 52.68,
+          "y": 8.14
+        },
+        "text": "7 Export"
+      },
+      {
+        "centerPercent": [
+          24.05,
+          47.42
+        ],
+        "rectPercent": {
+          "height": 3.34,
+          "width": 7.51,
+          "x": 20.3,
+          "y": 45.75
+        },
+        "text": "Prepare dataset"
+      }
+    ],
+    "width": 1818
+  },
+  "11-risk-readiness.png": {
+    "capturedAt": "2026-06-15T20:29:26.265Z",
+    "height": 1567,
+    "interactiveElements": [
+      {
+        "centerPercent": [
+          27.47,
+          2.44
+        ],
+        "rectPercent": {
+          "height": 2.04,
+          "width": 3.22,
+          "x": 25.86,
+          "y": 1.42
+        },
+        "text": "About"
+      },
+      {
+        "centerPercent": [
+          31.75,
+          2.44
+        ],
+        "rectPercent": {
+          "height": 2.04,
+          "width": 4.01,
+          "x": 29.75,
+          "y": 1.42
+        },
+        "text": "Progress"
+      },
+      {
+        "centerPercent": [
+          69.35,
+          2.44
+        ],
+        "rectPercent": {
+          "height": 2.71,
+          "width": 14.55,
+          "x": 62.08,
+          "y": 1.08
+        },
+        "text": "Sign in to use AI-assisted workflow"
+      },
+      {
+        "centerPercent": [
+          20,
+          7.88
+        ],
+        "rectPercent": {
+          "height": 2.55,
+          "width": 5.67,
+          "x": 17.17,
+          "y": 6.6
+        },
+        "text": "1 Template"
+      },
+      {
+        "centerPercent": [
+          25.76,
+          7.88
+        ],
+        "rectPercent": {
+          "height": 2.55,
+          "width": 4.96,
+          "x": 23.27,
+          "y": 6.6
+        },
+        "text": "2 Upload"
+      },
+      {
+        "centerPercent": [
+          31.01,
+          7.88
+        ],
+        "rectPercent": {
+          "height": 2.55,
+          "width": 4.67,
+          "x": 28.68,
+          "y": 6.6
+        },
+        "text": "3 Profile"
+      },
+      {
+        "centerPercent": [
+          36.87,
+          7.88
+        ],
+        "rectPercent": {
+          "height": 2.55,
+          "width": 6.16,
+          "x": 33.79,
+          "y": 6.6
+        },
+        "text": "4 Harmonize"
+      },
+      {
+        "centerPercent": [
+          42.98,
+          7.88
+        ],
+        "rectPercent": {
+          "height": 2.55,
+          "width": 5.18,
+          "x": 40.39,
+          "y": 6.6
+        },
+        "text": "5 Dataset"
+      },
+      {
+        "centerPercent": [
+          49.14,
+          7.88
+        ],
+        "rectPercent": {
+          "height": 2.55,
+          "width": 6.24,
+          "x": 46.02,
+          "y": 6.6
+        },
+        "text": "6 Dashboard"
+      },
+      {
+        "centerPercent": [
+          55.08,
+          7.88
+        ],
+        "rectPercent": {
+          "height": 2.55,
+          "width": 4.76,
+          "x": 52.7,
+          "y": 6.6
+        },
+        "text": "7 Export"
+      },
+      {
+        "centerPercent": [
+          24.73,
+          59.39
+        ],
+        "rectPercent": {
+          "height": 2.71,
+          "width": 9.36,
+          "x": 20.05,
+          "y": 58.04
+        },
+        "text": "Generate dashboard"
+      },
+      {
+        "centerPercent": [
+          40.46,
+          65.6
+        ],
+        "rectPercent": {
+          "height": 1.54,
+          "width": 41.93,
+          "x": 19.5,
+          "y": 64.83
+        },
+        "text": "Final prepared data preview 4 rows, 4 columns"
+      }
+    ],
+    "width": 1803
+  }
+}

@@ -42,6 +42,31 @@ export function formatDuration(ms) {
   return `${ms}ms`;
 }
 
+export function isSpawnPermissionError(error) {
+  if (!error || typeof error !== "object") return false;
+  if (error.code !== "EPERM" && error.code !== "EACCES") return false;
+
+  const syscall = typeof error.syscall === "string" ? error.syscall : "";
+  const message = typeof error.message === "string" ? error.message : "";
+  return /\bspawn(?:Sync)?\b/i.test(`${syscall} ${message}`);
+}
+
+export function formatStepError(step, error) {
+  if (isSpawnPermissionError(error)) {
+    const code = error.code ? ` (${error.code})` : "";
+    return (
+      `[guarded-build] ${step.label} could not start because this shell denied ` +
+      `Node child-process execution${code}.\n` +
+      "[guarded-build] This is a runner/permission problem, not evidence of a " +
+      "Next.js, TypeScript, or app-code build failure.\n" +
+      "[guarded-build] Rerun `npm run build` from a shell/context that allows " +
+      "Node child processes, then investigate normal build output if it still fails."
+    );
+  }
+
+  return `[guarded-build] ${step.label} failed: ${error.message}`;
+}
+
 export function createBuildSteps(repoRoot, env = process.env) {
   const timeouts = getBuildTimeouts(env);
   return [
@@ -67,6 +92,8 @@ export async function runCommandWithTimeout(step, options = {}) {
   const stdout = options.stdout ?? process.stdout;
   const stderr = options.stderr ?? process.stderr;
   const killGraceMs = options.killGraceMs ?? DEFAULT_KILL_GRACE_MS;
+  const spawnImpl = options.spawnImpl ?? spawn;
+  const terminateProcessTreeImpl = options.terminateProcessTreeImpl ?? terminateProcessTree;
 
   return await new Promise((resolve) => {
     let child;
@@ -84,7 +111,7 @@ export async function runCommandWithTimeout(step, options = {}) {
     };
 
     try {
-      child = spawn(step.command, step.args, {
+      child = spawnImpl(step.command, step.args, {
         cwd: step.cwd,
         detached: platform !== "win32",
         env: process.env,
@@ -129,7 +156,7 @@ export async function runCommandWithTimeout(step, options = {}) {
           `terminating process tree for PID ${child.pid}.\n`,
       );
 
-      terminateProcessTree(child.pid, { platform, stderr }).catch((error) => {
+      terminateProcessTreeImpl(child.pid, { platform, stderr }).catch((error) => {
         stderr.write(`[guarded-build] Process-tree termination failed: ${error.message}\n`);
         try {
           child.kill("SIGKILL");
@@ -252,7 +279,7 @@ async function main() {
     }
 
     if (result.error) {
-      console.error(`[guarded-build] ${step.label} failed: ${result.error.message}`);
+      console.error(formatStepError(step, result.error));
       process.exit(result.exitCode || 1);
     }
 

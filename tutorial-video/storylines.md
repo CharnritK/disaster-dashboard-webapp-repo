@@ -25,10 +25,14 @@ responsibility under uncertainty.
 | `FragmentedDataPainpoint` | 37s | Emotional hook and product proof | One opener only |
 | `PublicDemoUserFlow` | 67s | Real public demo walkthrough | None |
 | `TrustRiskUserFlow` | 46s | Risk, caveats, and privacy boundary | None |
-| `DashboardCopilotTutorial` | 113s | Longer business/architecture walkthrough | None |
+| `DashboardCopilotTutorial` | 113s | Internal longer business/architecture walkthrough | None |
 
 The production storyboard, capture source, motion plan, sound plan, and release
 gates live in `storyboard-capture-plan.md`.
+
+`DashboardCopilotTutorial` is not part of the current public release package.
+Do not regenerate it for public use without a fresh storyboard, transcript,
+capture plan, and pilot threshold.
 
 ## Part 1: Why Trust Breaks Before The Chart
 
@@ -151,8 +155,8 @@ Scene plan:
 
 ## Voiceover Direction
 
-Current renders are silent and on-screen-text first. If voiceover is added
-later, it should sound like a field-aware product guide:
+Current production cuts include generated narration plus on-screen text. The
+voice should sound like a field-aware product guide:
 
 - calm, direct, no hype
 - acknowledge pressure and incomplete data
@@ -160,3 +164,9 @@ later, it should sound like a field-aware product guide:
 - avoid claiming operational approval
 - end each tutorial with the trust line: "The final decision stays with the
   response team."
+
+## Pre-Generation Brief
+
+Before generating new speech, posters, stills, or MP4s, use
+`pre-generation-brief.md` as the go/no-go material pack. It states what to keep,
+what to cut, what captures to verify, and which claims must remain protected.

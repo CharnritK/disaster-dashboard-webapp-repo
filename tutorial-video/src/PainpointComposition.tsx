@@ -59,12 +59,31 @@ const painpointScenes: PainpointScene[] = [
         accent="blue"
         body="The public demo uses bundled synthetic fragmented files, so viewers can test the workflow without sensitive data."
         checklist={["Load sample", "Inspect sources", "Keep data synthetic"]}
-        cursor={{ clickAt: 0.66, from: [28, 78], to: [37, 36] }}
+        cursor={{
+          clickAt: 0.66,
+          from: [24, 78],
+          label: "Click sample",
+          rect: { height: 4.97, width: 11.81, x: 28.98, y: 43.86 },
+          to: [34.88, 46.34],
+        }}
         durationInFrames={painpointDurations[1]}
+        focusFrom={[35, 24]}
+        focusTo={[34.88, 46.34]}
         footer="Synthetic sample data only. No account or API key is needed."
-        image="captures/03-fragmented-data.png"
+        image="captures/02-upload.png"
+        imageSize={{ height: 1272, width: 1818 }}
         kicker="Part 1 / Proof"
-        panTo={[-26, -12]}
+        result={{
+          focus: [40, 32],
+          highlight: {
+            label: "Fragmented files loaded",
+            rect: { height: 1.51, width: 43.37, x: 18.77, y: 95.49 },
+            target: [40.46, 96.24],
+          },
+          image: "captures/03-fragmented-data.png",
+          imageSize: { height: 2820, width: 1803 },
+          label: "After click: fragmented files are loaded.",
+        }}
         task="Click: Use fragmented demo data needs + population + capacity"
         title="Show the fragmentation before solving it."
         zoomTo={1.08}
@@ -79,12 +98,20 @@ const painpointScenes: PainpointScene[] = [
         accent="amber"
         body="Before recommendations, the app profiles fields, missingness, inferred roles, and evidence coverage."
         checklist={["Profile fields", "Find evidence gaps", "Name uncertainty"]}
-        cursor={{ clickAt: 0.68, from: [73, 75], to: [43, 57] }}
+        cursor={{
+          from: [43, 57],
+          label: "Evidence coverage",
+          mode: "spotlight",
+          rect: { height: 18, width: 41.9, x: 19.5, y: 48 },
+          to: [40.46, 57],
+        }}
         durationInFrames={painpointDurations[2]}
+        focusFrom={[40, 44]}
+        focusTo={[40.46, 57]}
         footer="The uncertainty becomes visible before the dashboard exists."
         image="captures/04-profile-evidence.png"
+        imageSize={{ height: 3838, width: 1803 }}
         kicker="Part 1 / Evidence"
-        panTo={[-34, -20]}
         task="Read: Evidence coverage"
         title="Make uncertainty visible early."
         zoomTo={1.08}
@@ -99,12 +126,31 @@ const painpointScenes: PainpointScene[] = [
         accent="teal"
         body="Join suggestions and cleaning stay reviewable, row-preserving, and explainable."
         checklist={["Review join key", "Check cleaning", "Accept only explainable changes"]}
-        cursor={{ clickAt: 0.68, from: [26, 80], to: [26, 47] }}
+        cursor={{
+          clickAt: 0.68,
+          from: [58, 80],
+          label: "Click accept",
+          rect: { height: 3.34, width: 10.93, x: 20.3, y: 45.75 },
+          to: [25.76, 47.42],
+        }}
         durationInFrames={painpointDurations[3]}
+        focusFrom={[34, 37]}
+        focusTo={[25.76, 47.42]}
         footer="No hidden row deletion, imputation, fuzzy matching, or recoding."
         image="captures/05-harmonize-review.png"
+        imageSize={{ height: 1272, width: 1818 }}
         kicker="Part 1 / Review"
-        panTo={[-30, -18]}
+        result={{
+          focus: [24.73, 50.25],
+          highlight: {
+            label: "Ready for review",
+            rect: { height: 2.53, width: 9.36, x: 20.05, y: 48.98 },
+            target: [24.73, 50.25],
+          },
+          image: "captures/06-validation-readiness.png",
+          imageSize: { height: 1682, width: 1803 },
+          label: "After click: prepared data is ready for review.",
+        }}
         task="Click: Accept recommendation"
         title="Do not silently combine fragile data."
         zoomTo={1.075}
@@ -119,12 +165,31 @@ const painpointScenes: PainpointScene[] = [
         accent="blue"
         body="The handoff summary keeps caveats, assumptions, and transformation history attached for human review."
         checklist={["Open handoff", "Check caveats", "Keep final action human-owned"]}
-        cursor={{ clickAt: 0.66, from: [30, 78], to: [26, 50] }}
+        cursor={{
+          clickAt: 0.66,
+          from: [58, 78],
+          label: "Click handoff summary",
+          rect: { height: 2.21, width: 11.99, x: 19.83, y: 42.95 },
+          to: [25.82, 44.06],
+        }}
         durationInFrames={painpointDurations[4]}
+        focusFrom={[40, 24]}
+        focusTo={[25.82, 44.06]}
         footer="Clearer evidence. Human-owned action."
-        image="captures/09-handoff-summary.png"
+        image="captures/08-export-handoff.png"
+        imageSize={{ height: 1921, width: 1803 }}
         kicker="Part 1 / Handoff"
-        panTo={[-34, -12]}
+        result={{
+          focus: [40, 42],
+          highlight: {
+            label: "Handoff summary appears",
+            rect: { height: 25, width: 42, x: 19.8, y: 17 },
+            target: [40, 30],
+          },
+          image: "captures/09-handoff-summary.png",
+          imageSize: { height: 2356, width: 1803 },
+          label: "After click: handoff summary is generated.",
+        }}
         task="Click: Generate handoff summary"
         title="Clearer evidence. Human-owned action."
         zoomTo={1.08}

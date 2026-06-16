@@ -23,6 +23,7 @@
   "scripts": {
     "dev": "remotion studio",
     "build": "remotion bundle",
+    "capture": "node scripts/capture-demo-screens.mjs",
     "render": "remotion render DashboardCopilotTutorial out/dashboard-copilot-tutorial.mp4",
     "render:painpoint": "remotion render FragmentedDataPainpoint out/fragmented-data-painpoint.mp4",
     "render:userflow": "remotion render PublicDemoUserFlow out/public-demo-user-flow.mp4",

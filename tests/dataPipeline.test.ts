@@ -28,7 +28,15 @@ import {
   sanitizeDecisionHandoffSummary,
 } from "@/lib/copilotHandoff";
 import { booleanFromEnv, copilotTaskForRecommendationScope, resolveLlmTaskConfig } from "@/lib/serverConfig";
-import { aggregateField, aggregateRows, fieldDisplayLabel, inferMetricAggregation, metricDisplayLabel } from "@/lib/chartMetrics";
+import {
+  aggregateField,
+  aggregateRows,
+  fieldDisplayLabel,
+  inferMetricAggregation,
+  metricDisplayLabel,
+  sortGroupedMetricValues,
+  type GroupedMetricValue,
+} from "@/lib/chartMetrics";
 import {
   assessDecisionReadiness,
   buildEvidenceCoverageSummary,
@@ -47,6 +55,7 @@ import { generateFallbackRecommendations, requestAIRecommendations } from "@/lib
 import { findLocationFields } from "@/lib/locationFields";
 import { enforceVizPolicy } from "@/lib/vizPolicy";
 import { validateVizSpec } from "@/lib/vizSpecValidator";
+import { qualityBadgeLabel } from "@/lib/vizRules";
 
 function copilotRouteRequest(body: unknown) {
   return new Request("http://localhost/api/copilot", {
@@ -57,6 +66,19 @@ function copilotRouteRequest(body: unknown) {
     },
     body: JSON.stringify(body),
   });
+}
+
+function reactText(node: unknown): string {
+  if (typeof node === "string" || typeof node === "number") {
+    return String(node);
+  }
+  if (Array.isArray(node)) {
+    return node.map(reactText).join(" ");
+  }
+  if (isValidElement<{ children?: unknown }>(node)) {
+    return reactText(node.props.children);
+  }
+  return "";
 }
 
 describe("data pipeline", () => {
@@ -891,6 +913,28 @@ describe("data pipeline", () => {
     const dashboardRecommendation = generateDeterministicDashboardRecommendation(dataset, {
       qualityResults,
     });
+    const projectKitChart = dashboardRecommendation.charts[0];
+    expect(projectKitChart).toBeDefined();
+    dashboardRecommendation.charts[0] = {
+      ...projectKitChart!,
+      sourceNote: "Source: prepared.csv. Review caveats before operational use.",
+      screenReaderSummary: "Needs score chart with review caveat.",
+      mobileBehavior: "top5",
+      sortBy: "value_desc",
+      maxCategories: 5,
+      unit: "count",
+      timeScope: "Current reporting period",
+      annotations: [
+        { id: "review-note", label: "Review spike", tone: "warn" },
+      ],
+      supportedInsightIds: ["needs-spread"],
+      geoKey: "district_name",
+      dataKey: "needs_score",
+      measureType: "count",
+      classificationMethod: "quantile",
+      classCount: 5,
+      fallbackChartType: "table",
+    };
     const kit = buildDashboardProjectKit({
       generatedAt: "2026-06-13T00:00:00.000Z",
       decisionBrief: brief,
@@ -923,7 +967,31 @@ describe("data pipeline", () => {
       "notes",
     ]);
     expect(kit.files["prepared-data.csv"]).toContain("'=SUM(A1:A2)");
-    expect(JSON.parse(kit.files["dashboard-config.json"]).charts.length).toBeGreaterThan(0);
+    const dashboardConfig = JSON.parse(kit.files["dashboard-config.json"]);
+    expect(dashboardConfig.charts.length).toBeGreaterThan(0);
+    expect(dashboardConfig.charts[0]).toEqual(
+      expect.objectContaining({
+        sourceNote: "Source: prepared.csv. Review caveats before operational use.",
+        caveat: "Source: prepared.csv. Review caveats before operational use.",
+        screenReaderSummary: "Needs score chart with review caveat.",
+        mobileBehavior: "top5",
+        sortBy: "value_desc",
+        maxCategories: 5,
+        unit: "count",
+        timeScope: "Current reporting period",
+        supportedInsightIds: ["needs-spread"],
+        geoKey: "district_name",
+        dataKey: "needs_score",
+        measureType: "count",
+        classificationMethod: "quantile",
+        classCount: 5,
+        fallbackChartType: "table",
+        qualityBadge: expect.any(String),
+      }),
+    );
+    expect(dashboardConfig.charts[0].annotations).toEqual([
+      { id: "review-note", label: "Review spike", tone: "warn" },
+    ]);
     expect(JSON.parse(kit.files["decision-handoff-log.json"]).reviewNotice).toContain("review");
   });
 
@@ -1761,6 +1829,25 @@ describe("data pipeline", () => {
     ]);
   });
 
+  it("sorts grouped chart values by policy order", () => {
+    const grouped: GroupedMetricValue[] = [
+      { label: "2026-01-03", value: 20, count: 1, total: 20, aggregation: "sum" },
+      { label: "2026-01-01", value: 40, count: 1, total: 40, aggregation: "sum" },
+      { label: "2026-01-02", value: 10, count: 1, total: 10, aggregation: "sum" },
+    ];
+
+    expect(sortGroupedMetricValues(grouped, "time_asc").map((item) => item.label)).toEqual([
+      "2026-01-01",
+      "2026-01-02",
+      "2026-01-03",
+    ]);
+    expect(sortGroupedMetricValues(grouped, "value_desc").map((item) => item.value)).toEqual([
+      40,
+      20,
+      10,
+    ]);
+  });
+
   it("enforces deterministic visualization policy without mutating chart specs", () => {
     const dataset = withProfile(createTabularDataset(
       "synthetic-needs.csv",
@@ -1793,6 +1880,8 @@ describe("data pipeline", () => {
     expect(next.mobileBehavior).toBe("top5");
     expect(next.maxCategories).toBe(5);
     expect(next.qualityBadge).toBe("ok");
+    expect(next.sourceNote).toContain("Source: synthetic-needs.csv");
+    expect(next.sourceNote).toContain("Review caveats and validation results");
     expect(next.screenReaderSummary).toContain("Share by district");
     expect(validateVizSpec(next)).toEqual([]);
     expect(chart.chartType).toBe("pie");
@@ -1814,8 +1903,12 @@ describe("data pipeline", () => {
 
     expect(recommendation.charts.length).toBeGreaterThan(0);
     for (const chart of recommendation.charts) {
+      expect(chart.sourceNote).toContain("Source:");
       expect(chart.screenReaderSummary).toContain(chart.title);
       expect(chart.mobileBehavior).toBeTruthy();
+      if (["area", "bar", "line", "pie", "stacked-area", "table"].includes(chart.chartType)) {
+        expect(chart.sortBy).toBeTruthy();
+      }
       expect(validateVizSpec(chart).filter((issue) => issue.severity === "error")).toEqual([]);
     }
   });
@@ -1947,11 +2040,33 @@ describe("data pipeline", () => {
 
     expect(article.props["aria-labelledby"]).toBe("chart-response-gap-title");
     expect(article.props["aria-describedby"]).toContain("chart-response-gap-description");
+    expect(article.props["aria-describedby"]).toContain("chart-response-gap-source");
     expect(article.props["data-quality"]).toBe("warn");
     expect(article.props.className).toContain("quality-warn");
     expect(title.props.children).toBe("Response gap by district");
     expect(subtitle.props.children).toBe("Percent · District");
-    expect(badge.props.children).toBe("Use with caution");
+    expect(badge.props.children).toBe("Caution");
+    expect(reactText(children)).toContain("Requires data quality review.");
+
+    const fallback = ChartFrame({
+      id: "chart-without-metadata",
+      title: "Needs by district",
+      children: "chart body",
+    }) as unknown as ReactElement<{
+      "aria-describedby": string;
+      children: ReactElement[];
+    }>;
+    const fallbackText = reactText(fallback.props.children);
+
+    expect(fallback.props["aria-describedby"]).toContain("chart-without-metadata-source");
+    expect(fallbackText).toContain("accessible chart summary was not provided");
+    expect(fallbackText).toContain("Source and method note missing");
+  });
+
+  it("uses review-safe chart quality labels", () => {
+    expect(qualityBadgeLabel("ok")).toBe("Pass");
+    expect(qualityBadgeLabel("warn")).toBe("Caution");
+    expect(qualityBadgeLabel("block")).toBe("Blocking");
   });
 
   it("reconciles LLM dashboard recommendations against prepared dataset fields", () => {
