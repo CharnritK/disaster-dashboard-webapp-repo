@@ -1,3 +1,11 @@
+import type {
+  FormDetectionSummary,
+  FormEvidenceMapping,
+  FormFamily,
+  FormIntakeMetadata,
+  FormIntakeSourceKind,
+} from "@/types/formIntake";
+
 export type DatasetInputHints = {
   evidenceRole?: string;
   primaryField?: string;
@@ -5,6 +13,11 @@ export type DatasetInputHints = {
   timeField?: string;
   measurementUnit?: string;
   semanticNotes?: string;
+  formFamily?: FormFamily;
+  formSourceKind?: FormIntakeSourceKind;
+  formDetection?: FormDetectionSummary;
+  formEvidenceMappings?: FormEvidenceMapping[];
+  formMetadata?: FormIntakeMetadata;
 };
 
 export type DatasetFormatAssessmentStatus = "accepted" | "review" | "rejected";
@@ -32,7 +45,7 @@ export type Dataset = {
   name: string;
   originalFilename?: string;
   fileType: "csv" | "xlsx";
-  sourceType: "upload" | "sample";
+  sourceType: "upload" | "sample" | "form";
   rowCount?: number;
   columnCount?: number;
   columns?: string[];

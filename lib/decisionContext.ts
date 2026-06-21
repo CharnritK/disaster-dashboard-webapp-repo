@@ -1,18 +1,24 @@
 import type { Dataset } from "@/types/dataset";
 import type {
   DecisionBrief,
+  DecisionPlaybook,
   DecisionReadinessResult,
   DecisionReadinessStatus,
+  EvidenceReadinessControlTower,
   EvidenceCoverageCandidate,
   EvidenceCoverageItem,
   EvidenceCoverageStatus,
   EvidenceCoverageSummary,
+  AiGuardrailExplanation,
+  SafeBetaLearningSignal,
   SuggestedCollectionField,
   SuggestedDataCollectionTemplate,
   UseCaseTemplate,
   UseCaseTemplateId,
 } from "@/types/decision";
+import type { AIRecommendationResponse } from "@/types/recommendations";
 import type { QualityCheckResult } from "@/types/quality";
+import { FEEDBACK_TAGS } from "./feedback/constants";
 
 const DECISION_TEMPLATE_DEFAULTS: Record<
   UseCaseTemplateId,
@@ -84,6 +90,81 @@ export const DECISION_TEMPLATES: UseCaseTemplate[] = [
 ];
 
 export const RESPONSE_PRIORITIZATION_TEMPLATE = DECISION_TEMPLATES[0];
+
+const DECISION_PLAYBOOK_COPY: Record<
+  UseCaseTemplateId,
+  {
+    knownCaveats: string[];
+    sampleScenario: string;
+    sourceFreshnessExpectations: string[];
+    handoffLanguage: string;
+    nextCollectionAsks: string[];
+  }
+> = {
+  response_prioritization: {
+    knownCaveats: [
+      "Severity, affected population, response gap, and capacity often come from different reporting cadences.",
+      "Rankings are not action-ready when admin geography or affected population evidence is missing.",
+      "Capacity signals must be interpreted with access constraints and partner coverage notes.",
+    ],
+    sampleScenario:
+      "A district operations lead needs to decide which affected districts receive response teams in the next distribution cycle.",
+    sourceFreshnessExpectations: [
+      "Need severity and response gap should be current for the active response period.",
+      "Affected population denominators should be dated and reviewed when displacement is changing quickly.",
+      "Capacity signals should identify the reporting source or partner update cycle.",
+    ],
+    handoffLanguage:
+      "Use this handoff as a review packet for prioritization. It identifies covered, ambiguous, and missing evidence, but does not authorize operational action without owner review.",
+    nextCollectionAsks: [
+      "Confirm a stable admin area or p-code field.",
+      "Add the current need severity and affected population estimate.",
+      "Document response gap and available capacity using consistent units.",
+    ],
+  },
+  service_gap_monitoring: {
+    knownCaveats: [
+      "Service availability and response gap can reflect reporting coverage rather than true community access.",
+      "Partner presence does not prove service quality or continuity.",
+      "Comparable geography is required before ranking gaps across locations.",
+    ],
+    sampleScenario:
+      "A coordination lead needs to identify where WASH, health, shelter, or food-service gaps are largest for partner follow-up.",
+    sourceFreshnessExpectations: [
+      "Service availability should be refreshed for the current coordination cycle.",
+      "Response gap estimates should identify the population, service, or target used as the denominator.",
+      "Capacity signals should be tied to partner or facility reporting dates where available.",
+    ],
+    handoffLanguage:
+      "Use this handoff to coordinate review of service gaps and partner follow-up. Treat ambiguous coverage or missing capacity as unresolved until reviewed.",
+    nextCollectionAsks: [
+      "Confirm which service or sector each record describes.",
+      "Add a service availability or coverage field.",
+      "Add response gap and capacity fields with source notes.",
+    ],
+  },
+  preparedness_risk_screening: {
+    knownCaveats: [
+      "Hazard exposure, vulnerability, and preparedness capacity usually come from different source systems.",
+      "Preparedness screening is a planning aid, not a real-time impact assessment.",
+      "Population denominators need review when boundaries or settlement patterns changed after the source date.",
+    ],
+    sampleScenario:
+      "A preparedness planner needs to identify at-risk areas for readiness checks before the next hazard event.",
+    sourceFreshnessExpectations: [
+      "Hazard exposure should identify the relevant scenario or seasonal window.",
+      "Vulnerability and population denominators should be reviewed for recency before comparison.",
+      "Preparedness capacity should reflect current stock, plan, shelter, staffing, or drill status.",
+    ],
+    handoffLanguage:
+      "Use this handoff as a preparedness screening packet. It supports planning review and should not be treated as emergency-response authorization.",
+    nextCollectionAsks: [
+      "Add a hazard exposure or risk field for the planning scenario.",
+      "Add vulnerability and population denominator evidence.",
+      "Add preparedness capacity evidence with source and date caveats.",
+    ],
+  },
+};
 
 export function isUseCaseTemplateId(value: unknown): value is UseCaseTemplateId {
   return (
@@ -353,6 +434,146 @@ export function buildSuggestedCollectionTemplateRows(
   ];
 }
 
+export function buildDecisionPlaybook(useCaseId: UseCaseTemplateId): DecisionPlaybook {
+  const brief = createDecisionBriefFromTemplate(useCaseId);
+  const template = getUseCaseTemplate(useCaseId);
+  const playbookCopy = DECISION_PLAYBOOK_COPY[useCaseId];
+
+  return {
+    id: useCaseId,
+    title: `${template.title} playbook`,
+    decisionQuestion: brief.decisionQuestion,
+    requiredEvidence: [...brief.requiredEvidence],
+    knownCaveats: [...playbookCopy.knownCaveats],
+    suggestedFields: buildSuggestedDataCollectionTemplate(brief).fields,
+    sampleScenario: playbookCopy.sampleScenario,
+    sourceFreshnessExpectations: [...playbookCopy.sourceFreshnessExpectations],
+    handoffLanguage: playbookCopy.handoffLanguage,
+    nextCollectionAsks: [...playbookCopy.nextCollectionAsks],
+  };
+}
+
+export function buildDecisionPlaybooks(): DecisionPlaybook[] {
+  return DECISION_TEMPLATES.map((template) => buildDecisionPlaybook(template.id));
+}
+
+export function buildEvidenceReadinessControlTower({
+  evidenceCoverage,
+  readiness,
+}: {
+  evidenceCoverage: EvidenceCoverageSummary;
+  readiness: DecisionReadinessResult;
+}): EvidenceReadinessControlTower {
+  const evidenceCovered = evidenceCoverage.items
+    .filter((item) => item.status === "covered")
+    .map((item) => item.evidenceNeed);
+  const ambiguousEvidence = evidenceCoverage.items
+    .filter((item) => item.status === "ambiguous")
+    .map((item) => item.evidenceNeed);
+  const missingEvidence = evidenceCoverage.items
+    .filter((item) => item.status === "missing")
+    .map((item) => item.evidenceNeed);
+  const nextCollectionAsks = evidenceCoverage.items
+    .filter((item) => item.status !== "covered")
+    .map((item) => item.nextAction);
+  const sourceConfidence = sourceConfidenceForCoverage(evidenceCoverage);
+  const actionSafetyState =
+    readiness.status === "ready"
+      ? "ready_for_review"
+      : readiness.status === "review_needed"
+        ? "needs_review"
+        : "blocked_for_action";
+
+  return {
+    deterministicAuthority: true,
+    status: readiness.status,
+    actionSafetyState,
+    evidenceCovered,
+    ambiguousEvidence,
+    missingEvidence,
+    blockers: readiness.requiredEvidenceMissing.map(
+      (evidence) => `Missing required evidence: ${evidence}`,
+    ),
+    nextCollectionAsks,
+    sourceConfidence,
+    sourceConfidenceRationale: sourceConfidenceRationale(evidenceCoverage),
+    reviewState:
+      actionSafetyState === "ready_for_review"
+        ? "Ready for human review; deterministic checks found the required evidence."
+        : actionSafetyState === "needs_review"
+          ? "Needs reviewer choice before action; one or more evidence signals or quality checks are ambiguous."
+          : "Blocked for action; required evidence or high-severity checks remain unresolved.",
+  };
+}
+
+export function buildAiGuardrailExplanation({
+  recommendations,
+  qualityResults = [],
+  unsupportedSuggestions = [],
+}: {
+  recommendations?: AIRecommendationResponse;
+  qualityResults?: QualityCheckResult[];
+  unsupportedSuggestions?: string[];
+}): AiGuardrailExplanation {
+  const hasBlockingQuality = qualityResults.some((issue) => issue.status === "fail");
+  const hasReviewQuality = qualityResults.some((issue) => issue.status === "warning");
+  const aiRecommendationStatus =
+    recommendations?.source === "llm" && !recommendations.fallbackReason
+      ? "returned"
+      : recommendations?.fallbackReason
+        ? "fallback"
+        : "not_requested";
+  const deterministicValidation =
+    hasBlockingQuality
+      ? "rejected"
+      : hasReviewQuality || unsupportedSuggestions.length > 0
+        ? "partially_accepted"
+        : "accepted";
+
+  return {
+    advisoryOnly: true,
+    aiRecommendationStatus,
+    deterministicValidation,
+    deterministicAuthorityStatement:
+      "AI suggestions are advisory. Deterministic profiling, evidence coverage, quality checks, and visualization policy decide what can continue in the workflow.",
+    fallbackReason: recommendations?.fallbackReason,
+    unsupportedSuggestions,
+    validationCaveats: qualityResults
+      .filter((issue) => issue.status !== "pass")
+      .map((issue) => issue.caveat ?? issue.suggestedAction ?? issue.description)
+      .slice(0, 6),
+  };
+}
+
+export function buildSafeBetaLearningSignal({
+  decisionBrief,
+  evidenceCoverage,
+  readiness,
+  fallbackReason,
+  exportType,
+  feedbackTags = [],
+}: {
+  decisionBrief: DecisionBrief;
+  evidenceCoverage: EvidenceCoverageSummary;
+  readiness: DecisionReadinessResult;
+  fallbackReason?: string;
+  exportType?: SafeBetaLearningSignal["exportType"];
+  feedbackTags?: string[];
+}): SafeBetaLearningSignal {
+  return {
+    useCaseId: decisionBrief.useCaseId,
+    readinessStatus: readiness.status,
+    blockerCount: readiness.blockerCount,
+    ambiguousEvidenceCount: evidenceCoverage.ambiguousCount,
+    missingEvidenceCount: evidenceCoverage.missingCount,
+    fallbackReason,
+    exportType,
+    feedbackTags: feedbackTags.map(safeLearningTag).filter(Boolean).slice(0, 8),
+    templateOrPlaybookSelected: decisionBrief.useCaseId,
+    metadataOnly: true,
+  };
+}
+
 type EvidenceRule = {
   id: string;
   label: string;
@@ -510,8 +731,18 @@ export function buildEvidenceCoverageSummary(
 ): EvidenceCoverageSummary {
   const rules = evidenceRulesFor(decisionBrief.requiredEvidence);
   const items = rules.map((rule): EvidenceCoverageItem => {
+    const hasAmbiguousFormMapping = datasets.some((dataset) =>
+      (dataset.inputHints?.formEvidenceMappings ?? []).some(
+        (mapping) =>
+          mapping.evidenceNeed === rule.label && mapping.status === "ambiguous",
+      ),
+    );
     const candidates = datasets
-      .flatMap((dataset) => evidenceCandidatesForDataset(dataset, rule))
+      .flatMap((dataset) => [
+        ...formEvidenceCandidatesForDataset(dataset, rule),
+        ...evidenceCandidatesForDataset(dataset, rule),
+      ])
+      .filter(uniqueEvidenceCandidate)
       .sort(
         (a, b) =>
           b.confidence - a.confidence ||
@@ -524,7 +755,7 @@ export function buildEvidenceCoverageSummary(
     const runnerUp = strongCandidates[1];
     const status: EvidenceCoverageStatus = !top
       ? "missing"
-      : runnerUp && top.confidence - runnerUp.confidence <= 0.18
+      : hasAmbiguousFormMapping || (runnerUp && top.confidence - runnerUp.confidence <= 0.18)
         ? "ambiguous"
         : "covered";
 
@@ -586,8 +817,17 @@ export function assessDecisionReadiness(
     Object.keys(dataset.data?.[0] ?? {});
   const requiredRules = evidenceRulesFor(decisionBrief.requiredEvidence);
   const decisionArea = getUseCaseTemplate(decisionBrief.useCaseId).title;
+  const formMappedEvidence = new Set(
+    (dataset.inputHints?.formEvidenceMappings ?? [])
+      .filter((mapping) => mapping.status !== "missing")
+      .map((mapping) => mapping.evidenceNeed),
+  );
   const missingFindings = requiredRules
-    .filter((rule) => !columns.some((column) => rule.patterns.some((pattern) => pattern.test(column))))
+    .filter(
+      (rule) =>
+        !formMappedEvidence.has(rule.label) &&
+        !columns.some((column) => rule.patterns.some((pattern) => pattern.test(column))),
+    )
     .map((rule): QualityCheckResult => ({
       id: `decision-missing-${rule.id}`,
       checkType: "Decision evidence missing",
@@ -600,11 +840,14 @@ export function assessDecisionReadiness(
       suggestedAction: `Add or join a field that supports ${rule.label.toLowerCase()} before relying on this dashboard for action.`,
     }));
   const invalidValueFindings = invalidDecisionValueFindings(dataset, requiredRules);
+  const formMappingFindings = formMappingReviewFindings(dataset, requiredRules, decisionArea);
   const blockerCount =
     missingFindings.length +
     invalidValueFindings.length +
     baseQualityResults.filter((issue) => issue.status === "fail").length;
-  const reviewCount = baseQualityResults.filter((issue) => issue.status === "warning").length;
+  const reviewCount =
+    formMappingFindings.length +
+    baseQualityResults.filter((issue) => issue.status === "warning").length;
   const requiredEvidenceMissing = missingFindings
     .map((finding) => finding.evidenceNeed)
     .filter((value): value is string => Boolean(value));
@@ -614,6 +857,7 @@ export function assessDecisionReadiness(
   const caveats = [
     ...missingFindings.map((finding) => finding.caveat),
     ...invalidValueFindings.map((finding) => finding.caveat),
+    ...formMappingFindings.map((finding) => finding.caveat),
     ...baseQualityResults
       .filter((issue) => issue.status !== "pass")
       .map((issue) => issue.caveat)
@@ -644,10 +888,43 @@ export function assessDecisionReadiness(
       requiredEvidenceCovered,
       requiredEvidenceMissing,
     },
-    qualityResults: [...baseQualityResults, ...missingFindings, ...invalidValueFindings].sort(
+    qualityResults: [
+      ...baseQualityResults,
+      ...missingFindings,
+      ...invalidValueFindings,
+      ...formMappingFindings,
+    ].sort(
       (a, b) => severityRank(b.severity) - severityRank(a.severity),
     ),
   };
+}
+
+function formMappingReviewFindings(
+  dataset: Dataset,
+  requiredRules: EvidenceRule[],
+  decisionArea: string,
+): QualityCheckResult[] {
+  const requiredEvidence = new Set(requiredRules.map((rule) => rule.label));
+  return (dataset.inputHints?.formEvidenceMappings ?? [])
+    .filter(
+      (mapping) =>
+        mapping.status === "ambiguous" &&
+        requiredEvidence.has(mapping.evidenceNeed),
+    )
+    .map((mapping): QualityCheckResult => ({
+      id: `decision-ambiguous-form-mapping-${slugify(mapping.evidenceNeed)}`,
+      checkType: "Decision evidence needs review",
+      status: "warning",
+      severity: "medium",
+      description: `${mapping.evidenceNeed} form mapping needs reviewer confirmation.`,
+      affectedColumns: mapping.fieldNames,
+      decisionArea,
+      evidenceNeed: mapping.evidenceNeed,
+      caveat:
+        mapping.caveats[0] ??
+        `Review the form mapping for ${mapping.evidenceNeed.toLowerCase()} before relying on it for action.`,
+      suggestedAction: `Confirm which form field supports ${mapping.evidenceNeed.toLowerCase()} before treating the dashboard as action-ready.`,
+    }));
 }
 
 function invalidDecisionValueFindings(
@@ -667,9 +944,7 @@ function invalidDecisionValueFindings(
   const responseGapRule = requiredRules.find((rule) => rule.id === "response-gap");
 
   if (affectedPopulationRule) {
-    for (const column of columns.filter((candidate) =>
-      affectedPopulationRule.patterns.some((pattern) => pattern.test(candidate)),
-    )) {
+    for (const column of evidenceRuleColumns(dataset, affectedPopulationRule, columns)) {
       const invalidCount = rows.filter((row) => {
         const value = numericValue(row[column]);
         return value !== undefined && value < 0;
@@ -694,9 +969,10 @@ function invalidDecisionValueFindings(
   }
 
   if (responseGapRule) {
-    for (const column of columns.filter((candidate) =>
-      /percent|percentage|rate/i.test(candidate) &&
-      responseGapRule.patterns.some((pattern) => pattern.test(candidate)),
+    for (const column of evidenceRuleColumns(dataset, responseGapRule, columns).filter(
+      (candidate) =>
+        /percent|percentage|rate|gap/i.test(candidate) ||
+        formMappingFields(dataset, responseGapRule.label).includes(candidate),
     )) {
       const invalidCount = rows.filter((row) => {
         const value = numericValue(row[column]);
@@ -722,6 +998,59 @@ function invalidDecisionValueFindings(
   }
 
   return findings;
+}
+
+function evidenceRuleColumns(
+  dataset: Dataset,
+  rule: EvidenceRule,
+  columns: string[],
+) {
+  return Array.from(new Set([
+    ...columns.filter((candidate) =>
+      rule.patterns.some((pattern) => pattern.test(candidate)),
+    ),
+    ...formMappingFields(dataset, rule.label),
+  ]));
+}
+
+function formMappingFields(dataset: Dataset, evidenceNeed: string) {
+  return (dataset.inputHints?.formEvidenceMappings ?? [])
+    .filter((mapping) => mapping.evidenceNeed === evidenceNeed && mapping.status !== "missing")
+    .flatMap((mapping) => mapping.fieldNames);
+}
+
+function formEvidenceCandidatesForDataset(
+  dataset: Dataset,
+  rule: EvidenceRule,
+): EvidenceCoverageCandidate[] {
+  const rows = dataset.data ?? [];
+  const mappings = dataset.inputHints?.formEvidenceMappings ?? [];
+  return mappings
+    .filter((mapping) => mapping.evidenceNeed === rule.label && mapping.status !== "missing")
+    .flatMap((mapping) =>
+      mapping.fieldNames.map((fieldName, index): EvidenceCoverageCandidate => {
+        const profileColumn = dataset.profile?.columns.find(
+          (column) => column.columnName === fieldName,
+        );
+        const confidence =
+          mapping.status === "ambiguous"
+            ? Math.min(0.68, mapping.confidence)
+            : Math.max(0, Math.min(1, mapping.confidence - index * 0.24));
+        return {
+          datasetId: dataset.id,
+          datasetName: dataset.name,
+          columnName: fieldName,
+          inferredType: profileColumn?.inferredType ?? inferBasicType(rows, fieldName),
+          missingPercentage:
+            profileColumn?.missingPercentage ?? calculateMissingPercentage(rows, fieldName),
+          confidence: roundConfidence(confidence),
+          rationale:
+            mapping.status === "ambiguous"
+              ? `Form mapping needs review before using this field for ${rule.label.toLowerCase()}.`
+              : `Form mapping links this field to ${rule.label.toLowerCase()}.`,
+        };
+      }),
+    );
 }
 
 function evidenceCandidatesForDataset(
@@ -764,6 +1093,20 @@ function evidenceCandidatesForDataset(
   });
 }
 
+function uniqueEvidenceCandidate(
+  candidate: EvidenceCoverageCandidate,
+  index: number,
+  candidates: EvidenceCoverageCandidate[],
+) {
+  return (
+    candidates.findIndex(
+      (item) =>
+        item.datasetId === candidate.datasetId &&
+        item.columnName === candidate.columnName,
+    ) === index
+  );
+}
+
 function evidenceConfidence(
   columnName: string,
   inferredType: string | undefined,
@@ -799,6 +1142,42 @@ function evidenceConfidence(
       patternBoost + importantTermBoost + exactLabelBoost + typeScore + completenessScore * 0.18,
     ),
   );
+}
+
+function sourceConfidenceForCoverage(evidenceCoverage: EvidenceCoverageSummary) {
+  if (evidenceCoverage.missingCount > 0) return "low";
+  if (evidenceCoverage.ambiguousCount > 0) return "medium";
+  const confidences = evidenceCoverage.items.flatMap((item) =>
+    item.candidates.slice(0, 1).map((candidate) => candidate.confidence),
+  );
+  if (confidences.length === 0) return "unknown";
+  const average =
+    confidences.reduce((sum, confidence) => sum + confidence, 0) /
+    confidences.length;
+  if (average >= 0.78) return "high";
+  if (average >= 0.62) return "medium";
+  return "low";
+}
+
+function sourceConfidenceRationale(evidenceCoverage: EvidenceCoverageSummary) {
+  if (evidenceCoverage.missingCount > 0) {
+    return `${evidenceCoverage.missingCount} required evidence signal${evidenceCoverage.missingCount === 1 ? "" : "s"} are missing.`;
+  }
+  if (evidenceCoverage.ambiguousCount > 0) {
+    return `${evidenceCoverage.ambiguousCount} evidence signal${evidenceCoverage.ambiguousCount === 1 ? "" : "s"} need reviewer selection.`;
+  }
+  return "Required evidence signals have deterministic candidates with reviewable confidence scores.";
+}
+
+function safeLearningTag(value: string) {
+  const normalized = value
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 48);
+  return (FEEDBACK_TAGS as readonly string[]).includes(normalized)
+    ? normalized
+    : "";
 }
 
 function calculateMissingPercentage(rows: Record<string, unknown>[], columnName: string) {

@@ -76,6 +76,14 @@ describe("privacy no-row persistence guard", () => {
       );
     }
   });
+
+  it("keeps form intake client-safe and persistence-free", () => {
+    const formIntakeSource = readFileSync(join(ROOT, "lib", "formIntake.ts"), "utf8");
+
+    expect(formIntakeSource).not.toMatch(/@\/lib\/db|@\/lib\/supabase|serverClient|metadataAdapter/i);
+    expect(formIntakeSource).not.toMatch(/\bfetch\s*\(/);
+    expect(formIntakeSource).not.toMatch(/insert|upsert|update|delete|persist|saveForm|formSubmission/i);
+  });
 });
 
 function sourceFiles(dir: string): string[] {

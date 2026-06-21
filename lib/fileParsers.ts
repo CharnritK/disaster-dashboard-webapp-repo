@@ -359,7 +359,7 @@ function validateParsedTable(filename: string, data: Record<string, unknown>[]) 
 export function createTabularDataset(
   filename: string,
   fileType: "csv" | "xlsx",
-  sourceType: "upload" | "sample",
+  sourceType: Dataset["sourceType"],
   data: Record<string, unknown>[],
   options: {
     inputHints?: DatasetInputHints;

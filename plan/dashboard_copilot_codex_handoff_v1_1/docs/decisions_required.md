@@ -74,3 +74,41 @@ approved beta/admin email. The following decisions remain intentionally blocked:
 - Any change to `AI_DAILY_QUOTA=20`.
 - Any change to deterministic sample-only `/demo` behavior.
 - Any retention automation.
+
+## Form-Aware Disaster Intake Decisions
+
+The 2026-06-21 form-aware disaster intake roadmap is approved only as local
+planning until implementation is explicitly started. The 2026-06-21
+product-standout local implementation goal starts the first safe implementation
+slice: deterministic, session-only form/export detection and mapping over the
+existing dataset workflow. The following remain blocked without separate
+explicit approval:
+
+- Persisted form-family registry tables or reusable user mapping storage.
+- Production migrations, production deployment, production environment changes,
+  or admin reporting expansion.
+- Form upload or arbitrary form entry in the public `/demo` route.
+- AI interpretation of schemas/forms or any AI provider/model/quota/SDK change.
+- Evidence taxonomy expansion beyond the existing decision needs.
+- Labeling external form mappings as official or authoritative.
+- Fuzzy matching, imputation, deduplication, row deletion, geocoding, or
+  non-row-preserving cleaning to support forms.
+- Live KoBo/ODK/Google Forms sync or background intake jobs.
+
+## Decision Assurance Product-Standout Decisions
+
+The local product-standout layer may improve reviewed templates, readiness
+summaries, export-only dossier fields, AI fallback explanations, approved
+metadata-only learning signals, and protected-app form review UI. The following
+remain blocked without separate explicit approval:
+
+- Treating the Evidence Readiness Control Tower as operational command
+  authority rather than reviewable decision readiness.
+- Expanding the evidence taxonomy beyond the reviewed decision-template needs.
+- Persisting control tower state, form mappings, source registers, dossiers,
+  exports, prepared rows, or uploaded rows.
+- Adding automatic learning, model tuning, or template/playbook mutation from
+  beta feedback.
+- Expanding admin reports beyond aggregate metadata.
+- Claiming AI certification, operational safety, or official external-form
+  mappings.
