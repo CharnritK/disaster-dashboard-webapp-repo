@@ -1,0 +1,13 @@
+shelter_id,district_id,shelter_name,capacity_total,current_occupancy,accessible_beds,generator_available,potable_water_hours,medical_staff_count,status,last_inspected_at
+SH-201,D-104,Old Market Civic Hall,1200,1145,72,true,9,3,near_capacity,2026-06-12T08:10:00+07:00
+SH-202,D-102,Riverbend Sports Center,900,780,54,true,14,2,open,2026-06-12T08:20:00+07:00
+SH-203,D-105,South Flats High School,1100,930,65,false,7,1,near_capacity,2026-06-12T08:25:00+07:00
+SH-204,D-110,East Lagoon Temple Hall,650,625,31,false,5,1,near_capacity,2026-06-12T08:40:00+07:00
+SH-205,D-107,Canal View Community College,700,520,44,true,18,2,open,2026-06-12T08:45:00+07:00
+SH-206,D-103,Harbor Point Exhibition Hall,1300,870,80,true,20,4,open,2026-06-12T08:55:00+07:00
+SH-207,D-101,North Quay Ferry Terminal,500,360,22,false,11,1,open,2026-06-12T09:05:00+07:00
+SH-208,D-108,Hillcrest University Gym,750,410,58,true,26,4,open,2026-06-12T09:15:00+07:00
+SH-209,D-109,Mill District Union Hall,800,610,36,true,12,2,open,2026-06-12T09:25:00+07:00
+SH-210,D-106,Airport Ward Convention Annex,1500,320,110,true,32,5,open,2026-06-12T09:35:00+07:00
+SH-211,D-111,Depot Row Training Center,950,280,62,true,30,3,open,2026-06-12T09:45:00+07:00
+SH-212,D-112,Lower Green Parish Hall,480,390,18,false,,0,open,2026-06-12T09:55:00+07:00

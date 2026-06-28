@@ -1,0 +1,19 @@
+resource_id,district_id,resource_type,quantity_available,unit,staging_site,eta_hours,deployment_ready,owner_agency
+RS-3001,D-104,meal_kits,1800,kits,Old Market Civic Hall,1.5,true,City Logistics
+RS-3002,D-104,water_liters,6200,liters,Old Market Civic Hall,1.5,true,Water Authority
+RS-3003,D-104,rescue_boats,4,boats,Central Basin Yard,2,true,Fire Rescue
+RS-3004,D-102,meal_kits,1400,kits,Riverbend Sports Center,2,true,City Logistics
+RS-3005,D-102,water_liters,5200,liters,Riverbend Sports Center,2,true,Water Authority
+RS-3006,D-105,meal_kits,900,kits,South Flats High School,3,false,City Logistics
+RS-3007,D-105,water_liters,3600,liters,South Flats High School,3,true,Water Authority
+RS-3008,D-110,water_liters,2100,liters,East Lagoon Temple Hall,4,false,Water Authority
+RS-3009,D-110,rescue_boats,2,boats,East Lagoon Dock,2.5,true,Coast Guard
+RS-3010,D-107,sanitation_kits,420,kits,Canal View Community College,3,true,Health Department
+RS-3011,D-107,water_liters,3100,liters,Canal View Community College,3,true,Water Authority
+RS-3012,D-103,medical_kits,160,kits,Harbor Point Exhibition Hall,2,true,Health Department
+RS-3013,D-108,medical_kits,240,kits,Hillcrest University Gym,1,true,Health Department
+RS-3014,D-108,ambulances,6,vehicles,Hillcrest Hospital,0.5,true,EMS
+RS-3015,D-109,generators,7,units,Mill District Union Hall,2.5,true,Energy Utility
+RS-3016,D-101,meal_kits,700,kits,North Quay Ferry Terminal,3.5,true,City Logistics
+RS-3017,D-112,water_liters,,liters,Lower Green Parish Hall,4,false,Water Authority
+RS-3018,D-111,blankets,1200,blankets,Depot Row Training Center,5,true,Relief NGO
