@@ -2,9 +2,10 @@
 
 Date: 2026-06-28
 
-Status: approved for local/staging-safe planning and implementation. The first
-executable slice is deterministic and session-only. Persistence expansion,
-production deployment, production migrations, production environment changes,
+Status: approved for local/staging-safe planning and implementation. Phase 15,
+Phase 16, and the safe protected-UI portion of Phase 17 were implemented locally
+on 2026-06-28 in commit `1a3f4fe`. Persistence expansion, production
+deployment, production migrations, production environment changes,
 provider/model changes, open signup, anonymous AI, and public demo upload remain
 blocked unless separately approved.
 
@@ -30,6 +31,17 @@ First executable slice:
 3. Integrate protected-app UI copy and cards without changing `/demo`.
 4. Add tests proving privacy, demo isolation, and action ranking.
 
+Implementation checkpoint:
+
+- `types/repairAction.ts`;
+- `lib/repairActions.ts`;
+- `lib/coach/nextBestAction.ts`;
+- protected workflow integration in `components/DashboardCopilotApp.tsx` and
+  `components/WorkflowComponents.tsx`;
+- tests in `tests/repair-actions.test.ts`,
+  `tests/next-best-action-coach.test.ts`, `tests/coach.test.ts`,
+  `tests/formIntake.test.ts`, and `tests/privacy-no-row-persistence.test.ts`.
+
 Later approval-gated expansion:
 
 1. Persist metadata-only form registry and reusable mapping records.
@@ -40,6 +52,8 @@ Later approval-gated expansion:
    responses, exports, credentials, and production state out of scope.
 
 ## Phase 15 - Session-Only Repair Foundation
+
+Implementation status: complete locally on 2026-06-28.
 
 Objective: add typed repair action contracts and deterministic generation over
 existing readiness, form detection, quality, and AI fallback signals.
@@ -57,6 +71,8 @@ Acceptance:
   privacy boundaries.
 
 ## Phase 16 - Next Best Action Coach
+
+Implementation status: complete locally on 2026-06-28.
 
 Objective: replace generic coach hints with contextual triage over repair
 actions.
@@ -92,6 +108,9 @@ Acceptance:
 
 ## Phase 17 - Protected UI Integration
 
+Implementation status: safe protected-workflow portion complete locally on
+2026-06-28. Public demo behavior remains unchanged.
+
 Objective: extend the protected workflow with repair cards and coach-ranked next
 actions.
 
@@ -107,6 +126,9 @@ Acceptance:
 
 ## Phase 18 - Metadata Registry Foundation
 
+Implementation status: not started. This is the next gated product slice, not a
+carry-over from the completed session-only work.
+
 Objective: add typed metadata contracts and draft persistence surfaces for form
 families, form versions, and reusable mappings only after separate persistence
 approval.
@@ -114,7 +136,12 @@ approval.
 Gate:
 
 - do not implement this phase until persistence expansion has explicit approval
-  in the active decision docs.
+  in the active decision docs;
+- approval must name the metadata tables, local/staging migration target,
+  adapter/API boundary, and test gates;
+- production migration, production deployment, production environment mutation,
+  raw row/file persistence, prompt/model-response persistence, and public demo
+  upload remain out of scope.
 
 Acceptance:
 
@@ -271,8 +298,17 @@ Checks:
 
 ## Next Safe Task
 
-Implement Phase 15, Phase 16, and the safe portion of Phase 17 first:
-session-only repair actions, deterministic next-best-action ranking, protected
-UI integration, and tests. Do not start persistence, schema/RLS, registry APIs,
-AI schema interpretation, connector/OCR/geocoding/fuzzy runtime work, or public
-demo changes in the first long-running goal.
+Phase 15, Phase 16, and the safe protected-workflow portion of Phase 17 are
+complete locally. The next safe continuation is a Phase 18 approval packet and
+implementation plan, not code that mutates persistence.
+
+Before Phase 18 implementation, get explicit approval for:
+
+1. metadata-only tables: `form_registries`, `form_registry_versions`, and
+   `reusable_mappings`;
+2. local/staging-only schema/RLS drafts and in-memory adapter behavior;
+3. protected API route names and validator contracts;
+4. privacy tests that reject raw rows, uploaded files, full prompts, model
+   responses, sample values, and row-like payloads;
+5. confirmation that no production migration, production deployment, provider
+   change, admin expansion, or public demo upload is included.

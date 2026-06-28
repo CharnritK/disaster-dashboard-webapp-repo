@@ -1,13 +1,14 @@
 # Final Goal Status
 
-Date: 2026-06-21
+Date: 2026-06-28
 
-Verdict: `LOCAL_IMPLEMENTATION_COMPLETE_PHASES_0_14_AUTH_GATE_VALIDATED`
+Verdict: `LOCAL_IMPLEMENTATION_COMPLETE_PHASES_0_17_REPAIR_COACH_VALIDATED`
 
 The controlled-beta implementation is complete for local/reviewable code paths
-through the phase 13/14 product-standout layer. The public deterministic demo,
-protected-route login gate, session-only uploaded-data boundary, metadata-only
-persistence boundary, and deterministic fallback posture have been locally
+through the phase 15-17 session-only repair and coach slice. The public
+deterministic demo, protected-route login gate, session-only uploaded-data
+boundary, metadata-only persistence boundary, deterministic fallback posture,
+protected repair guidance, and next-best-action coach behavior have been locally
 validated. Earlier Supabase-backed magic-link login was user-confirmed for the
 approved beta/admin email, but authenticated staging route rendering and
 metadata/admin runtime smoke still need a clicked magic-link session. Production
@@ -84,6 +85,19 @@ allowlist changes remain out of scope.
   - Handoff Dossier v2 metadata fields;
   - safe beta learning signal helper;
   - protected internal `/app/ai-trial` sample-only AI-path smoke surface.
+- Phase 15 session-only repair foundation:
+  - typed `RepairAction` contracts;
+  - deterministic repair action generation for missing evidence, ambiguous
+    mapping, AI fallback, and quality review states;
+  - no new persistence, provider, public route, or demo upload behavior.
+- Phase 16 deterministic Next Best Action Coach:
+  - ranks repair actions before generic hints;
+  - returns 1-3 lowest-effort next actions;
+  - separates app-assisted actions from human review.
+- Phase 17 protected repair UI integration:
+  - repair cards render only inside protected workspace mode;
+  - public `/demo` remains deterministic and sample-only;
+  - workflow copy avoids operational approval language.
 - D1-D7 approval alignment:
   - preview-only deployment path approved;
   - Supabase Auth/Postgres approved for the real beta project;
@@ -99,7 +113,7 @@ allowlist changes remain out of scope.
 ## Verification
 
 - `npm run lint` - passed.
-- `npm run test` - passed, 21 test files, 178 tests.
+- `npm run test` - passed, 23 test files, 192 tests.
 - `npm run build` - passed.
 - `git diff --check` - passed with Windows line-ending warnings only.
 - `node scripts/smoke-vercel.mjs --dry-run` - passed.
@@ -115,6 +129,11 @@ allowlist changes remain out of scope.
   - `/api/templates` returns 401 unauthenticated;
   - `/api/feedback` returns 401 unauthenticated;
   - `/api/coach` returns deterministic fallback unauthenticated.
+- Phase 15-17 targeted verification passed:
+  - `npm run test -- tests/repair-actions.test.ts tests/next-best-action-coach.test.ts tests/coach.test.ts`;
+  - `npm run test -- tests/formIntake.test.ts tests/privacy-no-row-persistence.test.ts`;
+  - browser smoke confirmed `/demo` has no upload/form-aware intake/repair
+    controls and `/app/data` redirects unauthenticated users to login.
 - Staging Supabase-backed Vercel preview smoke passed:
   - `/demo` returned 200;
   - `/api/recommend/status` returned deterministic fallback with
