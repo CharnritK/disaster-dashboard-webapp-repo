@@ -11,12 +11,19 @@ import type { TransformationStep } from "@/types/transformations";
 import type { WorkflowStep } from "@/lib/config";
 import { buildDeterministicDecisionHandoffSummary } from "@/lib/copilotHandoff";
 import { loadSampleDatasets, parseFile, type SampleDatasetKind } from "@/lib/fileParsers";
+import { createFormDatasetFromRows } from "@/lib/formIntake";
 import { profileDataset } from "@/lib/profiling";
 import { AIRecommendationRequestError, generateFallbackRecommendations, requestAIRecommendations, requestDecisionHandoffCopilotSummary } from "@/lib/recommendations";
 import { applyJoinRecommendations, prepareSingleDataset, selectJoinPlan } from "@/lib/harmonization";
 import { reconcileCleaningRecommendationsForDatasetColumns } from "@/lib/cleaningTransforms";
 import { runQualityChecks } from "@/lib/validation";
-import { assessDecisionReadiness, buildEvidenceCoverageSummary, createDefaultDecisionBrief, validateDecisionBrief } from "@/lib/decisionContext";
+import {
+  assessDecisionReadiness,
+  buildAiGuardrailExplanation,
+  buildEvidenceCoverageSummary,
+  createDefaultDecisionBrief,
+  validateDecisionBrief,
+} from "@/lib/decisionContext";
 import {
   generateDeterministicDashboardRecommendation,
   reconcileDashboardRecommendation
@@ -141,7 +148,9 @@ export default function DashboardCopilotApp({
     setLoading(true);
     try {
       const results = await Promise.all(Array.from(files).map(parseFile));
-      const parsed = results.flatMap((result) => (result.dataset ? [result.dataset] : []));
+      const parsed = results.flatMap((result) =>
+        result.dataset ? [formAwareDataset(result.dataset)] : [],
+      );
       setErrors(results.flatMap((result) => (result.error ? [result.error] : [])));
       setState((current) => ({
         ...current,
@@ -214,6 +223,26 @@ export default function DashboardCopilotApp({
         warning: undefined
       };
     });
+    syncWorkspaceRoute("upload");
+  }
+
+  function addFormDataset(dataset: Dataset) {
+    setErrors([]);
+    setState((current) => ({
+      ...current,
+      datasets: [...current.datasets, dataset],
+      profilesReady: false,
+      aiRecommendations: undefined,
+      selectedJoinRecommendations: undefined,
+      preparedDataset: undefined,
+      decisionReadiness: undefined,
+      qualityResults: [],
+      dashboardRecommendation: undefined,
+      handoffSummary: undefined,
+      transformationLog: [],
+      currentStep: "upload",
+      warning: undefined
+    }));
     syncWorkspaceRoute("upload");
   }
 
@@ -705,8 +734,11 @@ export default function DashboardCopilotApp({
           <div className="main-panel">
             {state.currentStep === "brief" && (
               <DecisionBriefStep
+                aiAssistedAvailable={aiApiAvailable}
+                aiAssistedEnabled={llmEnabled}
                 brief={state.decisionBrief}
                 missingFields={missingDecisionFields}
+                onAiAssistedEnabledChange={handleLlmEnabledChange}
                 onChange={updateDecisionBrief}
                 onContinue={proceedFromDecisionBrief}
               />
@@ -720,6 +752,7 @@ export default function DashboardCopilotApp({
                 onSamples={useSamples}
                 onRemoveDataset={removeDataset}
                 onUpdateDatasetInputHints={updateDatasetInputHints}
+                onCreateFormDataset={addFormDataset}
                 sampleOnly={demoMode}
               />
             )}
@@ -728,6 +761,9 @@ export default function DashboardCopilotApp({
             )}
             {state.currentStep === "recommend" && state.aiRecommendations && (
               <RecommendationStep
+                aiGuardrail={buildAiGuardrailExplanation({
+                  recommendations: state.aiRecommendations,
+                })}
                 recommendations={state.aiRecommendations}
                 joins={joinPlan}
                 datasets={state.datasets}
@@ -740,6 +776,11 @@ export default function DashboardCopilotApp({
                 dataset={state.preparedDataset}
                 joins={state.selectedJoinRecommendations}
                 quality={state.qualityResults}
+                evidenceCoverage={buildEvidenceCoverageSummary(state.datasets, state.decisionBrief)}
+                aiGuardrail={buildAiGuardrailExplanation({
+                  recommendations: state.aiRecommendations,
+                  qualityResults: state.qualityResults,
+                })}
                 decisionReadiness={state.decisionReadiness}
                 transformationLog={state.transformationLog}
                 isWorking={loading}
@@ -811,6 +852,28 @@ function canNavigateToStepFromState(state: WorkflowState, step: WorkflowStep) {
   if (step === "dashboard") return Boolean(state.preparedDataset && state.dashboardRecommendation);
   if (step === "export") return Boolean(state.preparedDataset && state.dashboardRecommendation);
   return false;
+}
+
+function formAwareDataset(dataset: Dataset): Dataset {
+  if (!dataset.data?.length) return dataset;
+  const formDataset = createFormDatasetFromRows(
+    dataset.originalFilename ?? `${dataset.name}.${dataset.fileType}`,
+    dataset.fileType,
+    dataset.data,
+    {
+      datasetId: dataset.id,
+      uploadedAt: dataset.uploadedAt,
+    },
+  );
+  const family = formDataset.inputHints?.formMetadata?.family;
+  const detected = formDataset.inputHints?.formDetection?.status === "detected";
+  if (!detected || family === "generic_table" || family === "suggested_template") {
+    return dataset;
+  }
+  return {
+    ...formDataset,
+    formatAssessment: dataset.formatAssessment,
+  };
 }
 
 function mergeRecommendationResponse(

@@ -16,6 +16,7 @@ import { checkRateLimit } from "@/lib/apiSecurity";
 import { positiveNumberFromConfig } from "@/lib/config";
 import { toCsv } from "@/lib/exportCsv";
 import { qualityLinesForPdf } from "@/lib/exportPdf";
+import { createFormDatasetFromRows } from "@/lib/formIntake";
 import {
   buildDecisionHandoffRequestBody,
   buildRecommendationRequestBody,
@@ -39,8 +40,13 @@ import {
 } from "@/lib/chartMetrics";
 import {
   assessDecisionReadiness,
+  buildAiGuardrailExplanation,
   buildEvidenceCoverageSummary,
+  buildEvidenceReadinessControlTower,
   buildDecisionMapDataGroups,
+  buildDecisionPlaybook,
+  buildDecisionPlaybooks,
+  buildSafeBetaLearningSignal,
   evidenceCoverageStatusLabel,
   readinessStatusLabel,
   buildSuggestedCollectionTemplateRows,
@@ -400,6 +406,24 @@ describe("data pipeline", () => {
     }
 
     expect(createDefaultDecisionBrief().useCaseId).toBe("response_prioritization");
+  });
+
+  it("builds decision playbooks from reviewed template evidence without expanding taxonomy", () => {
+    const playbooks = buildDecisionPlaybooks();
+    const responsePlaybook = buildDecisionPlaybook("response_prioritization");
+
+    expect(playbooks).toHaveLength(DECISION_TEMPLATES.length);
+    expect(responsePlaybook.decisionQuestion).toBe(
+      createDecisionBriefFromTemplate("response_prioritization").decisionQuestion,
+    );
+    expect(responsePlaybook.requiredEvidence).toEqual(
+      DECISION_TEMPLATES.find((template) => template.id === "response_prioritization")?.requiredEvidence,
+    );
+    expect(responsePlaybook.knownCaveats.length).toBeGreaterThan(0);
+    expect(responsePlaybook.suggestedFields.map((field) => field.evidenceNeed)).toEqual(
+      expect.arrayContaining(responsePlaybook.requiredEvidence),
+    );
+    expect(JSON.stringify(responsePlaybook)).not.toMatch(/raw rows|officially certified/i);
   });
 
   it("updates collection fields by disaster decision template", () => {
@@ -794,6 +818,186 @@ describe("data pipeline", () => {
     expect(preparednessCoverage.items.map((item) => item.evidenceNeed)).toEqual(preparednessBrief.requiredEvidence);
   });
 
+  it("uses form evidence mappings before generic column-name inference", () => {
+    const dataset = withProfile({
+      ...createTabularDataset(
+        "field-form.csv",
+        "csv",
+        "form",
+        parseCsv("place,need,people,gap,teams\nNorth,78,1200,35,2\n"),
+      ),
+      inputHints: {
+        formFamily: "generic_table",
+        formSourceKind: "tabular_rows",
+        formEvidenceMappings: [
+          { evidenceNeed: "Admin geography", fieldNames: ["place"], status: "mapped", confidence: 0.88, caveats: [] },
+          { evidenceNeed: "Need severity", fieldNames: ["need"], status: "mapped", confidence: 0.88, caveats: [] },
+          { evidenceNeed: "Affected population", fieldNames: ["people"], status: "mapped", confidence: 0.88, caveats: [] },
+          { evidenceNeed: "Response gap", fieldNames: ["gap"], status: "mapped", confidence: 0.88, caveats: [] },
+          { evidenceNeed: "Capacity signal", fieldNames: ["teams"], status: "mapped", confidence: 0.88, caveats: [] },
+        ],
+      },
+    });
+    const brief = createDecisionBriefFromTemplate("response_prioritization");
+    const coverage = buildEvidenceCoverageSummary([dataset], brief);
+    const readiness = assessDecisionReadiness(dataset, brief, runQualityChecks(dataset)).readiness;
+
+    expect(coverage.missingCount).toBe(0);
+    expect(coverage.items.every((item) => item.status === "covered")).toBe(true);
+    expect(coverage.items.find((item) => item.evidenceNeed === "Need severity")?.candidates[0].columnName).toBe("need");
+    expect(readiness.requiredEvidenceMissing).toEqual([]);
+  });
+
+  it("keeps ambiguous form evidence as review-needed readiness", () => {
+    const dataset = withProfile({
+      ...createTabularDataset(
+        "ambiguous-form.csv",
+        "csv",
+        "form",
+        parseCsv("place,need_a,need_b,people,gap,teams\nNorth,78,80,1200,35,2\n"),
+      ),
+      inputHints: {
+        formFamily: "generic_table",
+        formSourceKind: "tabular_rows",
+        formEvidenceMappings: [
+          { evidenceNeed: "Admin geography", fieldNames: ["place"], status: "mapped", confidence: 0.88, caveats: [] },
+          {
+            evidenceNeed: "Need severity",
+            fieldNames: ["need_a", "need_b"],
+            status: "ambiguous",
+            confidence: 0.68,
+            caveats: ["Two form fields may represent severity."],
+          },
+          { evidenceNeed: "Affected population", fieldNames: ["people"], status: "mapped", confidence: 0.88, caveats: [] },
+          { evidenceNeed: "Response gap", fieldNames: ["gap"], status: "mapped", confidence: 0.88, caveats: [] },
+          { evidenceNeed: "Capacity signal", fieldNames: ["teams"], status: "mapped", confidence: 0.88, caveats: [] },
+        ],
+      },
+    });
+    const brief = createDecisionBriefFromTemplate("response_prioritization");
+    const coverage = buildEvidenceCoverageSummary([dataset], brief);
+    const readiness = assessDecisionReadiness(dataset, brief, runQualityChecks(dataset)).readiness;
+
+    expect(coverage.items.find((item) => item.evidenceNeed === "Need severity")?.status).toBe("ambiguous");
+    expect(readiness.status).toBe("review_needed");
+    expect(readiness.requiredEvidenceMissing).toEqual([]);
+    expect(readiness.caveats).toContain("Two form fields may represent severity.");
+  });
+
+  it("builds an evidence readiness control tower from deterministic coverage and readiness", () => {
+    const dataset = withProfile(createTabularDataset(
+      "field-form.csv",
+      "csv",
+      "sample",
+      parseCsv("admin_code,need_score\nD01,78\n"),
+    ));
+    const brief = responsePrioritizationBrief([
+      "Admin geography",
+      "Need severity",
+      "Affected population",
+    ]);
+    const coverage = buildEvidenceCoverageSummary([dataset], brief);
+    const readiness = assessDecisionReadiness(
+      dataset,
+      brief,
+      runQualityChecks(dataset),
+    ).readiness;
+    const controlTower = buildEvidenceReadinessControlTower({
+      evidenceCoverage: coverage,
+      readiness,
+    });
+
+    expect(controlTower.deterministicAuthority).toBe(true);
+    expect(controlTower.status).toBe("decision_unsafe");
+    expect(controlTower.actionSafetyState).toBe("blocked_for_action");
+    expect(controlTower.evidenceCovered).toEqual(
+      expect.arrayContaining(["Admin geography", "Need severity"]),
+    );
+    expect(controlTower.missingEvidence).toEqual(["Affected population"]);
+    expect(controlTower.blockers).toEqual([
+      "Missing required evidence: Affected population",
+    ]);
+    expect(controlTower.nextCollectionAsks[0]).toContain("Add or combine");
+    expect(controlTower.sourceConfidence).toBe("low");
+  });
+
+  it("explains AI guardrails without changing deterministic authority", () => {
+    const explanation = buildAiGuardrailExplanation({
+      recommendations: {
+        source: "deterministic",
+        fallbackReason: "quota_exceeded",
+        summary: "Fallback",
+        recommendedPath: {
+          actions: ["Prepare dataset"],
+          confidence: 0.7,
+          rationale: "Deterministic fallback.",
+          title: "Proceed with deterministic checks",
+        },
+        assumptions: ["profile-only"],
+      },
+      qualityResults: [
+        {
+          id: "decision-missing-affected-population",
+          checkType: "Decision evidence missing",
+          status: "fail",
+          severity: "high",
+          description: "Affected population evidence is missing.",
+          caveat: "Do not rank districts by need without an affected population denominator.",
+        },
+      ],
+      unsupportedSuggestions: ["Skipped unsupported row deletion recommendation."],
+    });
+
+    expect(explanation.advisoryOnly).toBe(true);
+    expect(explanation.aiRecommendationStatus).toBe("fallback");
+    expect(explanation.deterministicValidation).toBe("rejected");
+    expect(explanation.fallbackReason).toBe("quota_exceeded");
+    expect(explanation.deterministicAuthorityStatement).toContain("Deterministic profiling");
+    expect(explanation.unsupportedSuggestions).toEqual([
+      "Skipped unsupported row deletion recommendation.",
+    ]);
+    expect(explanation.validationCaveats).toEqual([
+      "Do not rank districts by need without an affected population denominator.",
+    ]);
+  });
+
+  it("creates metadata-only beta learning signals from readiness state", () => {
+    const dataset = withProfile(createTabularDataset(
+      "needs.csv",
+      "csv",
+      "sample",
+      parseCsv("district_name,needs_score\nNorth,78\n"),
+    ));
+    const brief = createDefaultDecisionBrief();
+    const coverage = buildEvidenceCoverageSummary([dataset], brief);
+    const readiness = assessDecisionReadiness(dataset, brief, runQualityChecks(dataset)).readiness;
+    const signal = buildSafeBetaLearningSignal({
+      decisionBrief: brief,
+      evidenceCoverage: coverage,
+      readiness,
+      fallbackReason: "missing_api_key",
+      exportType: "handoff_log",
+      feedbackTags: ["useful", "missing-caveat", "Needs Rows: North"],
+    });
+    const serialized = JSON.stringify(signal);
+
+    expect(signal).toEqual(
+      expect.objectContaining({
+        useCaseId: "response_prioritization",
+        readinessStatus: readiness.status,
+        blockerCount: readiness.blockerCount,
+        missingEvidenceCount: coverage.missingCount,
+        fallbackReason: "missing_api_key",
+        exportType: "handoff_log",
+        metadataOnly: true,
+      }),
+    );
+    expect(signal.feedbackTags).toEqual(["useful", "missing-caveat"]);
+    expect(serialized).not.toContain("district_name");
+    expect(serialized).not.toContain("North");
+    expect(serialized).not.toContain("78");
+  });
+
   it("quality-risk sample triggers invalid decision values and decision unsafe readiness", () => {
     const dataset = withProfile(createTabularDataset(
       "demo_quality_risk.csv",
@@ -868,6 +1072,125 @@ describe("data pipeline", () => {
 
     expect(packet.aiAssistance.mode).toBe("fallback");
     expect(packet.aiAssistance.summary).toContain("deterministic recommendations");
+  });
+
+  it("builds a handoff dossier v2 with owner, blockers, source register, and lineage", () => {
+    const brief = createDefaultDecisionBrief();
+    const dataset = withProfile(createTabularDataset(
+      "needs.csv",
+      "csv",
+      "sample",
+      parseCsv("district_name,needs_score\nNorth,78\n"),
+    ));
+    const quality = runQualityChecks(dataset, brief);
+    const readiness = assessDecisionReadiness(dataset, brief, quality).readiness;
+    const packet = buildDecisionHandoffPacket({
+      acceptedCaveats: ["Affected population must be collected before action."],
+      decisionBrief: brief,
+      decisionReadiness: readiness,
+      decisionOwner: "Operations lead",
+      evidenceCoverage: buildEvidenceCoverageSummary([dataset], brief),
+      datasets: [dataset],
+      generatedAt: "2026-06-12T00:00:00.000Z",
+      reviewer: "IM reviewer",
+      reviewByDate: "2026-06-15",
+      selectedJoinRecommendations: [],
+      qualityResults: quality,
+      transformationLog: [
+        {
+          affectedColumns: ["needs_score"],
+          description: "Profiled uploaded needs fields.",
+          id: "profile-1",
+          stepType: "profile",
+          timestamp: "2026-06-12T00:00:00.000Z",
+        },
+      ],
+      aiMode: "fallback",
+      aiFallbackReason: "missing_api_key",
+    });
+    const serializedDossier = JSON.stringify(packet.dossier);
+
+    expect(packet.dossierVersion).toBe("2.0");
+    expect(packet.dossier).toEqual(
+      expect.objectContaining({
+        acceptedCaveats: ["Affected population must be collected before action."],
+        aiFallbackReason: "missing_api_key",
+        aiMode: "fallback",
+        decisionOwner: "Operations lead",
+        reviewer: "IM reviewer",
+        reviewByDate: "2026-06-15",
+      }),
+    );
+    expect(packet.dossier.unresolvedBlockers.length).toBeGreaterThan(0);
+    expect(packet.dossier.sourceRegister[0]).toEqual(
+      expect.objectContaining({
+        name: "needs",
+        rowCount: 1,
+        sourceType: "sample",
+      }),
+    );
+    expect(packet.dossier.transformationLineage[0]).toEqual(
+      expect.objectContaining({
+        affectedColumns: ["needs_score"],
+        stepType: "profile",
+      }),
+    );
+    expect(serializedDossier).not.toContain("North");
+    expect(serializedDossier).not.toContain("78");
+  });
+
+  it("includes form intake metadata in decision handoff without sample values", () => {
+    const dataset = withProfile(createFormDatasetFromRows(
+      "hxl-response.csv",
+      "csv",
+      [
+        {
+          adm1_name: "#adm1+name",
+          affected_people: "#affected+ind",
+          org_name: "#org+name",
+        },
+        {
+          adm1_name: "North Confidential District",
+          affected_people: 1200,
+          org_name: "Sensitive Relief Partner",
+        },
+      ],
+      {
+        datasetId: "form-hxl-response",
+        uploadedAt: "2026-06-12T00:00:00.000Z",
+      },
+    ));
+    const brief = responsePrioritizationBrief(["Admin geography", "Affected population"]);
+    const evidenceCoverage = buildEvidenceCoverageSummary([dataset], brief);
+    const handoff = buildDecisionHandoffPacket({
+      decisionBrief: brief,
+      evidenceCoverage,
+      datasets: [dataset],
+      selectedJoinRecommendations: [],
+      qualityResults: [],
+      transformationLog: [],
+      aiMode: "disabled",
+    });
+    const serializedFormIntake = JSON.stringify(handoff.datasetLineage[0].formIntake);
+
+    expect(handoff.dossier.sourceRegister[0]).toEqual(
+      expect.objectContaining({
+        formDetectionStatus: "detected",
+        formFamily: "hxl",
+        formMappingCount: expect.any(Number),
+      }),
+    );
+    expect(handoff.datasetLineage[0].formIntake?.detection.family).toBe("hxl");
+    expect(handoff.datasetLineage[0].formIntake?.privacyAudit).toEqual(
+      expect.objectContaining({
+        metadataOnly: true,
+        rawRowValuesIncluded: false,
+      }),
+    );
+    expect(serializedFormIntake).toContain("#adm1+name");
+    expect(serializedFormIntake).not.toContain("North Confidential District");
+    expect(serializedFormIntake).not.toContain("Sensitive Relief Partner");
+    expect(serializedFormIntake).not.toContain("1200");
   });
 
   it("decision unsafe packet includes review-only language", () => {

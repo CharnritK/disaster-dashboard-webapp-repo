@@ -10,12 +10,15 @@ import type {
 } from "@/types/dataset";
 import type {
   DecisionBrief,
+  AiGuardrailExplanation,
+  DecisionPlaybook,
   DecisionReadinessResult,
   EvidenceCoverageSummary,
   SuggestedDataCollectionTemplate,
 } from "@/types/decision";
 import type { DecisionHandoffSummary } from "@/types/copilot";
 import type { SampleDatasetKind } from "@/lib/fileParsers";
+import { createFormDatasetFromTemplate } from "@/lib/formIntake";
 import type {
   AIRecommendationResponse,
   CleaningRecommendation,
@@ -35,6 +38,8 @@ import { runQualityChecks } from "@/lib/validation";
 import {
   buildEvidenceCoverageSummary,
   buildDecisionMapDataGroups,
+  buildDecisionPlaybook,
+  buildEvidenceReadinessControlTower,
   buildSuggestedCollectionTemplateRows,
   buildSuggestedDataCollectionTemplate,
   createDecisionBriefFromTemplate,
@@ -149,13 +154,19 @@ export function LoadingStatus() {
 }
 
 export function DecisionBriefStep({
+  aiAssistedAvailable,
+  aiAssistedEnabled,
   brief,
   missingFields,
+  onAiAssistedEnabledChange,
   onChange,
   onContinue,
 }: {
+  aiAssistedAvailable: boolean;
+  aiAssistedEnabled: boolean;
   brief: DecisionBrief;
   missingFields: string[];
+  onAiAssistedEnabledChange: (enabled: boolean) => void;
   onChange: (brief: DecisionBrief) => void;
   onContinue: () => void;
 }) {
@@ -164,6 +175,9 @@ export function DecisionBriefStep({
   };
   const collectionTemplate = buildSuggestedDataCollectionTemplate(brief);
   const selectedTemplate = getUseCaseTemplate(brief.useCaseId);
+  const selectedPlaybook = buildDecisionPlaybook(brief.useCaseId);
+  const templateDefaults = createDecisionBriefFromTemplate(brief.useCaseId);
+  const hasCustomBriefContext = isBriefCustomizedFromTemplate(brief, templateDefaults);
   const [isDecisionMapOpen, setIsDecisionMapOpen] = useState(false);
   const decisionMapTitleId = useId();
   const decisionMapDescriptionId = useId();
@@ -194,7 +208,7 @@ export function DecisionBriefStep({
             <h3>{selectedTemplate.title}</h3>
             <p>{selectedTemplate.description}</p>
             <p className="helper-text">
-              Defaults are ready to run. Adjust the brief only where your decision differs.
+              Defaults are ready to run in deterministic mode. If you change the decision context, turn on AI-assisted workflow so the model can use your edited question, action, and evidence needs.
             </p>
             <button
               type="button"
@@ -205,6 +219,44 @@ export function DecisionBriefStep({
             </button>
           </div>
         </div>
+        <div className={`ai-context-notice${hasCustomBriefContext ? " custom" : ""}`}>
+          <div>
+            <strong>
+              {hasCustomBriefContext
+                ? "Custom decision context detected"
+                : "Template defaults selected"}
+            </strong>
+            <p>
+              {hasCustomBriefContext
+                ? aiAssistedEnabled && aiAssistedAvailable
+                  ? "AI-assisted workflow is on. Your edited brief will be sent as minimized decision context with the profile metadata."
+                  : "Deterministic mode will continue with template rules, but it will not reinterpret your custom brief. Turn on AI-assisted workflow before harmonizing or generating dashboards."
+                : "Use the template as-is for the deterministic guided flow, or edit it and turn on AI-assisted workflow for context-aware recommendations."}
+            </p>
+          </div>
+          <label className="llm-toggle ai-context-toggle">
+            <input
+              type="checkbox"
+              checked={aiAssistedEnabled}
+              disabled={!aiAssistedAvailable}
+              onChange={(event) => onAiAssistedEnabledChange(event.target.checked)}
+            />
+            <span className="llm-toggle-copy">
+              <span>AI-assisted workflow</span>
+              <strong>
+                {aiAssistedAvailable
+                  ? aiAssistedEnabled
+                    ? "On"
+                    : "Off"
+                  : "Unavailable"}
+              </strong>
+            </span>
+            <span className="llm-toggle-track" aria-hidden="true">
+              <span className="llm-toggle-thumb" />
+            </span>
+          </label>
+        </div>
+        <DecisionPlaybookPanel playbook={selectedPlaybook} />
         <div className="brief-form-grid">
           <label>
             Decision question
@@ -290,6 +342,70 @@ export function DecisionBriefStep({
           />
         ) : null}
       </article>
+    </section>
+  );
+}
+
+function isBriefCustomizedFromTemplate(
+  brief: DecisionBrief,
+  templateDefaults: DecisionBrief,
+) {
+  return (
+    brief.decisionQuestion !== templateDefaults.decisionQuestion ||
+    brief.intendedAction !== templateDefaults.intendedAction ||
+    brief.decisionMaker !== templateDefaults.decisionMaker ||
+    brief.geographyScope !== templateDefaults.geographyScope ||
+    brief.timeframe !== templateDefaults.timeframe ||
+    normalizedEvidence(brief.requiredEvidence) !==
+      normalizedEvidence(templateDefaults.requiredEvidence)
+  );
+}
+
+function normalizedEvidence(values: string[]) {
+  return [...values].sort().join("|");
+}
+
+function DecisionPlaybookPanel({ playbook }: { playbook: DecisionPlaybook }) {
+  return (
+    <section className="decision-playbook-panel" aria-labelledby="decision-playbook-title">
+      <div className="decision-playbook-header">
+        <div>
+          <p className="eyebrow">Decision playbook</p>
+          <h3 id="decision-playbook-title">{playbook.title}</h3>
+          <p>{playbook.sampleScenario}</p>
+        </div>
+        <div className="playbook-required-evidence">
+          <span>Required evidence</span>
+          <strong>{playbook.requiredEvidence.length}</strong>
+        </div>
+      </div>
+      <div className="decision-playbook-grid">
+        <div>
+          <h4>Known caveats</h4>
+          <ul className="compact-list">
+            {playbook.knownCaveats.slice(0, 3).map((caveat) => (
+              <li key={caveat}>{caveat}</li>
+            ))}
+          </ul>
+        </div>
+        <div>
+          <h4>Source freshness</h4>
+          <ul className="compact-list">
+            {playbook.sourceFreshnessExpectations.slice(0, 3).map((expectation) => (
+              <li key={expectation}>{expectation}</li>
+            ))}
+          </ul>
+        </div>
+        <div>
+          <h4>Next collection asks</h4>
+          <ul className="compact-list">
+            {playbook.nextCollectionAsks.slice(0, 3).map((ask) => (
+              <li key={ask}>{ask}</li>
+            ))}
+          </ul>
+        </div>
+      </div>
+      <p className="playbook-handoff-language">{playbook.handoffLanguage}</p>
     </section>
   );
 }
@@ -530,6 +646,7 @@ export function UploadStep({
   onSamples,
   onRemoveDataset,
   onUpdateDatasetInputHints,
+  onCreateFormDataset,
   sampleOnly = false,
 }: {
   datasets: Dataset[];
@@ -539,6 +656,7 @@ export function UploadStep({
   onSamples: (kind: SampleDatasetKind) => void;
   onRemoveDataset: (datasetId: string) => void;
   onUpdateDatasetInputHints: (datasetId: string, inputHints: DatasetInputHints) => void;
+  onCreateFormDataset: (dataset: Dataset) => void;
   sampleOnly?: boolean;
 }) {
   return (
@@ -556,6 +674,12 @@ export function UploadStep({
           minimized sample values.
         </p>
       </div>
+      {!sampleOnly ? (
+        <FormIntakeReviewPanel
+          decisionBrief={decisionBrief}
+          onCreateFormDataset={onCreateFormDataset}
+        />
+      ) : null}
       {datasets.length === 0 ? (
         <div className="empty-state upload-empty">
           <h3>Add data to begin</h3>
@@ -651,6 +775,74 @@ export function UploadStep({
           </button>
         </>
       )}
+    </section>
+  );
+}
+
+function FormIntakeReviewPanel({
+  decisionBrief,
+  onCreateFormDataset,
+}: {
+  decisionBrief: DecisionBrief;
+  onCreateFormDataset: (dataset: Dataset) => void;
+}) {
+  const template = buildSuggestedDataCollectionTemplate(decisionBrief);
+  const previewDataset = createFormDatasetFromTemplate(template, {
+    filename: `${decisionBrief.useCaseId}-reviewed-form-schema.csv`,
+  });
+  const metadata = previewDataset.inputHints?.formMetadata;
+  const mappings = metadata?.evidenceMappings ?? [];
+
+  function addSchemaDataset() {
+    onCreateFormDataset(
+      createFormDatasetFromTemplate(template, {
+        datasetId: crypto.randomUUID(),
+        filename: `${decisionBrief.useCaseId}-reviewed-form-schema.csv`,
+        uploadedAt: new Date().toISOString(),
+      }),
+    );
+  }
+
+  return (
+    <section className="form-intake-panel" aria-labelledby="form-intake-title">
+      <div className="form-intake-panel__header">
+        <div>
+          <p className="eyebrow">Form-aware intake</p>
+          <h3 id="form-intake-title">Review playbook form schema</h3>
+          <p>
+            Add a metadata-only form schema from this playbook, or upload HXL
+            and 3W/5W-style exports for deterministic recognition.
+          </p>
+        </div>
+        <button type="button" className="secondary-button" onClick={addSchemaDataset}>
+          Add schema dataset
+        </button>
+      </div>
+      <div className="form-intake-summary">
+        <div>
+          <span>Detected family</span>
+          <strong>{metadata?.family.replaceAll("_", " ") ?? "Not detected"}</strong>
+        </div>
+        <div>
+          <span>Status</span>
+          <strong>{metadata?.detection.status.replaceAll("_", " ") ?? "Review needed"}</strong>
+        </div>
+        <div>
+          <span>Mappings</span>
+          <strong>{mappings.length}</strong>
+        </div>
+        <div>
+          <span>Privacy</span>
+          <strong>{metadata?.privacyAudit.metadataOnly ? "Metadata only" : "Review"}</strong>
+        </div>
+      </div>
+      <div className="form-intake-mapping-list">
+        {mappings.slice(0, 6).map((mapping) => (
+          <span key={mapping.evidenceNeed}>
+            {mapping.evidenceNeed}: {mapping.fieldNames.join(", ")}
+          </span>
+        ))}
+      </div>
     </section>
   );
 }
@@ -935,6 +1127,7 @@ function DatasetCard({
         {dataset.rowCount ?? 0} rows, {dataset.columnCount ?? 0} columns
       </p>
       <FormatAssessmentPanel assessment={dataset.formatAssessment} />
+      <FormMetadataPanel dataset={dataset} />
       <DatasetPreview dataset={dataset} title="Parsed data preview" defaultOpen />
       <div className="dataset-hints-grid">
         <label>
@@ -1065,13 +1258,55 @@ function formatAssessmentStatusLabel(status: DatasetFormatAssessment["status"]) 
   }[status];
 }
 
+function FormMetadataPanel({ dataset }: { dataset: Dataset }) {
+  const metadata = dataset.inputHints?.formMetadata;
+  if (!metadata) return null;
+  return (
+    <div className={`form-metadata-panel ${metadata.detection.status}`}>
+      <div className="form-metadata-header">
+        <strong>{metadata.family.replaceAll("_", " ")} form metadata</strong>
+        <span>
+          {metadata.detection.status.replaceAll("_", " ")} ·{" "}
+          {Math.round(metadata.detection.confidence * 100)}% confidence
+        </span>
+      </div>
+      <p>
+        {metadata.schemaSummary.fieldCount} fields,{" "}
+        {metadata.schemaSummary.requiredFieldCount} required,{" "}
+        {metadata.evidenceMappings.length} evidence mappings.{" "}
+        {metadata.privacyAudit.metadataOnly
+          ? "Form metadata excludes raw row values."
+          : "Review privacy audit before continuing."}
+      </p>
+      {metadata.evidenceMappings.length > 0 ? (
+        <div className="form-mapping-chips">
+          {metadata.evidenceMappings.slice(0, 6).map((mapping) => (
+            <span key={`${dataset.id}-${mapping.evidenceNeed}`}>
+              {mapping.evidenceNeed}: {mapping.status.replaceAll("_", " ")}
+            </span>
+          ))}
+        </div>
+      ) : null}
+      {metadata.caveats.length > 0 ? (
+        <ul>
+          {metadata.caveats.slice(0, 3).map((caveat) => (
+            <li key={caveat}>{caveat}</li>
+          ))}
+        </ul>
+      ) : null}
+    </div>
+  );
+}
+
 export function RecommendationStep({
+  aiGuardrail,
   recommendations,
   joins = [],
   datasets,
   cleaningRecommendations,
   onAccept,
 }: {
+  aiGuardrail: AiGuardrailExplanation;
   recommendations: AIRecommendationResponse;
   joins?: JoinRecommendation[];
   datasets: Dataset[];
@@ -1115,6 +1350,7 @@ export function RecommendationStep({
         <p className="eyebrow">Step 4</p>
         <h2>Review before combining files</h2>
       </div>
+      <AiGuardrailPanel explanation={aiGuardrail} />
       <div className="recommendation-card">
         <p className="eyebrow">Recommended</p>
         <h2>{recommendations.recommendedPath.title}</h2>
@@ -1281,16 +1517,20 @@ function JoinReviewCard({
 }
 
 export function ValidationStep({
+  aiGuardrail,
   dataset,
   decisionReadiness,
+  evidenceCoverage,
   joins,
   quality,
   transformationLog,
   isWorking = false,
   onProceed,
 }: {
+  aiGuardrail: AiGuardrailExplanation;
   dataset: Dataset;
   decisionReadiness?: DecisionReadinessResult;
+  evidenceCoverage: EvidenceCoverageSummary;
   joins?: JoinRecommendation[];
   quality: QualityCheckResult[];
   transformationLog: TransformationStep[];
@@ -1308,7 +1548,11 @@ export function ValidationStep({
         <p className="eyebrow">Step 5</p>
         <h2>{joins?.length ? "Review Combined Dataset" : "Review Prepared Dataset"}</h2>
       </div>
-      <DecisionReadinessPanel readiness={decisionReadiness} />
+      <EvidenceControlTowerPanel
+        evidenceCoverage={evidenceCoverage}
+        readiness={decisionReadiness}
+      />
+      <AiGuardrailPanel explanation={aiGuardrail} />
       <article className="recommendation-card">
         <p className="eyebrow">Recommended</p>
         <h2>
@@ -1384,6 +1628,152 @@ function DecisionReadinessPanel({
             <li key={caveat}>{caveat}</li>
           ))}
         </ul>
+      ) : null}
+    </article>
+  );
+}
+
+function EvidenceControlTowerPanel({
+  evidenceCoverage,
+  readiness,
+}: {
+  evidenceCoverage: EvidenceCoverageSummary;
+  readiness?: DecisionReadinessResult;
+}) {
+  if (!readiness) return null;
+  const controlTower = buildEvidenceReadinessControlTower({
+    evidenceCoverage,
+    readiness,
+  });
+  const tone =
+    controlTower.actionSafetyState === "blocked_for_action"
+      ? "high"
+      : controlTower.actionSafetyState === "needs_review"
+        ? "medium"
+        : "low";
+
+  return (
+    <article className={`evidence-control-tower ${tone}`}>
+      <div className="control-tower-header">
+        <div>
+          <p className="eyebrow">Evidence readiness control tower</p>
+          <p className="status-label">{readinessStatusLabel(controlTower.status)}</p>
+          <h3>{readiness.title}</h3>
+          <p>{controlTower.reviewState}</p>
+        </div>
+        <div className="control-tower-confidence">
+          <span>Source confidence</span>
+          <strong>{controlTower.sourceConfidence}</strong>
+          <p>{controlTower.sourceConfidenceRationale}</p>
+        </div>
+      </div>
+      <div className="control-tower-grid">
+        <div>
+          <span>Covered</span>
+          <strong>{controlTower.evidenceCovered.length}</strong>
+          <p>{formatEvidenceList(controlTower.evidenceCovered)}</p>
+        </div>
+        <div>
+          <span>Ambiguous</span>
+          <strong>{controlTower.ambiguousEvidence.length}</strong>
+          <p>{formatEvidenceList(controlTower.ambiguousEvidence)}</p>
+        </div>
+        <div>
+          <span>Missing</span>
+          <strong>{controlTower.missingEvidence.length}</strong>
+          <p>{formatEvidenceList(controlTower.missingEvidence)}</p>
+        </div>
+        <div>
+          <span>Blockers</span>
+          <strong>{controlTower.blockers.length}</strong>
+          <p>{controlTower.blockers[0] ?? "No blocker detected."}</p>
+        </div>
+      </div>
+      {controlTower.nextCollectionAsks.length > 0 ? (
+        <div className="control-tower-next-asks">
+          <h4>Next collection asks</h4>
+          <ul className="compact-list">
+            {controlTower.nextCollectionAsks.map((ask) => (
+              <li key={ask}>{ask}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+    </article>
+  );
+}
+
+function formatEvidenceList(values: string[]) {
+  return values.length > 0 ? values.join(", ") : "None";
+}
+
+function AiGuardrailPanel({
+  explanation,
+}: {
+  explanation: AiGuardrailExplanation;
+}) {
+  const statusLabel = {
+    fallback: "Deterministic fallback",
+    not_requested: "AI not used",
+    returned: "AI returned",
+  }[explanation.aiRecommendationStatus];
+  const validationLabel = {
+    accepted: "Accepted by deterministic checks",
+    partially_accepted: "Needs deterministic review",
+    rejected: "Rejected by deterministic checks",
+  }[explanation.deterministicValidation];
+  const tone =
+    explanation.deterministicValidation === "rejected"
+      ? "high"
+      : explanation.deterministicValidation === "partially_accepted"
+        ? "medium"
+        : "low";
+
+  return (
+    <article className={`ai-guardrail-panel ${tone}`}>
+      <div className="ai-guardrail-header">
+        <div>
+          <p className="eyebrow">AI guardrails</p>
+          <h3>Advisory output, deterministic authority</h3>
+          <p>{explanation.deterministicAuthorityStatement}</p>
+        </div>
+        <div className="ai-guardrail-status">
+          <span>{statusLabel}</span>
+          <strong>{validationLabel}</strong>
+        </div>
+      </div>
+      <div className="ai-guardrail-grid">
+        <div>
+          <span>AI status</span>
+          <strong>{statusLabel}</strong>
+          {explanation.fallbackReason ? (
+            <p>Fallback reason: {explanation.fallbackReason.replaceAll("_", " ")}</p>
+          ) : (
+            <p>Fallback reason: none recorded.</p>
+          )}
+        </div>
+        <div>
+          <span>Deterministic validation</span>
+          <strong>{validationLabel}</strong>
+          <p>
+            {explanation.deterministicValidation === "accepted"
+              ? "No blocking deterministic caveats are attached to this step."
+              : "Review caveats before using the output for action or handoff."}
+          </p>
+        </div>
+      </div>
+      {explanation.validationCaveats.length > 0 ? (
+        <ul className="compact-list">
+          {explanation.validationCaveats.map((caveat) => (
+            <li key={caveat}>{caveat}</li>
+          ))}
+        </ul>
+      ) : null}
+      {explanation.unsupportedSuggestions.length > 0 ? (
+        <p className="helper-text">
+          Unsupported suggestions retained for review:{" "}
+          {explanation.unsupportedSuggestions.join(" ")}
+        </p>
       ) : null}
     </article>
   );

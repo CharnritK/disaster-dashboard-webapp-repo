@@ -1,19 +1,18 @@
 # Final Goal Status
 
-Date: 2026-06-14
+Date: 2026-06-21
 
-Verdict: `IMPLEMENTATION_COMPLETE_T031_PARTIAL_STAGING_VALIDATION`
+Verdict: `LOCAL_IMPLEMENTATION_COMPLETE_PHASES_0_14_AUTH_GATE_VALIDATED`
 
 The controlled-beta implementation is complete for local/reviewable code paths
-and the staging preview has been partially revalidated. Earlier Supabase-backed
-magic-link login was user-confirmed for the approved beta/admin email. Current
-`POST /auth/signin` evidence shows staging can issue a magic link (`sent=1`),
-while immediate repeat requests can hit Supabase OTP resend protection. Local
-code now maps that cooldown/rate-limit path to `auth_rate_limited` instead of
-generic `auth_failed`, pending preview redeploy verification. Authenticated
-route rendering and metadata/admin runtime smoke still need a clicked
-magic-link session. Production credentials, production migrations, production
-deployment, and production allowlist changes remain out of scope.
+through the phase 13/14 product-standout layer. The public deterministic demo,
+protected-route login gate, session-only uploaded-data boundary, metadata-only
+persistence boundary, and deterministic fallback posture have been locally
+validated. Earlier Supabase-backed magic-link login was user-confirmed for the
+approved beta/admin email, but authenticated staging route rendering and
+metadata/admin runtime smoke still need a clicked magic-link session. Production
+credentials, production migrations, production deployment, and production
+allowlist changes remain out of scope.
 
 ## Completed
 
@@ -73,6 +72,18 @@ deployment, and production allowlist changes remain out of scope.
 - T028 retention policy draft.
 - T029 release readiness checklist.
 - T030 final command and browser smoke sweep.
+- Phase 13 form-aware disaster intake:
+  - deterministic HXL, 3W/5W-style, and XLSForm-like metadata detection;
+  - session-only form mapping into existing evidence coverage and readiness;
+  - safe form metadata in handoff exports;
+  - no form-response persistence.
+- Phase 14 decision assurance product-standout layer:
+  - decision playbooks;
+  - evidence readiness control tower;
+  - AI guardrail explainer;
+  - Handoff Dossier v2 metadata fields;
+  - safe beta learning signal helper;
+  - protected internal `/app/ai-trial` sample-only AI-path smoke surface.
 - D1-D7 approval alignment:
   - preview-only deployment path approved;
   - Supabase Auth/Postgres approved for the real beta project;
@@ -88,7 +99,7 @@ deployment, and production allowlist changes remain out of scope.
 ## Verification
 
 - `npm run lint` - passed.
-- `npm run test` - passed, 19 test files, 149 tests.
+- `npm run test` - passed, 21 test files, 178 tests.
 - `npm run build` - passed.
 - `git diff --check` - passed with Windows line-ending warnings only.
 - `node scripts/smoke-vercel.mjs --dry-run` - passed.
@@ -125,6 +136,20 @@ deployment, and production allowlist changes remain out of scope.
   - authenticated route rendering, metadata write smoke, admin aggregate
     runtime smoke, and direct staging DB row checks remain unverified until the
     clicked magic-link session is available.
+- Product-standout local validation evidence lives in
+  `product_standout_local_validation_2026-06-21.md`:
+  - `/demo` rendered locally with AI off and no upload input;
+  - the decision playbook rendered;
+  - bundled sample workflow reached readiness;
+  - the evidence readiness control tower rendered;
+  - the AI guardrail panel rendered deterministic authority / AI-not-used copy;
+  - `/app/data` redirected unauthenticated users to
+    `/login?next=%2Fapp%2Fdata`;
+  - `/app/ai-trial` redirected unauthenticated users to
+    `/login?next=%2Fapp%2Fai-trial`;
+  - targeted privacy scans found no new forbidden persistence, provider,
+    browser-storage, DB mutation, or client-secret surface in the phase 13/14
+    work.
 
 ## Remaining External Gates
 

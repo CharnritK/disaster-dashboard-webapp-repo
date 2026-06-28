@@ -8,15 +8,20 @@ import type { CopilotFallbackReason, DecisionHandoffAiMode } from "@/types/copil
 import type { DashboardRecommendation, JoinRecommendation } from "@/types/recommendations";
 import type { QualityCheckResult } from "@/types/quality";
 import type { TransformationStep } from "@/types/transformations";
+import type { FormIntakeMetadata } from "@/types/formIntake";
 import { readinessStatusLabel } from "./decisionContext";
 import { toCsv } from "./exportCsv";
 
 export type DecisionHandoffPacketInput = {
   generatedAt?: string;
+  acceptedCaveats?: string[];
   decisionBrief: DecisionBrief;
+  decisionOwner?: string;
   evidenceCoverage: EvidenceCoverageSummary;
   decisionReadiness?: DecisionReadinessResult;
   datasets: Dataset[];
+  reviewer?: string;
+  reviewByDate?: string;
   selectedJoinRecommendations: JoinRecommendation[];
   qualityResults: QualityCheckResult[];
   transformationLog: TransformationStep[];
@@ -46,8 +51,31 @@ export function buildDecisionHandoffPacket(input: DecisionHandoffPacketInput) {
       ? ["Outputs are review-only until blockers are corrected or explicitly accepted by a decision owner."]
       : []),
   ];
+  const unresolvedBlockers = [
+    ...missingEvidence.map((item) => ({
+      type: "missing_evidence",
+      evidenceNeed: item.evidenceNeed,
+      action: item.nextAction,
+    })),
+    ...qualityIssues
+      .filter((issue) => issue.status === "fail")
+      .map((issue) => ({
+        type: "quality_blocker",
+        evidenceNeed: issue.evidenceNeed,
+        action: issue.suggestedAction ?? issue.description,
+      })),
+  ];
+  const sourceRegister = input.datasets.map(sourceRegisterForDataset);
+  const transformationLineage = input.transformationLog.map((step) => ({
+    id: step.id,
+    stepType: step.stepType,
+    description: step.description,
+    affectedColumns: step.affectedColumns,
+    timestamp: step.timestamp,
+  }));
 
   return {
+    dossierVersion: "2.0",
     generatedAt: input.generatedAt ?? new Date().toISOString(),
     decisionContext: {
       useCaseId: input.decisionBrief.useCaseId,
@@ -57,6 +85,17 @@ export function buildDecisionHandoffPacket(input: DecisionHandoffPacketInput) {
       geographyScope: input.decisionBrief.geographyScope,
       timeframe: input.decisionBrief.timeframe,
       requiredEvidence: input.decisionBrief.requiredEvidence,
+    },
+    dossier: {
+      decisionOwner: input.decisionOwner ?? input.decisionBrief.decisionMaker,
+      reviewer: input.reviewer ?? "Reviewer not assigned",
+      reviewByDate: input.reviewByDate,
+      acceptedCaveats: input.acceptedCaveats ?? [],
+      unresolvedBlockers,
+      sourceRegister,
+      transformationLineage,
+      aiMode: input.aiMode,
+      aiFallbackReason: input.aiFallbackReason,
     },
     evidenceCoverage: input.evidenceCoverage,
     decisionReadiness: readiness
@@ -82,6 +121,7 @@ export function buildDecisionHandoffPacket(input: DecisionHandoffPacketInput) {
       columnCount: dataset.columnCount ?? dataset.columns?.length ?? 0,
       fields: dataset.columns ?? dataset.profile?.columns.map((column) => column.columnName) ?? [],
       inputHints: dataset.inputHints,
+      formIntake: formIntakeForDataset(dataset),
       formatAssessment: dataset.formatAssessment
         ? {
             status: dataset.formatAssessment.status,
@@ -217,6 +257,75 @@ function aiModeSummary(mode: DecisionHandoffAiMode) {
     return "AI recommendations were unavailable. The app used deterministic recommendations. Review joins and caveats before action.";
   }
   return "Deterministic recommendations were used without external AI assistance.";
+}
+
+function sourceRegisterForDataset(dataset: Dataset) {
+  const formHints = dataset.inputHints as
+    | (Dataset["inputHints"] & {
+        formDetection?: { status?: string };
+        formFamily?: string;
+        formMetadata?: FormIntakeMetadata;
+      })
+    | undefined;
+  return {
+    id: dataset.id,
+    name: dataset.name,
+    sourceType: dataset.sourceType,
+    fileType: dataset.fileType,
+    rowCount: dataset.rowCount ?? dataset.data?.length ?? 0,
+    columnCount: dataset.columnCount ?? dataset.columns?.length ?? 0,
+    formFamily: formHints?.formFamily,
+    formDetectionStatus: formHints?.formDetection?.status,
+    formMappingCount: formHints?.formMetadata?.evidenceMappings.length,
+  };
+}
+
+function formIntakeForDataset(dataset: Dataset) {
+  const metadata = dataset.inputHints?.formMetadata;
+  if (!metadata) return undefined;
+  return {
+    family: metadata.family,
+    detection: {
+      sourceKind: metadata.detection.sourceKind,
+      family: metadata.detection.family,
+      status: metadata.detection.status,
+      confidence: metadata.detection.confidence,
+      fieldCount: metadata.detection.fieldCount,
+      hxlTagRowIndex: metadata.detection.hxlTagRowIndex,
+      strippedHxlTagRow: metadata.detection.strippedHxlTagRow,
+      detectedSignals: metadata.detection.detectedSignals,
+      caveats: metadata.detection.caveats,
+    },
+    schemaSummary: {
+      family: metadata.schemaSummary.family,
+      fieldCount: metadata.schemaSummary.fieldCount,
+      requiredFieldCount: metadata.schemaSummary.requiredFieldCount,
+      choiceListCount: metadata.schemaSummary.choiceListCount,
+      settingCount: metadata.schemaSummary.settingCount,
+      fields: metadata.schemaSummary.fields.map((field) => ({
+        name: field.name,
+        label: field.label,
+        type: field.type,
+        required: field.required,
+        evidenceNeed: field.evidenceNeed,
+        hxlTag: field.hxlTag,
+        choiceListName: field.choiceListName,
+        source: field.source,
+        status: field.status,
+        caveats: field.caveats,
+      })),
+      caveats: metadata.schemaSummary.caveats,
+    },
+    evidenceMappings: metadata.evidenceMappings.map((mapping) => ({
+      evidenceNeed: mapping.evidenceNeed,
+      fieldNames: mapping.fieldNames,
+      status: mapping.status,
+      confidence: mapping.confidence,
+      caveats: mapping.caveats,
+    })),
+    privacyAudit: metadata.privacyAudit,
+    caveats: metadata.caveats,
+  };
 }
 
 function buildPreparedDataSchema(dataset: Dataset) {
