@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import type { DecisionHandoffAiMode, DecisionHandoffSummary } from "@/types/copilot";
 import type { Dataset, DatasetInputHints } from "@/types/dataset";
@@ -37,6 +37,7 @@ import { UsageMeter } from "@/components/UsageMeter";
 import { FeedbackForm } from "@/components/FeedbackForm";
 import { AiCoachPanel } from "@/components/AiCoachPanel";
 import { deterministicCoachHints } from "@/lib/coach";
+import { buildRepairActions } from "@/lib/repairActions";
 import {
   isStepCompatibleWithWorkspacePath,
   isWorkspaceWorkflowPath,
@@ -109,6 +110,33 @@ export default function DashboardCopilotApp({
   const joinRecommendations = state.aiRecommendations?.joinRecommendations ?? [];
   const joinPlan = selectJoinPlan(state.datasets, joinRecommendations);
   const missingDecisionFields = validateDecisionBrief(state.decisionBrief);
+  const evidenceCoverage = useMemo(
+    () =>
+      state.datasets.length > 0
+        ? buildEvidenceCoverageSummary(state.datasets, state.decisionBrief)
+        : undefined,
+    [state.datasets, state.decisionBrief],
+  );
+  const repairActions = useMemo(
+    () =>
+      workspaceMode
+        ? buildRepairActions({
+            aiFallbackReason: state.aiRecommendations?.fallbackReason,
+            evidenceCoverage,
+            qualityResults: state.qualityResults,
+            readiness: state.decisionReadiness,
+            workflowStep: state.currentStep,
+          })
+        : [],
+    [
+      evidenceCoverage,
+      state.aiRecommendations?.fallbackReason,
+      state.currentStep,
+      state.decisionReadiness,
+      state.qualityResults,
+      workspaceMode,
+    ],
+  );
 
   useEffect(() => {
     workflowShellRef.current?.scrollIntoView({ block: "start" });
@@ -776,12 +804,16 @@ export default function DashboardCopilotApp({
                 dataset={state.preparedDataset}
                 joins={state.selectedJoinRecommendations}
                 quality={state.qualityResults}
-                evidenceCoverage={buildEvidenceCoverageSummary(state.datasets, state.decisionBrief)}
+                evidenceCoverage={
+                  evidenceCoverage ??
+                  buildEvidenceCoverageSummary(state.datasets, state.decisionBrief)
+                }
                 aiGuardrail={buildAiGuardrailExplanation({
                   recommendations: state.aiRecommendations,
                   qualityResults: state.qualityResults,
                 })}
                 decisionReadiness={state.decisionReadiness}
+                repairActions={repairActions}
                 transformationLog={state.transformationLog}
                 isWorking={loading}
                 onProceed={generateDashboardFromValidation}
@@ -835,6 +867,7 @@ export default function DashboardCopilotApp({
             hints={deterministicCoachHints(
               state.currentStep,
               state.decisionReadiness,
+              repairActions,
             )}
           />
         </section>

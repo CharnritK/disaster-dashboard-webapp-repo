@@ -27,6 +27,7 @@ import type {
   MetricAggregation,
 } from "@/types/recommendations";
 import type { QualityCheckResult } from "@/types/quality";
+import type { RepairAction } from "@/types/repairAction";
 import type { TransformationStep } from "@/types/transformations";
 import {
   MAX_UPLOAD_SIZE_MB,
@@ -60,6 +61,7 @@ import {
   type GroupedMetricValue,
 } from "@/lib/chartMetrics";
 import { cleaningTransformLabel } from "@/lib/cleaningTransforms";
+import { repairActionAutomationLabel } from "@/lib/repairActions";
 import { isValidLatitude, isValidLongitude } from "@/lib/locationFields";
 import { ChartFrame } from "@/components/charts/ChartFrame";
 
@@ -944,7 +946,7 @@ function EvidenceCoveragePanel({
             )}
             <p className="coverage-caveat">{item.caveat}</p>
             <p className="coverage-next-action">
-              <strong>Next action</strong>
+              <strong>Easiest safe fix</strong>
               <span>{item.nextAction}</span>
             </p>
           </article>
@@ -1252,7 +1254,7 @@ function FormatAssessmentPanel({
 
 function formatAssessmentStatusLabel(status: DatasetFormatAssessment["status"]) {
   return {
-    accepted: "Accepted",
+    accepted: "Ready for review",
     review: "Needs review",
     rejected: "Rejected",
   }[status];
@@ -1352,7 +1354,7 @@ export function RecommendationStep({
       </div>
       <AiGuardrailPanel explanation={aiGuardrail} />
       <div className="recommendation-card">
-        <p className="eyebrow">Recommended</p>
+        <p className="eyebrow">Review path</p>
         <h2>{recommendations.recommendedPath.title}</h2>
         <p>{renderInlineCodeText(recommendations.summary, highlightTerms)}</p>
         <div className="why-box">
@@ -1364,7 +1366,7 @@ export function RecommendationStep({
         </div>
         <div className="action-row">
           <button className="primary-button" onClick={() => onAccept(joins)}>
-            {hasJoinPlan ? "Accept recommendation" : "Prepare dataset"}
+            {hasJoinPlan ? "Use combine plan for review" : "Prepare review dataset"}
           </button>
           {join && (
             <button onClick={() => setShowAdjust((value) => !value)}>
@@ -1425,7 +1427,7 @@ export function RecommendationStep({
               className="primary-button"
               onClick={() => adjustedJoin && onAccept([adjustedJoin])}
             >
-              Accept adjusted join
+              Use adjusted join for review
             </button>
           </div>
         </article>
@@ -1526,6 +1528,7 @@ export function ValidationStep({
   transformationLog,
   isWorking = false,
   onProceed,
+  repairActions = [],
 }: {
   aiGuardrail: AiGuardrailExplanation;
   dataset: Dataset;
@@ -1536,6 +1539,7 @@ export function ValidationStep({
   transformationLog: TransformationStep[];
   isWorking?: boolean;
   onProceed: () => void;
+  repairActions?: RepairAction[];
 }) {
   const blocking = quality.filter((issue) => issue.status === "fail");
   const logHighlightTerms = [
@@ -1552,13 +1556,14 @@ export function ValidationStep({
         evidenceCoverage={evidenceCoverage}
         readiness={decisionReadiness}
       />
+      <RepairActionsPanel actions={repairActions} />
       <AiGuardrailPanel explanation={aiGuardrail} />
       <article className="recommendation-card">
-        <p className="eyebrow">Recommended</p>
+        <p className="eyebrow">Next review step</p>
         <h2>
           {blocking.length > 0
-            ? "Proceed After Reviewing High-severity Issues"
-            : "Proceed With Dashboard Generation"}
+            ? "Resolve blockers before decision use"
+            : "Generate review dashboard"}
         </h2>
         <p>
           {blocking.length > 0
@@ -1571,7 +1576,7 @@ export function ValidationStep({
             disabled={isWorking}
             onClick={onProceed}
           >
-            {isWorking ? "Generating..." : "Generate dashboard"}
+            {isWorking ? "Generating..." : "Generate review dashboard"}
           </button>
         </div>
       </article>
@@ -1581,6 +1586,49 @@ export function ValidationStep({
         log={transformationLog}
       />
     </section>
+  );
+}
+
+function RepairActionsPanel({ actions }: { actions: RepairAction[] }) {
+  if (actions.length === 0) return null;
+  return (
+    <article className="repair-actions-panel" aria-labelledby="repair-actions-title">
+      <div>
+        <p className="eyebrow">Decision repair</p>
+        <h3 id="repair-actions-title">Next best repair actions</h3>
+        <p>
+          These session-only checks show the easiest review path. They do not
+          replace owner review or handoff caveats.
+        </p>
+      </div>
+      <div className="repair-action-list">
+        {actions.slice(0, 3).map((action) => (
+          <section className={`repair-action ${action.severity}`} key={action.id}>
+            <div className="repair-action-heading">
+              <h4>{action.title}</h4>
+              <span>{action.severity}</span>
+            </div>
+            <p>{action.whyItMatters}</p>
+            <div className="repair-action-detail">
+              <strong>Easiest safe fix</strong>
+              <span>{action.easiestFix}</span>
+            </div>
+            <div className="repair-action-detail">
+              <strong>App can help</strong>
+              <span>{action.appCanHelpWith.join(" ")}</span>
+            </div>
+            <div className="repair-action-detail">
+              <strong>Human review</strong>
+              <span>{action.humanMustReview}</span>
+            </div>
+            <div className="repair-action-meta">
+              <span>{repairActionAutomationLabel(action.safeAutomationLevel)}</span>
+              <span>{action.estimatedEffort.replaceAll("_", " ")}</span>
+            </div>
+          </section>
+        ))}
+      </div>
+    </article>
   );
 }
 
@@ -1715,10 +1763,10 @@ function AiGuardrailPanel({
   const statusLabel = {
     fallback: "Deterministic fallback",
     not_requested: "AI not used",
-    returned: "AI returned",
+    returned: "AI draft returned",
   }[explanation.aiRecommendationStatus];
   const validationLabel = {
-    accepted: "Accepted by deterministic checks",
+    accepted: "Allowed for review by deterministic checks",
     partially_accepted: "Needs deterministic review",
     rejected: "Rejected by deterministic checks",
   }[explanation.deterministicValidation];
@@ -3473,7 +3521,7 @@ function QualityPanel({
                 </p>
                 {issue.suggestedAction ? (
                   <p>
-                    Recommended:{" "}
+                    Suggested review:{" "}
                     {renderInlineCodeText(issue.suggestedAction, [
                       ...highlightTerms,
                       ...(issue.affectedColumns ?? []),

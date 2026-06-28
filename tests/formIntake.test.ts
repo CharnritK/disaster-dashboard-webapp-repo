@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { buildSuggestedDataCollectionTemplate, createDefaultDecisionBrief } from "@/lib/decisionContext";
 import {
   createFormDatasetFromRows,
@@ -7,6 +9,8 @@ import {
   detectXlsFormSchema,
 } from "@/lib/formIntake";
 import { profileDataset } from "@/lib/profiling";
+
+const ROOT = process.cwd();
 
 describe("form intake contract", () => {
   it("creates a metadata-only form dataset from a suggested collection template", () => {
@@ -208,5 +212,20 @@ describe("form intake contract", () => {
     expect(profile.columnCount).toBe(template.fields.length);
     expect(profile.columns.map((column) => column.columnName)).toEqual(dataset.columns);
     expect(profile.inputHints?.formMetadata?.schemaSummary.fieldCount).toBe(template.fields.length);
+  });
+
+  it("keeps form-aware intake hidden from public sample-only demo upload", () => {
+    const workflowSource = readFileSync(
+      join(ROOT, "components", "WorkflowComponents.tsx"),
+      "utf8",
+    );
+
+    expect(workflowSource).toMatch(
+      /!\s*sampleOnly\s*\?\s*\([\s\S]*<FormIntakeReviewPanel/,
+    );
+    expect(workflowSource).toMatch(
+      /!\s*sampleOnly\s*&&\s*\([\s\S]*<label className="primary-action compact">/,
+    );
+    expect(workflowSource).toContain("Public demo uses bundled samples only");
   });
 });
