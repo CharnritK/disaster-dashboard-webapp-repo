@@ -216,8 +216,8 @@ export function buildDashboardProjectKit(input: DashboardProjectKitInput) {
   const readme = buildProjectKitReadme(handoffPacket, preparedDataSchema);
   const files = {
     "README.md": readme,
-    "prepared-data.csv": preparedDataCsv,
-    "decision-handoff-log.json": JSON.stringify(handoffPacket, null, 2),
+    "review-dataset.csv": preparedDataCsv,
+    "decision-review-log.json": JSON.stringify(handoffPacket, null, 2),
     "dashboard-config.json": JSON.stringify(dashboardConfig, null, 2),
     "prepared-data-schema.json": JSON.stringify(preparedDataSchema, null, 2),
     "transformation-log.json": JSON.stringify(input.transformationLog, null, 2),
@@ -371,8 +371,8 @@ function buildProjectKitReadme(
     "",
     "## Files",
     "",
-    "- `prepared-data.csv`: formula-neutralized prepared rows for second-pass analysis.",
-    "- `decision-handoff-log.json`: decision context, evidence coverage, quality caveats, lineage, and review notice.",
+    "- `review-dataset.csv`: formula-neutralized review dataset rows for second-pass analysis.",
+    "- `decision-review-log.json`: decision context, evidence coverage, quality caveats, lineage, and review notice.",
     "- `dashboard-config.json`: candidate chart configuration, fields, caveats, and AI-assistance mode.",
     "- `prepared-data-schema.json`: field names, inferred types, missingness, and row/column counts.",
     "- `transformation-log.json`: row-preserving cleaning and join history.",

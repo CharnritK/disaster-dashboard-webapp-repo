@@ -415,7 +415,12 @@ function linkFactsToCharts(facts: DashboardInsightFact[], charts: ChartRecommend
 function getNumericMetricFields(dataset: Dataset) {
   const profile = dataset.profile;
   const fields = profile?.columns
-    .filter((column) => column.inferredType === "number" && !isCoordinateField(column.columnName))
+    .filter((column) =>
+      column.inferredType === "number" &&
+      !isCoordinateField(column.columnName) &&
+      !isGenericIdentifierField(column.columnName) &&
+      !isLowCardinalityGroupingCode(column)
+    )
     .map((column) => column.columnName) ?? [];
   return mergeValues(fields, profile?.potentialMetricFields.filter((field) => fields.includes(field)) ?? [], MAX_FIELDS);
 }
@@ -452,10 +457,11 @@ function isUsefulGroupingColumn(
   column: NonNullable<Dataset["profile"]>["columns"][number],
   rowCount?: number,
 ) {
+  const lowCardinalityCode = isLowCardinalityGroupingCode(column);
   return (
     !isCoordinateField(column.columnName) &&
-    !isGenericIdentifierField(column.columnName) &&
-    column.inferredType !== "number" &&
+    (!isGenericIdentifierField(column.columnName) || lowCardinalityCode) &&
+    (column.inferredType !== "number" || lowCardinalityCode) &&
     column.inferredType !== "date" &&
     column.uniqueCount > 1 &&
     column.uniqueCount <= Math.max(12, Math.ceil((rowCount ?? 1) * 0.7))
@@ -464,11 +470,28 @@ function isUsefulGroupingColumn(
 
 function isGenericIdentifierField(field: string) {
   const normalized = field.toLowerCase();
-  const isGeographicCode =
-    normalized.includes("pcode") ||
-    /(admin|district|region|province|commune|ward|site|location).*(code|id)$/.test(normalized);
-  if (isGeographicCode) return false;
+  if (isGeographicCodeField(normalized)) return false;
   return /(^|_)(id|uuid|guid)$|_id$|identifier/.test(normalized);
+}
+
+function isLowCardinalityGroupingCode(
+  column: NonNullable<Dataset["profile"]>["columns"][number],
+) {
+  const normalized = column.columnName.toLowerCase();
+  const uniqueLimit = 6;
+  if (column.uniqueCount < 2 || column.uniqueCount > uniqueLimit) return false;
+  const codeLikeSuffix = /(^|_)(id|code)$/.test(normalized);
+  if (!codeLikeSuffix) return false;
+  const reviewDimensionCode =
+    /(^|_)(status|type|category|class|phase|severity|priority|need|sector|cluster|disaster|hazard|damage|response|service)(_|$)/.test(normalized);
+  return reviewDimensionCode || isGeographicCodeField(normalized);
+}
+
+function isGeographicCodeField(normalized: string) {
+  return (
+    normalized.includes("pcode") ||
+    /(admin|district|region|province|commune|ward|site|location).*(code|id)$/.test(normalized)
+  );
 }
 
 function isUsableChart(

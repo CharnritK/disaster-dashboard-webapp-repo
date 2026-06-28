@@ -533,7 +533,7 @@ export default function DashboardCopilotApp({
 
   function exportCsv() {
     if (!state.preparedDataset?.data) return;
-    downloadText("dashboard-copilot-prepared-data.csv", toCsv(state.preparedDataset.data), "text/csv");
+    downloadText("dashboard-copilot-review-dataset.csv", toCsv(state.preparedDataset.data), "text/csv");
   }
 
   function exportLog() {
@@ -553,7 +553,7 @@ export default function DashboardCopilotApp({
       aiMode: currentAiMode(llmEnabled, state.aiRecommendations, state.warning),
     });
     downloadText(
-      "dashboard-copilot-decision-handoff-log.json",
+      "dashboard-copilot-decision-review-log.json",
       JSON.stringify(packet, null, 2),
       "application/json",
     );

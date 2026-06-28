@@ -1473,7 +1473,7 @@ function JoinReviewCard({
   return (
     <details className="card profile-accordion">
       <summary>
-        <span>{joins.length === 1 ? "Review join/combine recommendation" : "Review join/combine plan"}</span>
+        <span>{joins.length === 1 ? "Review candidate join/combine path" : "Review join/combine plan"}</span>
         <span className="accordion-meta">{planMeta}</span>
       </summary>
       <div className="accordion-content">
