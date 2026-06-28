@@ -34,15 +34,15 @@ Place the eight final slide PNGs in `artifacts/showcase-deck/images`, set
    - Keep: confidence badges, required fields, quality caveats, reviewable facts.
    - Export surfaces: CSV, PNG, PDF report, transformation log JSON.
 
-7. Built for Safe Prototype Decisions
-   - Purpose: Make the prototype contract explicit.
+7. Built for Safe Controlled-Beta Decisions
+   - Purpose: Make the controlled-beta contract explicit.
    - Keep: session-only not persisted, row-preserving cleaning, deterministic fallback, formula-safe exports.
    - Allowed cleaning only: trim whitespace, normalize empty strings, convert numeric strings, convert boolean strings.
 
-8. What This Prototype Proves
+8. What This Controlled Beta Proves
    - Purpose: Executive close.
    - Message: faster triage, safer recommendations, clearer handoff.
-   - Next decision: validate with sample incident data, tighten acceptance criteria, decide whether to expand beyond session-only prototype.
+   - Next decision: validate with sample incident data, tighten acceptance criteria, and decide whether preview evidence is strong enough for production approval gates.
 
 ## Assembly Status
 

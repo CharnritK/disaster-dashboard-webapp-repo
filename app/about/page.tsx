@@ -9,36 +9,42 @@ export const metadata: Metadata = {
 const resources = [
   {
     title: "Code Repository",
-    href: "https://github.com/datakind/disaster-dashboard-webapp-repo",
-    description: "The open-sourced code behind Dashboard Copilot.",
+    href: "https://github.com/CharnritK/disaster-dashboard-webapp-repo",
+    description: "The current fork and review path for Dashboard Copilot.",
   },
   {
     title: "Public-Good Guide",
-    href: "https://github.com/datakind/disaster-dashboard-webapp-repo/blob/main/docs/digital-public-good-guide.md",
+    href: "https://github.com/CharnritK/disaster-dashboard-webapp-repo/blob/main/docs/digital-public-good-guide.md",
     description:
       "Plain-English project tutorial, scope, extension guidance, and technical appendix.",
   },
   {
     title: "Release Readiness",
-    href: "https://github.com/datakind/disaster-dashboard-webapp-repo/blob/main/docs/release-readiness.md",
+    href: "https://github.com/CharnritK/disaster-dashboard-webapp-repo/blob/main/docs/release-readiness.md",
     description:
       "Controlled-beta gates, current staging posture, and production approval boundary.",
   },
   {
     title: "Showcase Script",
-    href: "https://github.com/datakind/disaster-dashboard-webapp-repo/blob/main/docs/showcase-script.md",
+    href: "https://github.com/CharnritK/disaster-dashboard-webapp-repo/blob/main/docs/showcase-script.md",
     description:
       "A short presenter path for explaining the workflow without overselling the demo.",
   },
   {
+    title: "Showcase Salvage PR",
+    href: "https://github.com/CharnritK/disaster-dashboard-webapp-repo/pull/7/files",
+    description:
+      "Under-review deck notes, Typhoon Kestrel synthetic files, and deterministic PPTX build scripts.",
+  },
+  {
     title: "Tutorial Video Source",
-    href: "https://github.com/datakind/disaster-dashboard-webapp-repo/tree/main/tutorial-video",
+    href: "https://github.com/CharnritK/disaster-dashboard-webapp-repo/tree/main/tutorial-video",
     description:
       "Remotion source project, captured walkthrough screens, narration scripts, and render notes for the embedded tutorial series.",
   },
   {
     title: "License",
-    href: "https://github.com/datakind/disaster-dashboard-webapp-repo?tab=Apache-2.0-1-ov-file#readme",
+    href: "https://github.com/CharnritK/disaster-dashboard-webapp-repo?tab=Apache-2.0-1-ov-file#readme",
     description: "Open-source licensing for Dashboard Copilot.",
   },
   {
@@ -58,11 +64,11 @@ const resources = [
 const workflowSteps = [
   {
     title: "Pick the decision",
-    body: "Start with the response-prioritization template, action owner, geography, timeframe, and evidence needs.",
+    body: "Start with response prioritization, service gap monitoring, or preparedness risk screening, then confirm the action owner, geography, timeframe, and evidence needs.",
   },
   {
     title: "Load sample or local files",
-    body: "Use the public demo samples for a safe first run, or sign in to the workspace before uploading CSV/XLSX data.",
+    body: "Use the public demo samples for a safe first run, use the Typhoon Kestrel synthetic files for a richer multi-file scenario, or sign in to the workspace before uploading CSV/XLSX data.",
   },
   {
     title: "Inspect evidence coverage",
@@ -95,7 +101,13 @@ const entryPoints = [
     title: "Progress and gates",
     href: "/progress",
     action: "View progress",
-    body: "Check what is implemented, what was locally verified, and what still needs approval before production.",
+    body: "Check what is implemented, what is under review, what was locally verified, and what still needs approval before production.",
+  },
+  {
+    title: "Showcase package",
+    href: "https://github.com/CharnritK/disaster-dashboard-webapp-repo/pull/7",
+    action: "View PR #7",
+    body: "Review the deck notes, Typhoon Kestrel synthetic files, and build scripts before merging them into main.",
   },
 ];
 
@@ -193,6 +205,14 @@ export default function AboutPage() {
             </p>
           </article>
           <article className="about-panel">
+            <h2>Showcase Materials</h2>
+            <p>
+              PR #7 proposes deterministic deck builders, verification scripts,
+              and the synthetic Typhoon Kestrel multi-file sample for richer
+              walkthroughs without using real disaster data.
+            </p>
+          </article>
+          <article className="about-panel">
             <h2>How AI Fits</h2>
             <p>
               AI is optional and advisory. Provider calls require server-side
@@ -252,15 +272,24 @@ export default function AboutPage() {
             <h2>Choose the Right Entry Point</h2>
           </div>
           <div className="entry-grid">
-            {entryPoints.map((entry) => (
-              <article className="entry-card" key={entry.href}>
-                <h3>{entry.title}</h3>
-                <p>{entry.body}</p>
-                <a className="secondary-action" href={entry.href}>
-                  {entry.action}
-                </a>
-              </article>
-            ))}
+            {entryPoints.map((entry) => {
+              const isExternal = entry.href.startsWith("http");
+
+              return (
+                <article className="entry-card" key={entry.href}>
+                  <h3>{entry.title}</h3>
+                  <p>{entry.body}</p>
+                  <a
+                    className="secondary-action"
+                    href={entry.href}
+                    target={isExternal ? "_blank" : undefined}
+                    rel={isExternal ? "noreferrer" : undefined}
+                  >
+                    {entry.action}
+                  </a>
+                </article>
+              );
+            })}
           </div>
         </section>
 
