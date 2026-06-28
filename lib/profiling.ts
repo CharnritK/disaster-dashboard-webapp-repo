@@ -146,9 +146,17 @@ export function inferColumnType(values: unknown[]): ColumnProfile["inferredType"
   const strings = values.map((value) => String(value).trim());
   const numberLike = strings.filter((value) => value !== "" && !Number.isNaN(Number(value))).length;
   const booleanLike = strings.filter((value) => /^(true|false)$/i.test(value)).length;
-  const dateLike = strings.filter((value) => !Number.isNaN(Date.parse(value)) && /[-/]/.test(value)).length;
+  const dateLike = strings.filter(isDateLikeValue).length;
   if (numberLike / values.length > 0.85) return "number";
   if (booleanLike / values.length > 0.85) return "boolean";
   if (dateLike / values.length > 0.85) return "date";
   return "string";
+}
+
+function isDateLikeValue(value: string) {
+  if (value === "") return false;
+  const hasRecognizableDateShape =
+    /^\d{4}[-/]\d{1,2}[-/]\d{1,2}(?:[ T].*)?$/.test(value) ||
+    /^\d{1,2}[-/]\d{1,2}[-/]\d{2,4}$/.test(value);
+  return hasRecognizableDateShape && !Number.isNaN(Date.parse(value));
 }

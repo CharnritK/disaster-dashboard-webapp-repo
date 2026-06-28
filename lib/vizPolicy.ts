@@ -118,7 +118,7 @@ export function enforceVizPolicy(
   next.mobileBehavior = next.mobileBehavior ?? defaultMobileBehavior(next.chartType, categoryCount);
   next.maxCategories = next.maxCategories ?? defaultMaxCategories(next.mobileBehavior, categoryCount);
   next.unit = next.unit ?? inferUnit(metricField, aggregation);
-  next.subtitle = next.subtitle ?? buildSubtitle(next, groupField);
+  next.subtitle = buildSubtitle(next, groupField, metricField) ?? next.subtitle;
   next.screenReaderSummary = next.screenReaderSummary ?? buildScreenReaderSummary(next);
   next.sourceNote = appendReason(
     next.sourceNote,
@@ -248,10 +248,33 @@ function inferUnit(
 function buildSubtitle(
   chart: ChartRecommendation,
   groupField?: string,
+  metricField?: string,
 ) {
+  if (chart.chartType === "summary") return "Reviewer field check";
+  if (chart.chartType === "map") return "Coordinate coverage only";
+  if (chart.chartType === "area" || chart.chartType === "choropleth") {
+    return "Uploaded area labels only";
+  }
+  if (chart.chartType === "missingness") return "Automated quality check";
+  if (chart.chartType === "table") return "Record review";
+
+  const groupLabel = groupField ? fieldDisplayLabel(groupField) : undefined;
+  const metricLabel = metricField ? fieldDisplayLabel(metricField) : undefined;
+  const measureContext = chart.chartType === "scatter" && metricLabel && groupLabel
+    ? `${metricLabel} vs ${groupLabel}`
+    : chart.chartType === "line" && metricLabel && groupLabel
+      ? `${metricLabel} over ${groupLabel}`
+      : metricLabel && groupLabel && metricLabel !== groupLabel
+    ? `${metricLabel} by ${groupLabel}`
+    : groupLabel && chart.aggregation === "count"
+      ? `Records by ${groupLabel}`
+    : groupLabel
+      ? `Grouped by ${groupLabel}`
+      : metricLabel
+        ? `Metric view: ${metricLabel}`
+        : undefined;
   const parts = [
-    chart.unit ? formatUnit(chart.unit) : undefined,
-    groupField ? fieldDisplayLabel(groupField) : undefined,
+    measureContext,
     chart.timeScope,
     chart.mobileBehavior === "top5" ? "Top 5 on mobile" : undefined,
   ].filter(Boolean);
@@ -271,11 +294,6 @@ function buildScreenReaderSummary(chart: ChartRecommendation) {
       ? ` Quality status: ${chart.qualityBadge}.`
       : "";
   return `${chart.title}. ${chart.rationale}${fieldSummary}${qualitySummary}`;
-}
-
-function formatUnit(unit: string) {
-  if (unit === "%") return "Percent";
-  return fieldDisplayLabel(unit);
 }
 
 function buildSourceNote(

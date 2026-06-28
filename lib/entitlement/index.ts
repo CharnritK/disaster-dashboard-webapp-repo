@@ -55,7 +55,11 @@ export type AiEventInput = {
   model?: string;
   promptVersion?: string;
   provider?: string;
-  route: "/api/coach" | "/api/recommend" | "/api/copilot";
+  route:
+    | "/api/coach"
+    | "/api/copilot"
+    | "/api/form-schema/interpret"
+    | "/api/recommend";
   succeeded?: boolean;
   taskType: CopilotTaskType;
   userId?: string;

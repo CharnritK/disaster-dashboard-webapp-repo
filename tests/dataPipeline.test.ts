@@ -5,7 +5,7 @@ import type { Dataset } from "@/types/dataset";
 import { ChartFrame } from "@/components/charts/ChartFrame";
 import { POST as postCopilotRoute } from "@/app/api/copilot/route";
 import { assessExcelTableRows, parseCsv, parseFile, createTabularDataset, loadSampleDatasets } from "@/lib/fileParsers";
-import { profileDataset } from "@/lib/profiling";
+import { inferColumnType, profileDataset } from "@/lib/profiling";
 import { generateDeterministicJoinRecommendations } from "@/lib/deterministicJoinRecommendations";
 import { applyJoinRecommendation, applyJoinRecommendations, prepareSingleDataset, selectJoinPlan } from "@/lib/harmonization";
 import { runQualityChecks } from "@/lib/validation";
@@ -104,20 +104,21 @@ describe("data pipeline", () => {
       "csv",
       "sample",
       parseCsv([
-        "district_name,reported_at,severity_score",
-        "North,2026-01-01,10",
-        "North,2026-01-02,20",
-        "South,2026-01-03,30",
-        "South,2026-01-04,40",
-        "East,2026-01-05,50",
-        "East,2026-01-06,60",
-        "West,not-a-date,0",
-        ",2026-01-08,-10",
+        "district_name,reported_at,severity_score,assessment_id",
+        "North,2026-01-01,10,A-001",
+        "North,2026-01-02,20,A-002",
+        "South,2026-01-03,30,A-003",
+        "South,2026-01-04,40,A-004",
+        "East,2026-01-05,50,A-005",
+        "East,2026-01-06,60,A-006",
+        "West,not-a-date,0,A-007",
+        ",2026-01-08,-10,A-008",
       ].join("\n")),
     ));
     const district = dataset.profile?.columns.find((column) => column.columnName === "district_name");
     const reportedAt = dataset.profile?.columns.find((column) => column.columnName === "reported_at");
     const severity = dataset.profile?.columns.find((column) => column.columnName === "severity_score");
+    const assessmentId = dataset.profile?.columns.find((column) => column.columnName === "assessment_id");
 
     expect(district?.descriptiveStats?.nonMissingCount).toBe(7);
     expect(district?.descriptiveStats?.topValues[0]).toEqual({
@@ -132,6 +133,7 @@ describe("data pipeline", () => {
       validCount: 7,
       invalidCount: 1,
     });
+    expect(assessmentId?.inferredType).toBe("string");
     expect(severity?.descriptiveStats?.numeric).toEqual({
       min: -10,
       max: 60,
@@ -142,6 +144,12 @@ describe("data pipeline", () => {
       negativeCount: 1,
       zeroCount: 1,
     });
+  });
+
+  it("does not infer coded identifiers as date fields", () => {
+    expect(inferColumnType(["A-001", "B-002", "C-003", "D-004"])).toBe("string");
+    expect(inferColumnType(["2026-01-01", "2026/02/02", "2026-03-03T10:00:00Z"])).toBe("date");
+    expect(inferColumnType(["01/31/2026", "02/28/2026", "03/15/2026"])).toBe("date");
   });
 
   it("keeps duplicate CSV headers and rejects empty uploaded tables", async () => {
@@ -1071,7 +1079,7 @@ describe("data pipeline", () => {
     });
 
     expect(packet.aiAssistance.mode).toBe("fallback");
-    expect(packet.aiAssistance.summary).toContain("deterministic recommendations");
+    expect(packet.aiAssistance.summary).toContain("deterministic review guidance");
   });
 
   it("builds a handoff dossier v2 with owner, blockers, source register, and lineage", () => {
@@ -1276,8 +1284,8 @@ describe("data pipeline", () => {
     expect(kit.manifest.files).toEqual(
       expect.arrayContaining([
         "README.md",
-        "prepared-data.csv",
-        "decision-handoff-log.json",
+        "review-dataset.csv",
+        "decision-review-log.json",
         "dashboard-config.json",
         "prepared-data-schema.json",
         "transformation-log.json",
@@ -1289,7 +1297,9 @@ describe("data pipeline", () => {
       "needs_score",
       "notes",
     ]);
-    expect(kit.files["prepared-data.csv"]).toContain("'=SUM(A1:A2)");
+    expect(kit.files["review-dataset.csv"]).toContain("'=SUM(A1:A2)");
+    expect(kit.readme).toContain("`review-dataset.csv`: formula-neutralized review dataset rows");
+    expect(kit.readme).toContain("`decision-review-log.json`: decision context");
     const dashboardConfig = JSON.parse(kit.files["dashboard-config.json"]);
     expect(dashboardConfig.charts.length).toBeGreaterThan(0);
     expect(dashboardConfig.charts[0]).toEqual(
@@ -1315,7 +1325,7 @@ describe("data pipeline", () => {
     expect(dashboardConfig.charts[0].annotations).toEqual([
       { id: "review-note", label: "Review spike", tone: "warn" },
     ]);
-    expect(JSON.parse(kit.files["decision-handoff-log.json"]).reviewNotice).toContain("review");
+    expect(JSON.parse(kit.files["decision-review-log.json"]).reviewNotice).toContain("review");
   });
 
   it("flags missing response-prioritization evidence as decision readiness findings", () => {
@@ -2236,6 +2246,25 @@ describe("data pipeline", () => {
     }
   });
 
+  it("preserves existing subtitles when deterministic subtitle context is unavailable", () => {
+    const dataset = withProfile(createTabularDataset(
+      "metrics.csv",
+      "csv",
+      "sample",
+      parseCsv("metric\n1\n2\n"),
+    ));
+    const chart = enforceVizPolicy(dataset, [], {
+      id: "custom-context",
+      chartType: "bar",
+      title: "Custom review context",
+      rationale: "Keeps caller-provided review context when no fields can form a subtitle.",
+      subtitle: "Existing reviewer context",
+      aggregation: "count",
+    });
+
+    expect(chart.subtitle).toBe("Existing reviewer context");
+  });
+
   it("blocks invalid part-to-whole, one-point trends, and raw-count choropleths", () => {
     const dataset = withProfile(createTabularDataset(
       "synthetic-needs.csv",
@@ -2368,7 +2397,7 @@ describe("data pipeline", () => {
     expect(article.props.className).toContain("quality-warn");
     expect(title.props.children).toBe("Response gap by district");
     expect(subtitle.props.children).toBe("Percent · District");
-    expect(badge.props.children).toBe("Caution");
+    expect(badge.props.children).toBe("Chart needs review");
     expect(reactText(children)).toContain("Requires data quality review.");
 
     const fallback = ChartFrame({
@@ -2387,9 +2416,9 @@ describe("data pipeline", () => {
   });
 
   it("uses review-safe chart quality labels", () => {
-    expect(qualityBadgeLabel("ok")).toBe("Pass");
-    expect(qualityBadgeLabel("warn")).toBe("Caution");
-    expect(qualityBadgeLabel("block")).toBe("Blocking");
+    expect(qualityBadgeLabel("ok")).toBe("Chart check clear");
+    expect(qualityBadgeLabel("warn")).toBe("Chart needs review");
+    expect(qualityBadgeLabel("block")).toBe("Chart blocked");
   });
 
   it("reconciles LLM dashboard recommendations against prepared dataset fields", () => {
@@ -2506,6 +2535,33 @@ describe("data pipeline", () => {
     expect(chartTypes.has("table")).toBe(true);
     expect(recommendation.insights?.length).toBeGreaterThanOrEqual(2);
     expect(recommendation.insights?.some((insight) => insight.evidence?.length)).toBe(true);
+  });
+
+  it("keeps unique IDs out of dashboard groups while retaining low-cardinality coded IDs", () => {
+    const dataset = withProfile(createTabularDataset(
+      "coded-needs.csv",
+      "csv",
+      "sample",
+      parseCsv([
+        "record_id,status_id,disaster_type_id,affected_households",
+        "A-001,1,10,12",
+        "A-002,2,20,8",
+        "A-003,1,10,14",
+        "A-004,3,20,4",
+        "A-005,2,30,6",
+        "A-006,3,30,10",
+      ].join("\n")),
+    ));
+    const recommendation = generateDeterministicDashboardRecommendation(dataset);
+
+    expect(recommendation.groupByFields).toEqual(
+      expect.arrayContaining(["status_id", "disaster_type_id"]),
+    );
+    expect(recommendation.groupByFields).not.toContain("record_id");
+    expect(recommendation.metricFields).toContain("affected_households");
+    expect(recommendation.metricFields).not.toEqual(
+      expect.arrayContaining(["status_id", "disaster_type_id"]),
+    );
   });
 
   it("detects coordinate fields and recommends local location views", () => {

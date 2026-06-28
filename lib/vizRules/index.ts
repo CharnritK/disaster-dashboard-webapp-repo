@@ -74,9 +74,9 @@ export function defaultMobileBehavior(
 }
 
 export function qualityBadgeLabel(badge: QualityBadge) {
-  if (badge === "block") return "Blocking";
-  if (badge === "warn") return "Caution";
-  return "Pass";
+  if (badge === "block") return "Chart blocked";
+  if (badge === "warn") return "Chart needs review";
+  return "Chart check clear";
 }
 
 export function qualityBadgeTone(badge: QualityBadge) {

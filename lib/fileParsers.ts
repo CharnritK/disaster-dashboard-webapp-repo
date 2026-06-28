@@ -324,7 +324,7 @@ export function assessExcelTableRows(
         detail: `${formulaLikeValues} value${formulaLikeValues === 1 ? "" : "s"} begin with spreadsheet formula characters.`,
         suggestedAction: "Paste values instead of formulas before upload when possible.",
       },
-      "Upload values, not formulas, when a reviewer or agent needs to interpret the dataset.",
+      "Upload values, not formulas, when reviewers or automated checks need to interpret the dataset.",
     );
   }
 
