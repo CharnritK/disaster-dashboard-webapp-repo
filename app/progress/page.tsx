@@ -13,19 +13,19 @@ const progressCards = [
     detail: "Public deterministic demo plus protected AI-assisted workspace.",
   },
   {
-    label: "Current branch",
-    value: "PR #7 open",
-    detail: "Showcase deck salvage assets are on a mergeable review branch.",
+    label: "Review state",
+    value: "Local review",
+    detail: "Treat branch, preview, and test evidence as scoped review signals, not production approval.",
   },
   {
-    label: "Preview checks",
-    value: "Passing",
-    detail: "GitHub reports Vercel preview and preview comments as successful.",
+    label: "Verification",
+    value: "Evidence required",
+    detail: "Run fresh lint, tests, build, and route smoke checks before marking UI changes reviewed.",
   },
   {
     label: "Next decision",
-    value: "Merge PR #7",
-    detail: "Merge the salvage branch if the showcase assets should be kept.",
+    value: "Review gates",
+    detail: "Decide staging validation, migration timing, admin access, and production release separately.",
   },
 ];
 
@@ -36,15 +36,15 @@ const statusRows = [
     tone: "ready",
     evidence:
       "Merged and obsolete pending branches were deleted. Leftover uncommitted work from the old branch was backed up before the worktree was removed.",
-    gap: "No old pending branch remains as the active integration path; PR #7 is the review path for salvaged assets.",
+    gap: "No old pending branch remains as the active integration path; current branch work still needs fresh review evidence before merge.",
   },
   {
-    area: "Showcase salvage branch",
+    area: "Review branch assets",
     status: "Under review",
     tone: "watch",
     evidence:
-      "PR #7 adds showcase deck notes, deterministic deck builders, verifier scripts, and Typhoon Kestrel synthetic sample files.",
-    gap: "The PR still needs human review and merge. The final deck still requires the approved eight PNGs and a visual spot-check.",
+      "Showcase notes, deterministic deck builders, verifier scripts, and synthetic sample files are review assets.",
+    gap: "Human review and visual spot-checks are still separate from automated checks.",
   },
   {
     area: "Public demo",
@@ -99,7 +99,7 @@ const statusRows = [
     status: "Preview only",
     tone: "watch",
     evidence:
-      "PR #7 has a successful Vercel preview check. Production deployment was not run.",
+      "Preview evidence can support review, but production deployment was not run.",
     gap: "Production still needs explicit environment, auth, database, support, and release-owner approval.",
   },
 ];
@@ -107,16 +107,16 @@ const statusRows = [
 const decisions = [
   {
     rank: "D1",
-    decision: "Merge or reject PR #7",
+    decision: "Merge or reject the review branch",
     recommendation:
-      "Merge it if you want the showcase deck builders and Typhoon Kestrel synthetic demo files in main.",
+      "Merge only after the branch has fresh local checks and the review assets are still wanted in main.",
     neededFor: "Closing the pending-branch cleanup without losing useful standalone assets.",
   },
   {
     rank: "D2",
     decision: "Complete the next preview smoke pass",
     recommendation:
-      "Use the PR preview and staging credentials to re-check login, quota denial, deterministic fallback, feedback/templates, and no-row-persistence.",
+      "Use the preview and staging credentials to re-check login, quota denial, deterministic fallback, feedback/templates, and no-row-persistence.",
     neededFor: "Fresh external validation without touching production.",
   },
   {
@@ -164,17 +164,17 @@ const decisions = [
 ];
 
 const nextSteps = [
-  "Review and merge or reject PR #7.",
-  "If merged, delete the salvage branch after main contains the commit.",
+  "Review and merge or reject the active review branch.",
+  "If merged, delete stale branch references after main contains the commit.",
   "Keep the public demo deterministic and sample-only while the showcase deck is reviewed.",
   "Pick the next preview or staging validation target before touching production settings.",
   "Only after preview evidence is current, decide whether to run production migration or production deployment.",
 ];
 
 const risks = [
-  "A passing PR preview does not prove Supabase email login, redirect URLs, RLS, or production env values are correct.",
+  "A passing preview does not prove Supabase email login, redirect URLs, RLS, or production env values are correct.",
   "Showcase deck scripts prove PPTX structure, not visual quality; the final deck still needs a human spot-check.",
-  "PR #7 links and deck notes should be reviewed after merge so branch-only references do not become stale.",
+  "Review links and deck notes after merge so branch-only references do not become stale.",
   "The biggest product risk is making AI or exports sound like operational approval.",
   "The biggest technical risk is accidentally storing uploaded rows while wiring persistence.",
 ];
@@ -208,8 +208,8 @@ export default function ProgressPage() {
           <h1>Progress toward controlled beta</h1>
           <p className="about-lede">
             As of June 28, 2026, the fork main branch contains the completed
-            product-standout work. The only active review branch is PR #7 for
-            showcase deck salvage assets. Production remains approval-gated.
+            product-standout work. Current branch work still needs fresh review
+            evidence before merge. Production remains approval-gated.
           </p>
         </section>
 
@@ -265,7 +265,7 @@ export default function ProgressPage() {
 
         <section className="progress-two-column">
           <article className="about-note">
-            <p className="eyebrow">Recommended sequence</p>
+            <p className="eyebrow">Review sequence</p>
             <h2>Best next move</h2>
             <ol className="progress-list">
               {nextSteps.map((step) => (

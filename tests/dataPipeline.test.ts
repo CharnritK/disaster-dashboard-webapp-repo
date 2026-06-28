@@ -104,20 +104,21 @@ describe("data pipeline", () => {
       "csv",
       "sample",
       parseCsv([
-        "district_name,reported_at,severity_score",
-        "North,2026-01-01,10",
-        "North,2026-01-02,20",
-        "South,2026-01-03,30",
-        "South,2026-01-04,40",
-        "East,2026-01-05,50",
-        "East,2026-01-06,60",
-        "West,not-a-date,0",
-        ",2026-01-08,-10",
+        "district_name,reported_at,severity_score,assessment_id",
+        "North,2026-01-01,10,A-001",
+        "North,2026-01-02,20,A-002",
+        "South,2026-01-03,30,A-003",
+        "South,2026-01-04,40,A-004",
+        "East,2026-01-05,50,A-005",
+        "East,2026-01-06,60,A-006",
+        "West,not-a-date,0,A-007",
+        ",2026-01-08,-10,A-008",
       ].join("\n")),
     ));
     const district = dataset.profile?.columns.find((column) => column.columnName === "district_name");
     const reportedAt = dataset.profile?.columns.find((column) => column.columnName === "reported_at");
     const severity = dataset.profile?.columns.find((column) => column.columnName === "severity_score");
+    const assessmentId = dataset.profile?.columns.find((column) => column.columnName === "assessment_id");
 
     expect(district?.descriptiveStats?.nonMissingCount).toBe(7);
     expect(district?.descriptiveStats?.topValues[0]).toEqual({
@@ -132,6 +133,7 @@ describe("data pipeline", () => {
       validCount: 7,
       invalidCount: 1,
     });
+    expect(assessmentId?.inferredType).toBe("string");
     expect(severity?.descriptiveStats?.numeric).toEqual({
       min: -10,
       max: 60,
@@ -1071,7 +1073,7 @@ describe("data pipeline", () => {
     });
 
     expect(packet.aiAssistance.mode).toBe("fallback");
-    expect(packet.aiAssistance.summary).toContain("deterministic recommendations");
+    expect(packet.aiAssistance.summary).toContain("deterministic review guidance");
   });
 
   it("builds a handoff dossier v2 with owner, blockers, source register, and lineage", () => {
@@ -2368,7 +2370,7 @@ describe("data pipeline", () => {
     expect(article.props.className).toContain("quality-warn");
     expect(title.props.children).toBe("Response gap by district");
     expect(subtitle.props.children).toBe("Percent · District");
-    expect(badge.props.children).toBe("Caution");
+    expect(badge.props.children).toBe("Chart needs review");
     expect(reactText(children)).toContain("Requires data quality review.");
 
     const fallback = ChartFrame({
@@ -2387,9 +2389,9 @@ describe("data pipeline", () => {
   });
 
   it("uses review-safe chart quality labels", () => {
-    expect(qualityBadgeLabel("ok")).toBe("Pass");
-    expect(qualityBadgeLabel("warn")).toBe("Caution");
-    expect(qualityBadgeLabel("block")).toBe("Blocking");
+    expect(qualityBadgeLabel("ok")).toBe("Chart check clear");
+    expect(qualityBadgeLabel("warn")).toBe("Chart needs review");
+    expect(qualityBadgeLabel("block")).toBe("Chart blocked");
   });
 
   it("reconciles LLM dashboard recommendations against prepared dataset fields", () => {

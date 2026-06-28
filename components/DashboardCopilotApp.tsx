@@ -335,16 +335,16 @@ export default function DashboardCopilotApp({
           const ai = await requestAIRecommendations(context, true, "workflow");
           recommendations = mergeRecommendationResponse(fallback, ai, profiled);
           if (ai.source !== "llm") {
-            warning = llmFallbackWarning(ai, "recommendations");
+            warning = llmFallbackWarning(ai, "review guidance");
           }
         } catch (error) {
           warning = llmFallbackWarning(
             fallbackWithRecommendationError(fallback, error),
-            "recommendations"
+            "review guidance"
           );
         }
       } else {
-        warning = "AI is off. Deterministic profiling, evidence coverage, readiness checks, and dashboard recommendations remain available.";
+        warning = "AI is off. Deterministic profiling, evidence coverage, readiness checks, and dashboard review guidance remain available.";
       }
       setState((current) => ({
         ...current,
@@ -504,15 +504,15 @@ export default function DashboardCopilotApp({
             { qualityResults }
           );
           if (ai.source !== "llm") {
-            warning = llmFallbackWarning(ai, "visualizations");
+            warning = llmFallbackWarning(ai, "dashboard view");
           }
         } else {
-          warning = "AI is off. Deterministic profiling, evidence coverage, readiness checks, and dashboard recommendations remain available.";
+          warning = "AI is off. Deterministic profiling, evidence coverage, readiness checks, and dashboard review guidance remain available.";
         }
       } catch (error) {
         warning = llmFallbackWarning(
           fallbackWithRecommendationError(fallback, error),
-          "visualizations"
+          "dashboard view"
         );
       }
 
@@ -698,7 +698,7 @@ export default function DashboardCopilotApp({
       setLlmEnabled(false);
       setState((current) => ({
         ...current,
-        warning: "AI is off. Deterministic profiling, evidence coverage, readiness checks, and dashboard recommendations remain available."
+        warning: "AI is off. Deterministic profiling, evidence coverage, readiness checks, and dashboard review guidance remain available."
       }));
       return;
     }
@@ -708,8 +708,8 @@ export default function DashboardCopilotApp({
       warning: enabled
         ? undefined
         : current.aiRecommendations?.source === "llm" || current.dashboardRecommendation
-          ? "AI is off. Deterministic profiling, evidence coverage, readiness checks, and dashboard recommendations remain available. Existing generated recommendations remain until you rerun the workflow or change data."
-          : "AI is off. Deterministic profiling, evidence coverage, readiness checks, and dashboard recommendations remain available."
+          ? "AI is off. Deterministic profiling, evidence coverage, readiness checks, and dashboard review guidance remain available. Existing generated guidance remains until you rerun the workflow or change data."
+          : "AI is off. Deterministic profiling, evidence coverage, readiness checks, and dashboard review guidance remain available."
     }));
   }
 
@@ -1021,45 +1021,45 @@ function slugify(value: string) {
 
 function llmFallbackWarning(
   response: AIRecommendationResponse,
-  outputLabel: "recommendations" | "visualizations"
+  outputLabel: "review guidance" | "dashboard view"
 ) {
   const genericUnavailable =
-    "AI recommendations were unavailable. The app used deterministic recommendations. Review joins and caveats before action.";
+    `AI guidance was unavailable. The app used deterministic ${outputLabel}. Review joins and caveats before action.`;
   if (response.fallbackReason === "app_rate_limit") {
     const retry = response.retryAfterSeconds
       ? ` Try again in about ${formatRetryAfter(response.retryAfterSeconds)}.`
       : " Try again shortly.";
-    return `The app recommendation rate limit was reached, so deterministic ${outputLabel} are being used.${retry}`;
+    return `The app AI rate limit was reached, so deterministic ${outputLabel} is being used.${retry}`;
   }
   if (response.fallbackReason === "provider_rate_limit") {
     const retry = response.retryAfterSeconds
       ? ` Try again in about ${formatRetryAfter(response.retryAfterSeconds)}.`
       : " Try again shortly.";
-    return `The LLM provider rate limit was reached, so deterministic ${outputLabel} are being used.${retry}`;
+    return `The LLM provider rate limit was reached, so deterministic ${outputLabel} is being used.${retry}`;
   }
   if (response.fallbackReason === "missing_api_key") {
-    return `LLM API calls are on, but no server API key is configured, so deterministic ${outputLabel} are being used.`;
+    return `LLM API calls are on, but no server API key is configured, so deterministic ${outputLabel} is being used.`;
   }
   if (response.fallbackReason === "ai_disabled") {
-    return `AI is disabled on the server, so deterministic ${outputLabel} are being used.`;
+    return `AI is disabled on the server, so deterministic ${outputLabel} is being used.`;
   }
   if (response.fallbackReason === "unauthenticated") {
-    return `Sign in to use AI-assisted workflow. Deterministic ${outputLabel} are being used for now.`;
+    return `Sign in to use AI-assisted workflow. Deterministic ${outputLabel} is being used for now.`;
   }
   if (response.fallbackReason === "not_entitled") {
-    return `AI-assisted workflow is not enabled for this account, so deterministic ${outputLabel} are being used.`;
+    return `AI-assisted workflow is not enabled for this account, so deterministic ${outputLabel} is being used.`;
   }
   if (response.fallbackReason === "quota_exceeded") {
-    return `Daily AI quota is exhausted, so deterministic ${outputLabel} are being used. Continue the workflow or try again after the quota resets.`;
+    return `Daily AI quota is exhausted, so deterministic ${outputLabel} is being used. Continue the workflow or try again after the quota resets.`;
   }
   if (response.fallbackReason === "unsupported_provider") {
-    return `The configured LLM provider is not supported by this app, so deterministic ${outputLabel} are being used.`;
+    return `The configured LLM provider is not supported by this app, so deterministic ${outputLabel} is being used.`;
   }
   if (response.fallbackReason === "invalid_request") {
-    return `The recommendation request could not be accepted, so deterministic ${outputLabel} are being used.${fallbackDetail(response)}`;
+    return `The AI guidance request could not be accepted, so deterministic ${outputLabel} is being used.${fallbackDetail(response)}`;
   }
   if (response.fallbackReason === "request_too_large") {
-    return `The recommendation request was too large for the app limits, so deterministic ${outputLabel} are being used.${fallbackDetail(response)}`;
+    return `The AI guidance request was too large for the app limits, so deterministic ${outputLabel} is being used.${fallbackDetail(response)}`;
   }
   if (response.fallbackReason === "request_timeout") {
     return genericUnavailable;
@@ -1071,13 +1071,13 @@ function llmFallbackWarning(
     return genericUnavailable;
   }
   if (response.fallbackReason === "model_response_truncated") {
-    const jsonLabel = outputLabel === "visualizations" ? "dashboard JSON" : "recommendation JSON";
-    return `The LLM response was truncated before the ${jsonLabel} finished, so deterministic ${outputLabel} are being used. Increase LLM_MAX_COMPLETION_TOKENS and retry.`;
+    const jsonLabel = outputLabel === "dashboard view" ? "dashboard JSON" : "review guidance JSON";
+    return `The LLM response was truncated before the ${jsonLabel} finished, so deterministic ${outputLabel} is being used. Increase LLM_MAX_COMPLETION_TOKENS and retry.`;
   }
   if (response.fallbackReason === "model_response_invalid") {
-    return `The LLM returned a response that did not match the dashboard format, so deterministic ${outputLabel} are being used.`;
+    return `The LLM returned a response that did not match the dashboard format, so deterministic ${outputLabel} is being used.`;
   }
-  if (outputLabel === "visualizations") {
+  if (outputLabel === "dashboard view") {
     return genericUnavailable;
   }
   return genericUnavailable;

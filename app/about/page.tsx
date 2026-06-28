@@ -31,7 +31,7 @@ const resources = [
       "A short presenter path for explaining the workflow without overselling the demo.",
   },
   {
-    title: "Showcase Salvage PR",
+    title: "Showcase Review Assets",
     href: "https://github.com/CharnritK/disaster-dashboard-webapp-repo/pull/7/files",
     description:
       "Under-review deck notes, Typhoon Kestrel synthetic files, and deterministic PPTX build scripts.",
@@ -76,7 +76,7 @@ const workflowSteps = [
   },
   {
     title: "Review harmonization",
-    body: "Accept or adjust join recommendations and row-preserving cleaning transforms before preparing the dataset.",
+    body: "Accept or adjust candidate joins and row-preserving cleaning transforms before preparing the dataset.",
   },
   {
     title: "Generate and export",
@@ -89,7 +89,7 @@ const entryPoints = [
     title: "Public demo",
     href: "/demo",
     action: "Open demo",
-    body: "No login. Uses bundled synthetic data and deterministic recommendations so a new user can learn the flow safely.",
+    body: "No login. Uses bundled synthetic data and deterministic review guidance so a new user can learn the flow safely.",
   },
   {
     title: "Authenticated workspace",
@@ -106,8 +106,8 @@ const entryPoints = [
   {
     title: "Showcase package",
     href: "https://github.com/CharnritK/disaster-dashboard-webapp-repo/pull/7",
-    action: "View PR #7",
-    body: "Review the deck notes, Typhoon Kestrel synthetic files, and build scripts before merging them into main.",
+    action: "View review assets",
+    body: "Review the deck notes, Typhoon Kestrel synthetic files, and build scripts before merging any showcase assets into main.",
   },
 ];
 
@@ -138,7 +138,7 @@ const tutorialVideos = [
 const tutorialChapters = [
   "Start with the decision question before choosing charts.",
   "Use bundled synthetic samples for a safe first run.",
-  "Profile evidence quality before trusting recommendations.",
+  "Profile evidence quality before trusting generated guidance.",
   "Review joins, cleaning, readiness, dashboard output, and exports.",
   "Keep blockers, caveats, and handoff context visible for human review.",
 ];
@@ -174,7 +174,7 @@ export default function AboutPage() {
             Dashboard Copilot helps response teams turn fragmented,
             non-sensitive CSV and XLSX data into a reviewable decision-support
             package: profiled evidence, safe preparation steps, readiness
-            checks, recommended visualizations, caveats, and exportable handoff
+            checks, candidate visualizations, caveats, and exportable handoff
             artifacts.
           </p>
           <div className="about-actions" aria-label="Primary entry points">
@@ -199,7 +199,7 @@ export default function AboutPage() {
           <article className="about-panel">
             <h2>What It Produces</h2>
             <p>
-              Prepared data, quality warnings, recommended charts, dashboard
+              Prepared data, quality warnings, candidate charts, dashboard
               insights, PDF/image exports, transformation logs, decision
               handoff logs, and a project kit for second-pass implementation.
             </p>
@@ -207,9 +207,9 @@ export default function AboutPage() {
           <article className="about-panel">
             <h2>Showcase Materials</h2>
             <p>
-              PR #7 proposes deterministic deck builders, verification scripts,
-              and the synthetic Typhoon Kestrel multi-file sample for richer
-              walkthroughs without using real disaster data.
+              Review assets include deterministic deck builders, verification
+              scripts, and the synthetic Typhoon Kestrel multi-file sample for
+              richer walkthroughs without using real disaster data.
             </p>
           </article>
           <article className="about-panel">
@@ -217,7 +217,7 @@ export default function AboutPage() {
             <p>
               AI is optional and advisory. Provider calls require server-side
               enablement, authentication, entitlement, and quota. Deterministic
-              recommendations remain the fallback and the validation anchor.
+              guidance remains the fallback and the validation anchor.
             </p>
           </article>
         </section>

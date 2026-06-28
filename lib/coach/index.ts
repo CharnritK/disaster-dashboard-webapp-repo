@@ -30,7 +30,7 @@ export function deterministicCoachHints(
   if (readiness?.status === "decision_unsafe") {
     return [
       {
-        body: "Resolve blocking readiness issues before sharing recommendations outside the team.",
+        body: "Resolve blocking readiness issues before sharing generated guidance outside the team.",
         title: "Readiness blocks action",
         tone: "warn",
       },
@@ -50,7 +50,7 @@ export function deterministicCoachHints(
   if (step === "upload" || step === "profile") {
     return [
       {
-        body: "Check join keys, dates, and location fields before trusting downstream recommendations.",
+        body: "Check join keys, dates, and location fields before trusting downstream review guidance.",
         title: "Inspect the evidence",
         tone: "neutral",
       },

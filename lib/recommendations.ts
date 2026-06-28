@@ -27,18 +27,18 @@ export function generateFallbackRecommendations(
   return {
     source: "deterministic",
     summary: bestJoin
-      ? `Join ${nameFor(datasets, bestJoin.sourceDatasetId)} to ${nameFor(datasets, bestJoin.targetDatasetId)} using ${bestJoin.sourceColumns[0]}.`
-      : "Generate a Dashboard From the Selected Dataset.",
+      ? `Review a candidate join between ${nameFor(datasets, bestJoin.sourceDatasetId)} and ${nameFor(datasets, bestJoin.targetDatasetId)} using ${bestJoin.sourceColumns[0]}.`
+      : "Prepare a review dashboard from the selected dataset.",
     recommendedPath: {
       title: bestJoin
-        ? "Review the Leading Join Recommendation"
-        : "Proceed With a Prepared Single-dataset Dashboard",
+        ? "Review candidate join"
+        : "Prepare single-dataset review dashboard",
       rationale:
         bestJoin?.rationale ??
-        "The Available Data Is Sufficient for a Useful First Dashboard Without Manual Setup.",
+        "The profiled data can support a first review dashboard, but reviewers still need to check caveats before use.",
       confidence: bestJoin?.confidenceScore ?? 0.72,
       actions: bestJoin
-        ? ["Accept recommendation", "Adjust"]
+        ? ["Use candidate join", "Adjust"]
         : ["Prepare dataset"],
     },
     joinRecommendations: joins,

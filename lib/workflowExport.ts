@@ -248,15 +248,15 @@ export function buildDashboardProjectKit(input: DashboardProjectKitInput) {
 
 function aiModeSummary(mode: DecisionHandoffAiMode) {
   if (mode === "llm") {
-    return "AI recommendations were used, with deterministic validation and caveats retained.";
+    return "AI guidance was used, with deterministic validation and caveats retained.";
   }
   if (mode === "disabled") {
-    return "AI was off. Deterministic profiling, evidence coverage, readiness checks, and dashboard recommendations remained available.";
+    return "AI was off. Deterministic profiling, evidence coverage, readiness checks, and dashboard review guidance remained available.";
   }
   if (mode === "fallback") {
-    return "AI recommendations were unavailable. The app used deterministic recommendations. Review joins and caveats before action.";
+    return "AI guidance was unavailable. The app used deterministic review guidance. Review joins and caveats before action.";
   }
-  return "Deterministic recommendations were used without external AI assistance.";
+  return "Deterministic review guidance was used without external AI assistance.";
 }
 
 function sourceRegisterForDataset(dataset: Dataset) {
@@ -361,7 +361,7 @@ function buildProjectKitReadme(
     "",
     `Generated: ${handoffPacket.generatedAt}`,
     `Decision: ${handoffPacket.decisionContext.question}`,
-    `Prepared dataset: ${schema.datasetName} (${schema.rowCount} rows, ${schema.columnCount} columns)`,
+    `Review dataset: ${schema.datasetName} (${schema.rowCount} rows, ${schema.columnCount} columns)`,
     `Decision readiness: ${readiness}`,
     "",
     "## Review Required",
@@ -373,7 +373,7 @@ function buildProjectKitReadme(
     "",
     "- `prepared-data.csv`: formula-neutralized prepared rows for second-pass analysis.",
     "- `decision-handoff-log.json`: decision context, evidence coverage, quality caveats, lineage, and review notice.",
-    "- `dashboard-config.json`: chart recommendations, fields, caveats, and AI-assistance mode.",
+    "- `dashboard-config.json`: candidate chart configuration, fields, caveats, and AI-assistance mode.",
     "- `prepared-data-schema.json`: field names, inferred types, missingness, and row/column counts.",
     "- `transformation-log.json`: row-preserving cleaning and join history.",
     "",

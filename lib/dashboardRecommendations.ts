@@ -293,13 +293,13 @@ function buildDeterministicCharts({
   charts.push({
     id: "chart-dashboard-signals",
     chartType: "summary",
-    title: "Dashboard signals",
+    title: "Dashboard field check",
     groupByField: primaryGroup,
     metricField: primaryMetric,
     aggregation: primaryMetric ? inferMetricAggregation(primaryMetric) : "count",
     section: "overview",
     priority: 1,
-    rationale: "Summarizes the field roles the dashboard is using for comparison, metrics, and review."
+    rationale: "Shows which grouping and metric fields are driving the dashboard so reviewers can confirm them before handoff."
   });
 
   if (hasMissingValues) {
@@ -429,26 +429,46 @@ function getNumericFields(dataset: Dataset) {
 function getCategoricalFields(dataset: Dataset) {
   const profile = dataset.profile;
   if (!profile) return dataset.columns?.filter((field) => !isCoordinateField(field)).slice(0, MAX_FIELDS) ?? [];
-  const fieldNames = new Set(profile.columns.map((column) => column.columnName));
+  const categoricalFieldNames = new Set(
+    profile.columns
+      .filter((column) => isUsefulGroupingColumn(column, profile.rowCount))
+      .map((column) => column.columnName),
+  );
   const profileCategories = profile.columns
-    .filter((column) =>
-      fieldNames.has(column.columnName) &&
-      !isCoordinateField(column.columnName) &&
-      column.inferredType !== "number" &&
-      column.inferredType !== "date" &&
-      column.uniqueCount > 1 &&
-      column.uniqueCount <= Math.max(12, Math.ceil((profile.rowCount ?? 1) * 0.7))
-    )
+    .filter((column) => categoricalFieldNames.has(column.columnName))
     .map((column) => column.columnName);
   return mergeValues(
     [
-      ...profile.potentialGeographicFields.filter((field) => !isCoordinateField(field)),
-      ...profile.potentialDemographicFields,
+      ...profile.potentialGeographicFields.filter((field) => categoricalFieldNames.has(field)),
+      ...profile.potentialDemographicFields.filter((field) => categoricalFieldNames.has(field)),
       ...profileCategories
     ],
     [],
     MAX_FIELDS
   );
+}
+
+function isUsefulGroupingColumn(
+  column: NonNullable<Dataset["profile"]>["columns"][number],
+  rowCount?: number,
+) {
+  return (
+    !isCoordinateField(column.columnName) &&
+    !isGenericIdentifierField(column.columnName) &&
+    column.inferredType !== "number" &&
+    column.inferredType !== "date" &&
+    column.uniqueCount > 1 &&
+    column.uniqueCount <= Math.max(12, Math.ceil((rowCount ?? 1) * 0.7))
+  );
+}
+
+function isGenericIdentifierField(field: string) {
+  const normalized = field.toLowerCase();
+  const isGeographicCode =
+    normalized.includes("pcode") ||
+    /(admin|district|region|province|commune|ward|site|location).*(code|id)$/.test(normalized);
+  if (isGeographicCode) return false;
+  return /(^|_)(id|uuid|guid)$|_id$|identifier/.test(normalized);
 }
 
 function isUsableChart(

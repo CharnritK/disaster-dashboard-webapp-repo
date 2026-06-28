@@ -47,7 +47,7 @@ export function FeedbackForm({ enabled }: FeedbackFormProps) {
     <section className="feedback-panel" aria-labelledby="feedback-title">
       <div>
         <p className="eyebrow">Feedback</p>
-        <h3 id="feedback-title">Was this recommendation useful?</h3>
+        <h3 id="feedback-title">Was this workflow output useful?</h3>
       </div>
 
       <div className="feedback-thumbs" role="group" aria-label="Feedback rating">
