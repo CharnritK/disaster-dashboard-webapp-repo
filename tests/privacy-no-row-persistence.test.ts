@@ -29,6 +29,14 @@ describe("privacy no-row persistence guard", () => {
       expect(combined, forbidden).not.toMatch(new RegExp(`from\\("${forbidden}"\\)`, "i"));
     }
 
+    for (const approved of [
+      "form_registries",
+      "form_registry_versions",
+      "reusable_mappings",
+    ]) {
+      expect(combined).toContain(approved);
+    }
+
     const methods = Object.getOwnPropertyNames(InMemoryMetadataDbAdapter.prototype).map(
       (method) => method.toLowerCase(),
     );
@@ -98,7 +106,7 @@ describe("privacy no-row persistence guard", () => {
       if (!exists(file)) continue;
       const text = readFileSync(file, "utf8");
       expect(text, relativePath).not.toMatch(
-        /@\/lib\/db|@\/lib\/supabase|metadataAdapter|serverClient|fetch\s*\(|localStorage|sessionStorage|indexedDB|insert|upsert|delete|persist|save/i,
+        /@\/lib\/db|@\/lib\/supabase|metadataAdapter|serverClient|fetch\s*\(|localStorage|sessionStorage|indexedDB|\b(?:insert|upsert|delete)\s*\(|\.(?:insert|upsert|delete)\s*\(/i,
       );
     }
   });

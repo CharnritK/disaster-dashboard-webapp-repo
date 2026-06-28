@@ -20,6 +20,7 @@ export type DashboardInsightType =
 export type MetricAggregation = "sum" | "average" | "count";
 export type RecommendationScope = "workflow" | "dashboard";
 export type CopilotTaskType =
+  | "form_schema_interpretation"
   | "workflow_harmonization"
   | "dashboard_synthesis"
   | "quality_repair_guidance"

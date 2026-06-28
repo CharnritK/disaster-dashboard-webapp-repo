@@ -5,7 +5,12 @@ export type RepairActionIssueType =
   | "missing_evidence"
   | "ambiguous_mapping"
   | "ai_fallback"
-  | "quality_issue";
+  | "quality_issue"
+  | "weak_form_detection"
+  | "connector_sync_issue"
+  | "ocr_pdf_confidence_issue"
+  | "geocoding_uncertainty"
+  | "fuzzy_match_conflict";
 
 export type RepairActionSeverity = "info" | "review" | "blocker";
 export type RepairActionEffort = "seconds" | "minutes" | "needs_owner";

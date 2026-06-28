@@ -4,10 +4,12 @@ Date: 2026-06-28
 
 Status: approved for local/staging-safe planning and implementation. Phase 15,
 Phase 16, and the safe protected-UI portion of Phase 17 were implemented locally
-on 2026-06-28 in commit `1a3f4fe`. Persistence expansion, production
-deployment, production migrations, production environment changes,
-provider/model changes, open signup, anonymous AI, and public demo upload remain
-blocked unless separately approved.
+on 2026-06-28 in commit `1a3f4fe`. Phases 18-24 were implemented locally on
+2026-06-28 as metadata-only controlled-beta surfaces. Production deployment,
+production migrations, production environment changes, provider/model changes,
+open signup, anonymous AI, public demo upload, credential storage, raw-data
+persistence, and retention automation remain blocked unless separately
+approved.
 
 ## Real Problem
 
@@ -126,8 +128,7 @@ Acceptance:
 
 ## Phase 18 - Metadata Registry Foundation
 
-Implementation status: not started. This is the next gated product slice, not a
-carry-over from the completed session-only work.
+Implementation status: complete locally on 2026-06-28.
 
 Objective: add typed metadata contracts and draft persistence surfaces for form
 families, form versions, and reusable mappings only after separate persistence
@@ -162,6 +163,8 @@ Tables:
 
 ## Phase 19 - Additional Repair Sources
 
+Implementation status: complete locally on 2026-06-28.
+
 Objective: extend repair action sources after Phase 15 is tested.
 
 Repair action types:
@@ -185,6 +188,9 @@ Acceptance:
 - repair actions are available to the coach and export handoff.
 
 ## Phase 20 - AI Schema Interpretation
+
+Implementation status: complete locally on 2026-06-28. The route is governed,
+schema-only, deterministic-first, and uses existing provider/model defaults.
 
 Objective: add a dedicated governed route for schema-only interpretation.
 
@@ -211,6 +217,10 @@ Acceptance:
 
 ## Phase 21 - Connector Metadata And Live Sync Surface
 
+Implementation status: complete locally on 2026-06-28 as metadata-only source
+status validation. Credential storage, token handling, background jobs, and
+persisted response rows were not implemented.
+
 Objective: support KoBo/ODK/Google Forms as metadata-first sources.
 
 Rules:
@@ -231,6 +241,9 @@ Acceptance:
 
 ## Phase 22 - PDF/OCR And Geocoding Metadata
 
+Implementation status: complete locally on 2026-06-28 as review-only metadata
+contracts and validators.
+
 Objective: represent OCR and geocoding as review-only assistance.
 
 Rules:
@@ -250,6 +263,9 @@ Acceptance:
 
 ## Phase 23 - Fuzzy Matching Review Candidates
 
+Implementation status: complete locally on 2026-06-28 as deterministic
+session-only review candidates. It is not a cleaning transform.
+
 Objective: add deterministic fuzzy matching as a review aid.
 
 Rules:
@@ -267,6 +283,10 @@ Acceptance:
   metadata.
 
 ## Phase 24 - Staging Validation
+
+Implementation status: local validation complete on 2026-06-28. Authenticated
+staging write smoke still requires a clicked magic-link session and configured
+staging credentials.
 
 Objective: validate local/staging-safe behavior without production action.
 
@@ -298,17 +318,17 @@ Checks:
 
 ## Next Safe Task
 
-Phase 15, Phase 16, and the safe protected-workflow portion of Phase 17 are
-complete locally. The next safe continuation is a Phase 18 approval packet and
-implementation plan, not code that mutates persistence.
+Phases 15-24 are complete locally. The next safe continuation is review and
+commit/publish workflow, followed by credential-dependent staging validation
+only when a clicked magic-link session and staging credentials are available.
 
-Before Phase 18 implementation, get explicit approval for:
+Before any later work, keep these approval gates explicit:
 
-1. metadata-only tables: `form_registries`, `form_registry_versions`, and
-   `reusable_mappings`;
-2. local/staging-only schema/RLS drafts and in-memory adapter behavior;
-3. protected API route names and validator contracts;
-4. privacy tests that reject raw rows, uploaded files, full prompts, model
-   responses, sample values, and row-like payloads;
-5. confirmation that no production migration, production deployment, provider
-   change, admin expansion, or public demo upload is included.
+1. no production migration or production deployment without separate approval;
+2. no credential storage, connector tokens, background sync jobs, or retention
+   automation without separate approval;
+3. no public `/demo` upload, anonymous AI, open signup, or provider/model/quota
+   change without separate approval;
+4. no persistence of uploaded rows, prepared rows, raw files, exports, full
+   prompts, model responses, OCR text, addresses, coordinates, place names, or
+   row-like payloads.

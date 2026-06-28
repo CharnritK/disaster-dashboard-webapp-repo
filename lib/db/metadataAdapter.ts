@@ -5,6 +5,16 @@ import type {
   AIRecommendationResponse,
   CopilotTaskType,
 } from "@/types/recommendations";
+import type {
+  FormRegistryReviewStatus,
+  FormRegistryVisibility,
+  MappingConfidenceBucket,
+  MappingReviewStatus,
+} from "@/types/formRegistry";
+import type {
+  FormFamily,
+  FormIntakeSourceKind,
+} from "@/types/formIntake";
 
 // Server-only boundary: metadata adapters must not be imported from Client Components.
 
@@ -13,7 +23,10 @@ export const APPROVED_METADATA_TABLES = [
   "ai_usage_daily",
   "ai_events",
   "feedback",
+  "form_registries",
+  "form_registry_versions",
   "custom_templates",
+  "reusable_mappings",
   "template_versions",
 ] as const;
 
@@ -77,7 +90,11 @@ export type AiEventDbInput = {
   model?: string;
   promptVersion: string;
   provider?: string;
-  route: "/api/coach" | "/api/copilot" | "/api/recommend";
+  route:
+    | "/api/coach"
+    | "/api/copilot"
+    | "/api/form-schema/interpret"
+    | "/api/recommend";
   succeeded?: boolean;
   taskType: CopilotTaskType;
   userId?: string;
@@ -168,15 +185,124 @@ export type TemplateVersionRecord = Required<
   reviewedByUserId?: string | null;
 };
 
+export type FormRegistryInput = {
+  caveats?: string[];
+  description?: string | null;
+  fieldCount: number;
+  formFamily: FormFamily;
+  mappingCount?: number;
+  ownerUserId: string;
+  requiredFieldCount: number;
+  reviewStatus?: FormRegistryReviewStatus;
+  schemaFingerprint: string;
+  sourceKind: FormIntakeSourceKind;
+  title: string;
+  visibility?: FormRegistryVisibility;
+};
+
+export type FormRegistryRecord = Required<
+  Pick<
+    FormRegistryInput,
+    | "fieldCount"
+    | "formFamily"
+    | "mappingCount"
+    | "ownerUserId"
+    | "requiredFieldCount"
+    | "reviewStatus"
+    | "schemaFingerprint"
+    | "sourceKind"
+    | "title"
+    | "visibility"
+  >
+> & {
+  caveats: string[];
+  createdAt: string;
+  description?: string | null;
+  id: string;
+  updatedAt: string;
+};
+
+export type FormRegistryVersionInput = {
+  caveats?: string[];
+  evidenceMappings?: SafeMetadata[];
+  fieldCount: number;
+  fieldSummaries?: SafeMetadata[];
+  registryId: string;
+  requiredFieldCount: number;
+  schemaFingerprint: string;
+  sourceKind: FormIntakeSourceKind;
+  versionNumber: number;
+};
+
+export type FormRegistryVersionRecord = Required<
+  Pick<
+    FormRegistryVersionInput,
+    | "evidenceMappings"
+    | "fieldCount"
+    | "fieldSummaries"
+    | "registryId"
+    | "requiredFieldCount"
+    | "schemaFingerprint"
+    | "sourceKind"
+    | "versionNumber"
+  >
+> & {
+  caveats: string[];
+  createdAt: string;
+  id: string;
+};
+
+export type ReusableMappingInput = {
+  caveats?: string[];
+  confidenceBucket: MappingConfidenceBucket;
+  evidenceNeed: string;
+  fieldName: string;
+  ownerUserId: string;
+  rationale?: string | null;
+  registryId: string;
+  registryVersionId?: string | null;
+  reviewStatus?: MappingReviewStatus;
+};
+
+export type ReusableMappingRecord = Required<
+  Pick<
+    ReusableMappingInput,
+    | "confidenceBucket"
+    | "evidenceNeed"
+    | "fieldName"
+    | "ownerUserId"
+    | "registryId"
+    | "reviewStatus"
+  >
+> & {
+  caveats: string[];
+  createdAt: string;
+  id: string;
+  rationale?: string | null;
+  registryVersionId?: string | null;
+  updatedAt: string;
+};
+
 export interface MetadataDbAdapter {
   createAiEvent(input: AiEventDbInput): Promise<AiEventDbRecord>;
   createCustomTemplate(input: CustomTemplateInput): Promise<CustomTemplateRecord>;
   createFeedback(input: FeedbackInput): Promise<FeedbackRecord>;
+  createFormRegistry(input: FormRegistryInput): Promise<FormRegistryRecord>;
+  createFormRegistryVersion(
+    input: FormRegistryVersionInput,
+  ): Promise<FormRegistryVersionRecord>;
+  createReusableMapping(input: ReusableMappingInput): Promise<ReusableMappingRecord>;
   createTemplateVersion(input: TemplateVersionInput): Promise<TemplateVersionRecord>;
   getAiUsageDaily(userId: string, usageDate: string): Promise<AiUsageDailyRecord | null>;
   getCustomTemplate(templateId: string): Promise<CustomTemplateRecord | null>;
+  getFormRegistry(registryId: string, ownerUserId: string): Promise<FormRegistryRecord | null>;
   getUserProfile(userId: string): Promise<UserProfileRecord | null>;
   listCustomTemplates(ownerUserId: string): Promise<CustomTemplateRecord[]>;
+  listFormRegistries(ownerUserId: string): Promise<FormRegistryRecord[]>;
+  listReusableMappings(
+    ownerUserId: string,
+    registryId?: string,
+  ): Promise<ReusableMappingRecord[]>;
   reserveAiUsage(input: {
     dailyLimit: number;
     usageDate: string;
@@ -202,6 +328,9 @@ export class InMemoryMetadataDbAdapter implements MetadataDbAdapter {
   private readonly aiUsage = new Map<string, AiUsageDailyRecord>();
   private readonly customTemplates = new Map<string, CustomTemplateRecord>();
   private readonly feedback = new Map<string, FeedbackRecord>();
+  private readonly formRegistries = new Map<string, FormRegistryRecord>();
+  private readonly formRegistryVersions = new Map<string, FormRegistryVersionRecord>();
+  private readonly reusableMappings = new Map<string, ReusableMappingRecord>();
   private readonly templateVersions = new Map<string, TemplateVersionRecord>();
   private readonly userProfiles = new Map<string, UserProfileRecord>();
 
@@ -241,6 +370,27 @@ export class InMemoryMetadataDbAdapter implements MetadataDbAdapter {
 
   async getCustomTemplate(templateId: string): Promise<CustomTemplateRecord | null> {
     return this.customTemplates.get(templateId) ?? null;
+  }
+
+  async listFormRegistries(ownerUserId: string): Promise<FormRegistryRecord[]> {
+    return Array.from(this.formRegistries.values()).filter(
+      (registry) =>
+        registry.ownerUserId === ownerUserId || registry.visibility === "reviewed",
+    );
+  }
+
+  async getFormRegistry(
+    registryId: string,
+    ownerUserId: string,
+  ): Promise<FormRegistryRecord | null> {
+    const registry = this.formRegistries.get(registryId);
+    if (
+      !registry ||
+      (registry.ownerUserId !== ownerUserId && registry.visibility !== "reviewed")
+    ) {
+      return null;
+    }
+    return registry;
   }
 
   async reserveAiUsage(input: {
@@ -402,12 +552,95 @@ export class InMemoryMetadataDbAdapter implements MetadataDbAdapter {
     return record;
   }
 
+  async createFormRegistry(input: FormRegistryInput): Promise<FormRegistryRecord> {
+    const now = new Date().toISOString();
+    const record: FormRegistryRecord = {
+      caveats: input.caveats ?? [],
+      createdAt: now,
+      description: input.description ?? null,
+      fieldCount: input.fieldCount,
+      formFamily: input.formFamily,
+      id: crypto.randomUUID(),
+      mappingCount: input.mappingCount ?? 0,
+      ownerUserId: input.ownerUserId,
+      requiredFieldCount: input.requiredFieldCount,
+      reviewStatus: input.reviewStatus ?? "draft",
+      schemaFingerprint: input.schemaFingerprint,
+      sourceKind: input.sourceKind,
+      title: input.title,
+      updatedAt: now,
+      visibility: input.visibility ?? "private",
+    };
+    this.formRegistries.set(record.id, record);
+    return record;
+  }
+
+  async createFormRegistryVersion(
+    input: FormRegistryVersionInput,
+  ): Promise<FormRegistryVersionRecord> {
+    const record: FormRegistryVersionRecord = {
+      caveats: input.caveats ?? [],
+      createdAt: new Date().toISOString(),
+      evidenceMappings: (input.evidenceMappings ?? []).map((mapping) =>
+        sanitizeSafeMetadata(mapping),
+      ),
+      fieldCount: input.fieldCount,
+      fieldSummaries: (input.fieldSummaries ?? []).map((field) =>
+        sanitizeSafeMetadata(field),
+      ),
+      id: crypto.randomUUID(),
+      registryId: input.registryId,
+      requiredFieldCount: input.requiredFieldCount,
+      schemaFingerprint: input.schemaFingerprint,
+      sourceKind: input.sourceKind,
+      versionNumber: input.versionNumber,
+    };
+    this.formRegistryVersions.set(record.id, record);
+    return record;
+  }
+
+  async createReusableMapping(
+    input: ReusableMappingInput,
+  ): Promise<ReusableMappingRecord> {
+    const now = new Date().toISOString();
+    const record: ReusableMappingRecord = {
+      caveats: input.caveats ?? [],
+      confidenceBucket: input.confidenceBucket,
+      createdAt: now,
+      evidenceNeed: input.evidenceNeed,
+      fieldName: input.fieldName,
+      id: crypto.randomUUID(),
+      ownerUserId: input.ownerUserId,
+      rationale: input.rationale ?? null,
+      registryId: input.registryId,
+      registryVersionId: input.registryVersionId ?? null,
+      reviewStatus: input.reviewStatus ?? "needs_review",
+      updatedAt: now,
+    };
+    this.reusableMappings.set(record.id, record);
+    return record;
+  }
+
+  async listReusableMappings(
+    ownerUserId: string,
+    registryId?: string,
+  ): Promise<ReusableMappingRecord[]> {
+    return Array.from(this.reusableMappings.values()).filter(
+      (mapping) =>
+        mapping.ownerUserId === ownerUserId &&
+        (!registryId || mapping.registryId === registryId),
+    );
+  }
+
   recordsForTests() {
     return {
       aiEvents: Array.from(this.aiEvents.values()),
       aiUsage: Array.from(this.aiUsage.values()),
       customTemplates: Array.from(this.customTemplates.values()),
       feedback: Array.from(this.feedback.values()),
+      formRegistries: Array.from(this.formRegistries.values()),
+      formRegistryVersions: Array.from(this.formRegistryVersions.values()),
+      reusableMappings: Array.from(this.reusableMappings.values()),
       templateVersions: Array.from(this.templateVersions.values()),
       userProfiles: Array.from(this.userProfiles.values()),
     };
@@ -477,6 +710,32 @@ export class SupabaseMetadataDbAdapter implements MetadataDbAdapter {
         .maybeSingle(),
     );
     return row ? fromCustomTemplateRow(row) : null;
+  }
+
+  async listFormRegistries(ownerUserId: string): Promise<FormRegistryRecord[]> {
+    const { data, error } = await this.client
+      .from("form_registries")
+      .select("*")
+      .or(`owner_user_id.eq.${ownerUserId},visibility.eq.reviewed`)
+      .order("updated_at", { ascending: false });
+    if (error) throw new Error(`Metadata DB form_registries read failed: ${error.message}`);
+    return (data ?? []).map((row) => fromFormRegistryRow(row as FormRegistryRow));
+  }
+
+  async getFormRegistry(
+    registryId: string,
+    ownerUserId: string,
+  ): Promise<FormRegistryRecord | null> {
+    const row = await this.maybeSingle<FormRegistryRow>(
+      "form_registries",
+      this.client
+        .from("form_registries")
+        .select("*")
+        .eq("id", registryId)
+        .or(`owner_user_id.eq.${ownerUserId},visibility.eq.reviewed`)
+        .maybeSingle(),
+    );
+    return row ? fromFormRegistryRow(row) : null;
   }
 
   async reserveAiUsage(input: {
@@ -603,6 +862,62 @@ export class SupabaseMetadataDbAdapter implements MetadataDbAdapter {
     return fromTemplateVersionRow(row);
   }
 
+  async createFormRegistry(input: FormRegistryInput): Promise<FormRegistryRecord> {
+    const row = await this.single<FormRegistryRow>(
+      "form_registries",
+      this.client
+        .from("form_registries")
+        .insert(toFormRegistryRow(input))
+        .select("*")
+        .single(),
+    );
+    return fromFormRegistryRow(row);
+  }
+
+  async createFormRegistryVersion(
+    input: FormRegistryVersionInput,
+  ): Promise<FormRegistryVersionRecord> {
+    const row = await this.single<FormRegistryVersionRow>(
+      "form_registry_versions",
+      this.client
+        .from("form_registry_versions")
+        .insert(toFormRegistryVersionRow(input))
+        .select("*")
+        .single(),
+    );
+    return fromFormRegistryVersionRow(row);
+  }
+
+  async createReusableMapping(
+    input: ReusableMappingInput,
+  ): Promise<ReusableMappingRecord> {
+    const row = await this.single<ReusableMappingRow>(
+      "reusable_mappings",
+      this.client
+        .from("reusable_mappings")
+        .insert(toReusableMappingRow(input))
+        .select("*")
+        .single(),
+    );
+    return fromReusableMappingRow(row);
+  }
+
+  async listReusableMappings(
+    ownerUserId: string,
+    registryId?: string,
+  ): Promise<ReusableMappingRecord[]> {
+    let query = this.client
+      .from("reusable_mappings")
+      .select("*")
+      .eq("owner_user_id", ownerUserId)
+      .order("updated_at", { ascending: false });
+    if (registryId) query = query.eq("registry_id", registryId);
+
+    const { data, error } = await query;
+    if (error) throw new Error(`Metadata DB reusable_mappings read failed: ${error.message}`);
+    return (data ?? []).map((row) => fromReusableMappingRow(row as ReusableMappingRow));
+  }
+
   private async single<T>(
     table: ApprovedMetadataTable,
     query: PromiseLike<{ data: T | null; error: { message: string } | null }>,
@@ -688,7 +1003,11 @@ type AiEventRow = {
   model: string | null;
   prompt_version: string;
   provider: string | null;
-  route: "/api/coach" | "/api/copilot" | "/api/recommend";
+  route:
+    | "/api/coach"
+    | "/api/copilot"
+    | "/api/form-schema/interpret"
+    | "/api/recommend";
   succeeded: boolean;
   task_type: CopilotTaskType;
   updated_at?: string;
@@ -735,6 +1054,53 @@ type TemplateVersionRow = {
   suggested_fields: SafeMetadata[];
   template_id: string;
   version_number: number;
+};
+
+type FormRegistryRow = {
+  caveats: string[];
+  created_at: string;
+  description: string | null;
+  field_count: number;
+  form_family: FormFamily;
+  id: string;
+  mapping_count: number;
+  owner_user_id: string;
+  required_field_count: number;
+  review_status: FormRegistryReviewStatus;
+  schema_fingerprint: string;
+  source_kind: FormIntakeSourceKind;
+  title: string;
+  updated_at: string;
+  visibility: FormRegistryVisibility;
+};
+
+type FormRegistryVersionRow = {
+  caveats: string[];
+  created_at: string;
+  evidence_mappings: SafeMetadata[];
+  field_count: number;
+  field_summaries: SafeMetadata[];
+  id: string;
+  registry_id: string;
+  required_field_count: number;
+  schema_fingerprint: string;
+  source_kind: FormIntakeSourceKind;
+  version_number: number;
+};
+
+type ReusableMappingRow = {
+  caveats: string[];
+  confidence_bucket: MappingConfidenceBucket;
+  created_at: string;
+  evidence_need: string;
+  field_name: string;
+  id: string;
+  owner_user_id: string;
+  rationale: string | null;
+  registry_id: string;
+  registry_version_id: string | null;
+  review_status: MappingReviewStatus;
+  updated_at: string;
 };
 
 function toUserProfileRow(input: UserProfileInput) {
@@ -904,5 +1270,111 @@ function fromTemplateVersionRow(row: TemplateVersionRow): TemplateVersionRecord 
     suggestedFields: row.suggested_fields,
     templateId: row.template_id,
     versionNumber: row.version_number,
+  };
+}
+
+function toFormRegistryRow(input: FormRegistryInput) {
+  return {
+    caveats: input.caveats ?? [],
+    description: input.description,
+    field_count: input.fieldCount,
+    form_family: input.formFamily,
+    mapping_count: input.mappingCount ?? 0,
+    owner_user_id: input.ownerUserId,
+    required_field_count: input.requiredFieldCount,
+    review_status: input.reviewStatus ?? "draft",
+    schema_fingerprint: input.schemaFingerprint,
+    source_kind: input.sourceKind,
+    title: input.title,
+    visibility: input.visibility ?? "private",
+  };
+}
+
+function fromFormRegistryRow(row: FormRegistryRow): FormRegistryRecord {
+  return {
+    caveats: row.caveats,
+    createdAt: row.created_at,
+    description: row.description,
+    fieldCount: row.field_count,
+    formFamily: row.form_family,
+    id: row.id,
+    mappingCount: row.mapping_count,
+    ownerUserId: row.owner_user_id,
+    requiredFieldCount: row.required_field_count,
+    reviewStatus: row.review_status,
+    schemaFingerprint: row.schema_fingerprint,
+    sourceKind: row.source_kind,
+    title: row.title,
+    updatedAt: row.updated_at,
+    visibility: row.visibility,
+  };
+}
+
+function toFormRegistryVersionRow(input: FormRegistryVersionInput) {
+  return {
+    caveats: input.caveats ?? [],
+    evidence_mappings: (input.evidenceMappings ?? []).map((mapping) =>
+      sanitizeSafeMetadata(mapping),
+    ),
+    field_count: input.fieldCount,
+    field_summaries: (input.fieldSummaries ?? []).map((field) =>
+      sanitizeSafeMetadata(field),
+    ),
+    registry_id: input.registryId,
+    required_field_count: input.requiredFieldCount,
+    schema_fingerprint: input.schemaFingerprint,
+    source_kind: input.sourceKind,
+    version_number: input.versionNumber,
+  };
+}
+
+function fromFormRegistryVersionRow(
+  row: FormRegistryVersionRow,
+): FormRegistryVersionRecord {
+  return {
+    caveats: row.caveats,
+    createdAt: row.created_at,
+    evidenceMappings: row.evidence_mappings.map((mapping) =>
+      sanitizeSafeMetadata(mapping),
+    ),
+    fieldCount: row.field_count,
+    fieldSummaries: row.field_summaries.map((field) => sanitizeSafeMetadata(field)),
+    id: row.id,
+    registryId: row.registry_id,
+    requiredFieldCount: row.required_field_count,
+    schemaFingerprint: row.schema_fingerprint,
+    sourceKind: row.source_kind,
+    versionNumber: row.version_number,
+  };
+}
+
+function toReusableMappingRow(input: ReusableMappingInput) {
+  return {
+    caveats: input.caveats ?? [],
+    confidence_bucket: input.confidenceBucket,
+    evidence_need: input.evidenceNeed,
+    field_name: input.fieldName,
+    owner_user_id: input.ownerUserId,
+    rationale: input.rationale,
+    registry_id: input.registryId,
+    registry_version_id: input.registryVersionId,
+    review_status: input.reviewStatus ?? "needs_review",
+  };
+}
+
+function fromReusableMappingRow(row: ReusableMappingRow): ReusableMappingRecord {
+  return {
+    caveats: row.caveats,
+    confidenceBucket: row.confidence_bucket,
+    createdAt: row.created_at,
+    evidenceNeed: row.evidence_need,
+    fieldName: row.field_name,
+    id: row.id,
+    ownerUserId: row.owner_user_id,
+    rationale: row.rationale,
+    registryId: row.registry_id,
+    registryVersionId: row.registry_version_id,
+    reviewStatus: row.review_status,
+    updatedAt: row.updated_at,
   };
 }

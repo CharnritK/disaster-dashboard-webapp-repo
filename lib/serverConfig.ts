@@ -171,6 +171,17 @@ export function resolveLlmTaskConfig(
     };
   }
 
+  if (taskType === "form_schema_interpretation") {
+    return {
+      taskType,
+      model: modelFromEnv(env, "LLM_FORM_SCHEMA_MODEL", "gpt-5.4-mini"),
+      reasoningEffort: "low",
+      verbosity: "low",
+      timeoutMs: numberFromRecord(env, "LLM_FORM_SCHEMA_REQUEST_TIMEOUT_MS", baseTimeout, 1_000),
+      maxOutputTokens: Math.min(sharedTokenBudget, 1_200),
+    };
+  }
+
   if (taskType === "decision_handoff_summary") {
     return {
       taskType,

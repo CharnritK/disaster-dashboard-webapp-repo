@@ -9,6 +9,9 @@ revoke all on table public.ai_events from anon, authenticated;
 revoke all on table public.feedback from anon, authenticated;
 revoke all on table public.custom_templates from anon, authenticated;
 revoke all on table public.template_versions from anon, authenticated;
+revoke all on table public.form_registries from anon, authenticated;
+revoke all on table public.form_registry_versions from anon, authenticated;
+revoke all on table public.reusable_mappings from anon, authenticated;
 
 alter table public.user_profiles enable row level security;
 alter table public.ai_usage_daily enable row level security;
@@ -16,6 +19,9 @@ alter table public.ai_events enable row level security;
 alter table public.feedback enable row level security;
 alter table public.custom_templates enable row level security;
 alter table public.template_versions enable row level security;
+alter table public.form_registries enable row level security;
+alter table public.form_registry_versions enable row level security;
+alter table public.reusable_mappings enable row level security;
 
 grant select on table public.user_profiles to authenticated;
 grant update (display_name, last_login_at, updated_at) on table public.user_profiles to authenticated;
@@ -24,6 +30,9 @@ grant select on table public.ai_events to authenticated;
 grant select, insert on table public.feedback to authenticated;
 grant select, insert, update, delete on table public.custom_templates to authenticated;
 grant select, insert, update, delete on table public.template_versions to authenticated;
+grant select, insert on table public.form_registries to authenticated;
+grant select, insert on table public.form_registry_versions to authenticated;
+grant select, insert on table public.reusable_mappings to authenticated;
 
 grant select, insert, update, delete on table public.user_profiles to service_role;
 grant select, insert, update, delete on table public.ai_usage_daily to service_role;
@@ -31,6 +40,9 @@ grant select, insert, update, delete on table public.ai_events to service_role;
 grant select, insert, update, delete on table public.feedback to service_role;
 grant select, insert, update, delete on table public.custom_templates to service_role;
 grant select, insert, update, delete on table public.template_versions to service_role;
+grant select, insert, update, delete on table public.form_registries to service_role;
+grant select, insert, update, delete on table public.form_registry_versions to service_role;
+grant select, insert, update, delete on table public.reusable_mappings to service_role;
 
 -- RPC execution should be explicit. Keep reserve_ai_usage unavailable to
 -- browser roles until a reviewed migration decides otherwise.
@@ -214,5 +226,83 @@ create policy "Users can delete own draft template versions"
         and templates.owner_user_id = (select auth.uid())
         and templates.status = 'draft'
         and templates.visibility = 'private'
+    )
+  );
+
+drop policy if exists "Users can read own or reviewed form registries" on public.form_registries;
+create policy "Users can read own or reviewed form registries"
+  on public.form_registries
+  for select
+  to authenticated
+  using (
+    (select auth.uid()) = owner_user_id
+    or visibility = 'reviewed'
+    or review_status = 'reviewed'
+  );
+
+drop policy if exists "Users can insert own private form registries" on public.form_registries;
+create policy "Users can insert own private form registries"
+  on public.form_registries
+  for insert
+  to authenticated
+  with check (
+    (select auth.uid()) = owner_user_id
+    and visibility = 'private'
+    and review_status in ('draft', 'review_needed')
+  );
+
+drop policy if exists "Users can read own or reviewed form registry versions" on public.form_registry_versions;
+create policy "Users can read own or reviewed form registry versions"
+  on public.form_registry_versions
+  for select
+  to authenticated
+  using (
+    exists (
+      select 1
+      from public.form_registries registries
+      where registries.id = form_registry_versions.registry_id
+        and (
+          registries.owner_user_id = (select auth.uid())
+          or registries.visibility = 'reviewed'
+          or registries.review_status = 'reviewed'
+        )
+    )
+  );
+
+drop policy if exists "Users can insert own form registry versions" on public.form_registry_versions;
+create policy "Users can insert own form registry versions"
+  on public.form_registry_versions
+  for insert
+  to authenticated
+  with check (
+    exists (
+      select 1
+      from public.form_registries registries
+      where registries.id = form_registry_versions.registry_id
+        and registries.owner_user_id = (select auth.uid())
+        and registries.visibility = 'private'
+        and registries.review_status in ('draft', 'review_needed')
+    )
+  );
+
+drop policy if exists "Users can read own reusable mappings" on public.reusable_mappings;
+create policy "Users can read own reusable mappings"
+  on public.reusable_mappings
+  for select
+  to authenticated
+  using ((select auth.uid()) = owner_user_id);
+
+drop policy if exists "Users can insert own reusable mappings" on public.reusable_mappings;
+create policy "Users can insert own reusable mappings"
+  on public.reusable_mappings
+  for insert
+  to authenticated
+  with check (
+    (select auth.uid()) = owner_user_id
+    and exists (
+      select 1
+      from public.form_registries registries
+      where registries.id = reusable_mappings.registry_id
+        and registries.owner_user_id = (select auth.uid())
     )
   );

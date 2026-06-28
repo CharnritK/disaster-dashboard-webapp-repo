@@ -70,6 +70,11 @@ function severityRank(
 function stepRelevanceRank(action: RepairAction, step: WorkflowStep) {
   if (step === "validate" && action.severity === "blocker") return 3;
   if (step === "profile" && action.issueType === "ambiguous_mapping") return 2;
+  if (step === "profile" && action.issueType === "weak_form_detection") return 2;
+  if (step === "profile" && action.issueType === "fuzzy_match_conflict") return 2;
+  if (step === "recommend" && action.issueType === "connector_sync_issue") return 2;
+  if (step === "recommend" && action.issueType === "geocoding_uncertainty") return 2;
+  if (step === "recommend" && action.issueType === "ocr_pdf_confidence_issue") return 2;
   if (step === "recommend" && action.issueType === "ai_fallback") return 2;
   if (step === "export" && action.issueType === "ai_fallback") return 1;
   return 0;
@@ -84,6 +89,11 @@ function issueRank(action: RepairAction) {
     missing_evidence: 0,
     quality_issue: 1,
     ambiguous_mapping: 2,
-    ai_fallback: 3,
+    weak_form_detection: 3,
+    connector_sync_issue: 4,
+    ocr_pdf_confidence_issue: 5,
+    geocoding_uncertainty: 6,
+    fuzzy_match_conflict: 7,
+    ai_fallback: 8,
   }[action.issueType];
 }

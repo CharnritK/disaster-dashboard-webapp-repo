@@ -13,6 +13,7 @@ import type { CopilotTaskType } from "@/types/recommendations";
 const ALL_TASK_TYPES: CopilotTaskType[] = [
   "workflow_harmonization",
   "dashboard_synthesis",
+  "form_schema_interpretation",
   "quality_repair_guidance",
   "decision_handoff_summary",
 ];
