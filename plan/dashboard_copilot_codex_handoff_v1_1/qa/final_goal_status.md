@@ -1,18 +1,21 @@
 # Final Goal Status
 
-Date: 2026-06-21
+Date: 2026-06-28
 
-Verdict: `LOCAL_IMPLEMENTATION_COMPLETE_PHASES_0_14_AUTH_GATE_VALIDATED`
+Verdict: `LOCAL_IMPLEMENTATION_COMPLETE_PHASES_0_24_FORM_ROADMAP_VALIDATED`
 
 The controlled-beta implementation is complete for local/reviewable code paths
-through the phase 13/14 product-standout layer. The public deterministic demo,
+through the phase 18-24 form roadmap expansion. The public deterministic demo,
 protected-route login gate, session-only uploaded-data boundary, metadata-only
-persistence boundary, and deterministic fallback posture have been locally
-validated. Earlier Supabase-backed magic-link login was user-confirmed for the
-approved beta/admin email, but authenticated staging route rendering and
-metadata/admin runtime smoke still need a clicked magic-link session. Production
-credentials, production migrations, production deployment, and production
-allowlist changes remain out of scope.
+persistence boundary, deterministic fallback posture, protected repair guidance,
+next-best-action coach behavior, metadata-only form registry, schema-only AI
+interpretation, connector metadata validation, OCR/geocoding metadata
+validation, and fuzzy review candidates have been locally validated. Earlier
+Supabase-backed magic-link login was user-confirmed for the approved beta/admin
+email, but authenticated staging route rendering and metadata/admin runtime
+smoke still need a clicked magic-link session. Production credentials,
+production migrations, production deployment, and production allowlist changes
+remain out of scope.
 
 ## Completed
 
@@ -84,6 +87,45 @@ allowlist changes remain out of scope.
   - Handoff Dossier v2 metadata fields;
   - safe beta learning signal helper;
   - protected internal `/app/ai-trial` sample-only AI-path smoke surface.
+- Phase 15 session-only repair foundation:
+  - typed `RepairAction` contracts;
+  - deterministic repair action generation for missing evidence, ambiguous
+    mapping, AI fallback, and quality review states;
+  - no new persistence, provider, public route, or demo upload behavior.
+- Phase 16 deterministic Next Best Action Coach:
+  - ranks repair actions before generic hints;
+  - returns 1-3 lowest-effort next actions;
+  - separates app-assisted actions from human review.
+- Phase 17 protected repair UI integration:
+  - repair cards render only inside protected workspace mode;
+  - public `/demo` remains deterministic and sample-only;
+  - workflow copy avoids operational approval language.
+- Phase 18 metadata registry foundation:
+  - metadata-only `form_registries`, `form_registry_versions`, and
+    `reusable_mappings` contracts;
+  - strict domain validators before persistence;
+  - in-memory and Supabase adapter boundaries;
+  - protected create/list/read API routes.
+- Phase 20 schema-only AI interpretation:
+  - dedicated `/api/form-schema/interpret` route;
+  - deterministic fallback first;
+  - auth, entitlement, provider preflight, quota reserve, safe AI event metadata,
+    and response sanitization.
+- Phase 19 additional repair sources:
+  - weak form detection, connector sync, OCR/PDF confidence, geocoding
+    uncertainty, and fuzzy mapping review actions.
+- Phase 21 connector metadata surface:
+  - KoBo/ODK/Google Forms metadata validators;
+  - opaque connector refs and aggregate counts/status/caveats only;
+  - no credentials, tokens, background jobs, or response row persistence.
+- Phase 22 OCR/geocoding metadata:
+  - OCR/PDF page/field/confidence buckets and caveats only;
+  - geocoding provider/config, match counts, precision buckets, and caveats only;
+  - no PDFs, images, OCR text, addresses, coordinates, place names, or extracted
+    rows.
+- Phase 23 fuzzy review candidates:
+  - deterministic exact, near, conflict, and no-match review candidates;
+  - not a cleaning transform and no automatic dataset mutation.
 - D1-D7 approval alignment:
   - preview-only deployment path approved;
   - Supabase Auth/Postgres approved for the real beta project;
@@ -99,7 +141,7 @@ allowlist changes remain out of scope.
 ## Verification
 
 - `npm run lint` - passed.
-- `npm run test` - passed, 21 test files, 178 tests.
+- `npm run test` - passed, 29 test files, 223 tests.
 - `npm run build` - passed.
 - `git diff --check` - passed with Windows line-ending warnings only.
 - `node scripts/smoke-vercel.mjs --dry-run` - passed.
@@ -115,6 +157,28 @@ allowlist changes remain out of scope.
   - `/api/templates` returns 401 unauthenticated;
   - `/api/feedback` returns 401 unauthenticated;
   - `/api/coach` returns deterministic fallback unauthenticated.
+- Phase 15-17 targeted verification passed:
+  - `npm run test -- tests/repair-actions.test.ts tests/next-best-action-coach.test.ts tests/coach.test.ts`;
+  - `npm run test -- tests/formIntake.test.ts tests/privacy-no-row-persistence.test.ts`;
+  - browser smoke confirmed `/demo` has no upload/form-aware intake/repair
+    controls and `/app/data` redirects unauthenticated users to login.
+- Phase 18-24 targeted verification passed:
+  - `npm run test -- tests/form-registry.test.ts tests/db-adapter.test.ts tests/db-schema-boundary.test.ts tests/privacy-no-row-persistence.test.ts`;
+  - `npm run test -- tests/form-schema-interpretation-api.test.ts tests/db-schema-boundary.test.ts tests/api-ai-governance.test.ts`;
+  - `npm run test -- tests/repair-actions-extended.test.ts tests/repair-actions.test.ts tests/next-best-action-coach.test.ts tests/fuzzy-review.test.ts tests/connector-metadata.test.ts tests/extraction-metadata.test.ts`;
+  - `npm run test -- tests/fuzzy-review.test.ts`;
+  - `npm run test -- tests/connector-metadata.test.ts tests/repair-actions-extended.test.ts`;
+  - `npm run test -- tests/extraction-metadata.test.ts tests/repair-actions-extended.test.ts`;
+  - `npm run test -- tests/ai-events.test.ts tests/privacy-no-row-persistence.test.ts`.
+- Phase 18-24 final local verification passed:
+  - `npm run lint`;
+  - `npm run test`;
+  - `npm run build`;
+  - `git diff --check` with Windows line-ending warnings only;
+  - browser smoke confirmed `/demo` stays sample-only with no file input, no
+    form registry controls, no schema interpretation controls, and no repair
+    controls; `/app/data` redirects unauthenticated users to
+    `/login?next=%2Fapp%2Fdata`; console logs showed no app warnings/errors.
 - Staging Supabase-backed Vercel preview smoke passed:
   - `/demo` returned 200;
   - `/api/recommend/status` returned deterministic fallback with

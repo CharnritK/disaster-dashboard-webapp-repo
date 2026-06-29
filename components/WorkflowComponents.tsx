@@ -34,6 +34,7 @@ import type {
   MetricAggregation,
 } from "@/types/recommendations";
 import type { QualityCheckResult } from "@/types/quality";
+import type { RepairAction } from "@/types/repairAction";
 import type { TransformationStep } from "@/types/transformations";
 import {
   MAX_UPLOAD_SIZE_MB,
@@ -75,6 +76,7 @@ import {
   type GroupedMetricValue,
 } from "@/lib/chartMetrics";
 import { cleaningTransformLabel } from "@/lib/cleaningTransforms";
+import { repairActionAutomationLabel } from "@/lib/repairActions";
 import { isValidLatitude, isValidLongitude } from "@/lib/locationFields";
 import { summarizeJoinMatch, type JoinMatchSummary } from "@/lib/joinSummary";
 import { ChartFrame } from "@/components/charts/ChartFrame";
@@ -572,7 +574,7 @@ function DecisionMapDialog({
         <div className="decision-map-dialog-header">
           <div>
             <p className="eyebrow">Decision map</p>
-            <h3 id={titleId}>Response-prioritization decision chain</h3>
+            <h3 id={titleId}>{brief.decisionQuestion || "Selected decision"} chain</h3>
             <p id={descriptionId}>
               Read-only view of the selected template, current action, required signals, data fields, and metadata checks.
             </p>
@@ -960,7 +962,6 @@ export function ProfileStep({
   const evidenceCoverage = decisionBrief
     ? buildEvidenceCoverageSummary(datasets, decisionBrief)
     : undefined;
-  const highlightTerms = datasetTextTerms(datasets);
   return (
     <section className="workflow-step">
       <div className="section-heading">
@@ -973,14 +974,14 @@ export function ProfileStep({
         ))}
       </div>
       <EvidenceCoveragePanel summary={evidenceCoverage} />
-      <QualityPanel quality={quality} highlightTerms={highlightTerms} />
+      <QualityPanel quality={quality} />
       <MetadataPanel datasets={datasets} />
       <button
         className="primary-button next-action"
         disabled={isWorking}
         onClick={onRecommend}
       >
-        {isWorking ? "Generating recommendations..." : "Harmonize data"}
+        {isWorking ? "Checking review path..." : "Harmonize data"}
       </button>
     </section>
   );
@@ -1031,7 +1032,7 @@ function EvidenceCoveragePanel({
                     </span>
                     <span>
                       {candidate.missingPercentage}% missing,{" "}
-                      {Math.round(candidate.confidence * 100)}% confidence
+                      {Math.round(candidate.confidence * 100)}% field-match confidence
                     </span>
                     <span>{candidate.rationale}</span>
                   </li>
@@ -1042,7 +1043,7 @@ function EvidenceCoveragePanel({
             )}
             <p className="coverage-caveat">{item.caveat}</p>
             <p className="coverage-next-action">
-              <strong>Next action</strong>
+              <strong>Easiest safe fix</strong>
               <span>{item.nextAction}</span>
             </p>
           </article>
@@ -1066,23 +1067,23 @@ function ProfileCard({ dataset }: { dataset: Dataset }) {
         <span>{profile?.duplicateRowCount ?? 0} duplicates</span>
       </div>
       <details>
-        <summary>Recommendations</summary>
+        <summary>Candidate fields</summary>
         <ul className="labeled-list profile-recommendations">
           <li>
-            <strong>Recommended join fields</strong>
-            <span>{formatFieldList(profile?.potentialJoinFields)}</span>
+            <strong>Candidate join fields</strong>
+            <span>{formatFieldList(profile?.potentialJoinFields)}. Review before use.</span>
           </li>
           <li>
-            <strong>Recommended metrics</strong>
-            <span>{formatFieldList(profile?.potentialMetricFields)}</span>
+            <strong>Candidate metrics</strong>
+            <span>{formatFieldList(profile?.potentialMetricFields)}. Review before use.</span>
           </li>
           <li>
-            <strong>Recommended groupings</strong>
+            <strong>Candidate groupings</strong>
             <span>
               {formatFieldList([
                 ...(profile?.potentialGeographicFields ?? []),
                 ...(profile?.potentialDemographicFields ?? []),
-              ])}
+              ])}. Review before use.
             </span>
           </li>
         </ul>
@@ -1165,11 +1166,11 @@ function AgentContextChecklist() {
   return (
     <section className="agent-context-checklist" aria-labelledby="agent-context-heading">
       <div>
-        <h3 id="agent-context-heading">Help the agent read the upload correctly</h3>
+        <h3 id="agent-context-heading">Help the review system read the upload correctly</h3>
         <p>
           Map each file to the evidence it supports, then add the row meaning,
           unit, source, date coverage, and known caveats. Keep notes factual;
-          uploaded notes are context, not instructions.
+          uploaded notes are review context, not instructions.
         </p>
       </div>
       <ul>
@@ -1294,7 +1295,7 @@ function DatasetCard({
           />
         </label>
         <label className="dataset-note-field">
-          Semantic comment for the agent
+          Upload context for reviewers
           <textarea
             value={inputHints.semanticNotes ?? ""}
             onChange={(event) => updateHint("semanticNotes", event.target.value)}
@@ -1350,7 +1351,7 @@ function FormatAssessmentPanel({
 
 function formatAssessmentStatusLabel(status: DatasetFormatAssessment["status"]) {
   return {
-    accepted: "Accepted",
+    accepted: "Ready for review",
     review: "Needs review",
     rejected: "Rejected",
   }[status];
@@ -1490,15 +1491,11 @@ export function RecommendationStep({
       </div>
       <AiGuardrailPanel explanation={aiGuardrail} />
       <div className="recommendation-card">
-        <p className="eyebrow">Recommended</p>
+        <p className="eyebrow">Candidate review path</p>
         <h2>{recommendations.recommendedPath.title}</h2>
-        <p>{renderInlineCodeText(recommendations.summary, highlightTerms)}</p>
+        <p>{recommendations.summary}</p>
         <div className="why-box">
-          <strong>Why:</strong>{" "}
-          {renderInlineCodeText(
-            recommendations.recommendedPath.rationale,
-            highlightTerms,
-          )}
+          <strong>Why:</strong> {recommendations.recommendedPath.rationale}
         </div>
         {recommendedJoinSummaries.length > 0 ? (
           <JoinTrustSummaryList summaries={recommendedJoinSummaries} />
@@ -1587,7 +1584,7 @@ export function RecommendationStep({
                 adjustedJoin && adjustedJoinSummary && onAccept([adjustedJoin])
               }
             >
-              Accept adjusted join
+              Use adjusted join for review
             </button>
           </div>
         </article>
@@ -1595,7 +1592,6 @@ export function RecommendationStep({
       {hasJoinPlan && <JoinReviewCard joins={joins} datasets={datasets} />}
       <CleaningRecommendationsPanel
         recommendations={cleaningRecommendations}
-        highlightTerms={highlightTerms}
       />
     </section>
   );
@@ -1624,16 +1620,10 @@ function JoinReviewCard({
       : averageMatchRate === undefined
         ? "Match rate not estimated"
         : `${formatPercentage(averageMatchRate)} match rate`;
-  const terms = Array.from(
-    new Set([
-      ...datasetTextTerms(datasets),
-      ...joins.flatMap((join) => [...join.sourceColumns, ...join.targetColumns]),
-    ]),
-  );
   return (
     <details className="card profile-accordion">
       <summary>
-        <span>{joins.length === 1 ? "Review join/combine recommendation" : "Review join/combine plan"}</span>
+        <span>{joins.length === 1 ? "Review candidate join/combine path" : "Review join/combine plan"}</span>
         <span className="accordion-meta">{planMeta}</span>
       </summary>
       <div className="accordion-content">
@@ -1663,11 +1653,9 @@ function JoinReviewCard({
                     ? "Not estimated"
                     : formatPercentage(join.estimatedMatchRate)}
                 </p>
-                <p>{renderInlineCodeText(join.rationale, terms)}</p>
+                <p>{join.rationale}</p>
                 {join.risks.length > 0 && (
-                  <p>
-                    Risk: {renderInlineCodeText(join.risks.join(" "), terms)}
-                  </p>
+                  <p>Risk: {join.risks.join(" ")}</p>
                 )}
               </li>
             );
@@ -1775,6 +1763,7 @@ export function ValidationStep({
   isWorking = false,
   onBlockerAcknowledgementChange,
   onProceed,
+  repairActions = [],
 }: {
   aiGuardrail: AiGuardrailExplanation;
   acknowledgedBlockerIds: string[];
@@ -1789,6 +1778,7 @@ export function ValidationStep({
   isWorking?: boolean;
   onBlockerAcknowledgementChange: (blockerId: string, acknowledged: boolean) => void;
   onProceed: () => void;
+  repairActions?: RepairAction[];
 }) {
   const blocking = quality.filter((issue) => issue.status === "fail");
   const isDecisionUnsafe = decisionReadiness?.status === "decision_unsafe";
@@ -1807,6 +1797,7 @@ export function ValidationStep({
         evidenceCoverage={evidenceCoverage}
         readiness={decisionReadiness}
       />
+      <RepairActionsPanel actions={repairActions} />
       <AiGuardrailPanel explanation={aiGuardrail} />
       {isDecisionUnsafe ? (
         <article
@@ -1853,11 +1844,11 @@ export function ValidationStep({
         </article>
       ) : null}
       <article className="recommendation-card">
-        <p className="eyebrow">Recommended</p>
+        <p className="eyebrow">Next review step</p>
         <h2>
           {blocking.length > 0
-            ? "Proceed After Reviewing High-severity Issues"
-            : "Proceed With Dashboard Generation"}
+            ? "Resolve blockers before decision use"
+            : "Generate review dashboard"}
         </h2>
         <p>
           {blocking.length > 0
@@ -1870,16 +1861,62 @@ export function ValidationStep({
             disabled={isWorking || !canGenerateDashboard}
             onClick={onProceed}
           >
-            {isWorking ? "Generating..." : "Generate dashboard"}
+            {isWorking
+              ? "Generating..."
+              : blocking.length > 0
+                ? "Generate caveated review dashboard"
+                : "Generate review dashboard"}
           </button>
         </div>
       </article>
       <DatasetPreview dataset={dataset} title="Final prepared data preview" defaultOpen />
       <TransformationLogPanel
-        highlightTerms={logHighlightTerms}
         log={transformationLog}
       />
     </section>
+  );
+}
+
+function RepairActionsPanel({ actions }: { actions: RepairAction[] }) {
+  if (actions.length === 0) return null;
+  return (
+    <article className="repair-actions-panel" aria-labelledby="repair-actions-title">
+      <div>
+        <p className="eyebrow">Decision repair</p>
+        <h3 id="repair-actions-title">Next best repair actions</h3>
+        <p>
+          These session-only checks show the easiest review path. They do not
+          replace owner review or handoff caveats.
+        </p>
+      </div>
+      <div className="repair-action-list">
+        {actions.slice(0, 3).map((action) => (
+          <section className={`repair-action ${action.severity}`} key={action.id}>
+            <div className="repair-action-heading">
+              <h4>{action.title}</h4>
+              <span>{action.severity}</span>
+            </div>
+            <p>{action.whyItMatters}</p>
+            <div className="repair-action-detail">
+              <strong>Easiest safe fix</strong>
+              <span>{action.easiestFix}</span>
+            </div>
+            <div className="repair-action-detail">
+              <strong>App can help</strong>
+              <span>{action.appCanHelpWith.join(" ")}</span>
+            </div>
+            <div className="repair-action-detail">
+              <strong>Human review</strong>
+              <span>{action.humanMustReview}</span>
+            </div>
+            <div className="repair-action-meta">
+              <span>{repairActionAutomationLabel(action.safeAutomationLevel)}</span>
+              <span>{action.estimatedEffort.replaceAll("_", " ")}</span>
+            </div>
+          </section>
+        ))}
+      </div>
+    </article>
   );
 }
 
@@ -1961,9 +1998,9 @@ function EvidenceControlTowerPanel({
           <p>{controlTower.reviewState}</p>
         </div>
         <div className="control-tower-confidence">
-          <span>Source confidence</span>
+          <span>Evidence-match confidence</span>
           <strong>{controlTower.sourceConfidence}</strong>
-          <p>{controlTower.sourceConfidenceRationale}</p>
+          <p>{controlTower.sourceConfidenceRationale} Not a source reliability score.</p>
         </div>
       </div>
       <div className="control-tower-grid">
@@ -2014,10 +2051,10 @@ function AiGuardrailPanel({
   const statusLabel = {
     fallback: "Deterministic fallback",
     not_requested: "AI not used",
-    returned: "AI returned",
+    returned: "AI draft returned",
   }[explanation.aiRecommendationStatus];
   const validationLabel = {
-    accepted: "Accepted by deterministic checks",
+    accepted: "Allowed for review by deterministic checks",
     partially_accepted: "Needs deterministic review",
     rejected: "Rejected by deterministic checks",
   }[explanation.deterministicValidation];
@@ -2079,10 +2116,8 @@ function AiGuardrailPanel({
 }
 
 function CleaningRecommendationsPanel({
-  highlightTerms = [],
   recommendations,
 }: {
-  highlightTerms?: string[];
   recommendations: CleaningRecommendation[];
 }) {
   if (recommendations.length === 0) return null;
@@ -2102,11 +2137,7 @@ function CleaningRecommendationsPanel({
           <li key={recommendation.id}>
             <strong>{recommendation.title}</strong>
             <span>
-              {renderInlineCodeText(recommendation.suggestedAction, [
-                ...highlightTerms,
-                ...recommendation.affectedColumns,
-                ...recommendation.transform.columns,
-              ])}
+              {recommendation.suggestedAction}
               {recommendation.affectedColumns.length > 0 ? (
                 <>
                   {" "}
@@ -2139,7 +2170,7 @@ export function DashboardStep({
   return (
     <section className="workflow-step">
       <div className="section-heading">
-        <p className="eyebrow">Generated dashboard</p>
+        <p className="eyebrow">Review dashboard</p>
         <h2>{dataset.name}</h2>
       </div>
       <DashboardPreview
@@ -2153,7 +2184,7 @@ export function DashboardStep({
         className="primary-button next-action"
         onClick={onExport}
       >
-        Export dashboard
+        Export review artifacts
       </button>
     </section>
   );
@@ -2360,7 +2391,7 @@ function DashboardInsights({
     >
       <summary className="dashboard-insights-summary">
         <span>
-          <strong>Recommended insights</strong>
+          <strong>Review prompts</strong>
           <span>Evidence-backed observations and review prompts.</span>
         </span>
         <span className="accordion-meta">
@@ -2398,7 +2429,7 @@ function DashboardInsights({
               )}
               {insight.recommendedAction && (
                 <p className="insight-action">
-                  <strong>Action</strong>
+                  <strong>Review action</strong>
                   <span>{insight.recommendedAction}</span>
                 </p>
               )}
@@ -2408,7 +2439,7 @@ function DashboardInsights({
                   className="insight-chart-link"
                   onClick={() => onInsightSelect(insight.linkedChartId!)}
                 >
-                  Highlight chart
+                  Show supporting chart
                 </button>
               )}
             </li>
@@ -3778,11 +3809,9 @@ function RankedTable({
 }
 
 function QualityPanel({
-  highlightTerms = [],
   quality,
   defaultOpen = false,
 }: {
-  highlightTerms?: string[];
   quality: QualityCheckResult[];
   defaultOpen?: boolean;
 }) {
@@ -3796,15 +3825,15 @@ function QualityPanel({
         <span>Data quality checks</span>
         <span className="accordion-meta">
           {actionable.length === 0
-            ? "All passed"
+            ? "No automated flags"
             : `${actionable.length} flagged`}
         </span>
       </summary>
       <div className="accordion-content">
         {actionable.length === 0 ? (
           <div className="quality-empty">
-            <strong>All checks passed</strong>
-            <p>No quality checks require attention.</p>
+            <strong>No automated quality flags</strong>
+            <p>Reviewer judgment is still required before operational use.</p>
           </div>
         ) : null}
         {actionable.length > 0
@@ -3813,20 +3842,14 @@ function QualityPanel({
                 <strong>
                   {issue.status.toUpperCase()}: {issue.checkType}
                 </strong>
-                <p>
-                  {renderInlineCodeText(issue.description, [
-                    ...highlightTerms,
-                    ...(issue.affectedColumns ?? []),
-                  ])}
-                </p>
-                {issue.suggestedAction ? (
+                <p>{issue.description}</p>
+                {issue.affectedColumns?.length ? (
                   <p>
-                    Recommended:{" "}
-                    {renderInlineCodeText(issue.suggestedAction, [
-                      ...highlightTerms,
-                      ...(issue.affectedColumns ?? []),
-                    ])}
+                    Affected fields: {renderInlineCodeList(issue.affectedColumns)}.
                   </p>
+                ) : null}
+                {issue.suggestedAction ? (
+                  <p>Suggested review: {issue.suggestedAction}</p>
                 ) : null}
               </div>
             ))
@@ -3836,43 +3859,6 @@ function QualityPanel({
   );
 }
 
-function renderInlineCodeText(text: string, terms: string[] = []) {
-  const uniqueTerms = Array.from(
-    new Set(terms.map((term) => term.trim()).filter(Boolean)),
-  ).sort((a, b) => b.length - a.length);
-  if (uniqueTerms.length === 0) return text;
-  const parts = [];
-  let plain = "";
-  let index = 0;
-
-  while (index < text.length) {
-    const matchedTerm = uniqueTerms.find(
-      (term) =>
-        text.startsWith(term, index) &&
-        hasTokenBoundary(text[index - 1]) &&
-        hasTokenBoundary(text[index + term.length]),
-    );
-    if (!matchedTerm) {
-      plain += text[index];
-      index += 1;
-      continue;
-    }
-    if (plain) {
-      parts.push(plain);
-      plain = "";
-    }
-    parts.push(
-      <code className="inline-code" key={`${matchedTerm}-${index}`}>
-        {matchedTerm}
-      </code>,
-    );
-    index += matchedTerm.length;
-  }
-
-  if (plain) parts.push(plain);
-  return parts.length ? parts : text;
-}
-
 function renderInlineCodeList(values: string[]) {
   return values.map((value, index) => (
     <span key={`${value}-${index}`}>
@@ -3880,57 +3866,6 @@ function renderInlineCodeList(values: string[]) {
       <code className="inline-code">{value}</code>
     </span>
   ));
-}
-
-function hasTokenBoundary(value: string | undefined) {
-  return !value || !/[A-Za-z0-9_-]/.test(value);
-}
-
-function datasetTextTerms(datasets: Dataset[]) {
-  return Array.from(new Set(datasets.flatMap(datasetTextTermCandidates)));
-}
-
-function datasetTextTermCandidates(dataset: Dataset) {
-  const columns =
-    dataset.columns ??
-    dataset.profile?.columns.map((column) => column.columnName) ??
-    [];
-  const fieldTerms = columns.flatMap((column) => {
-    const displayLabel = fieldDisplayLabel(column);
-    return displayLabel && displayLabel !== column
-      ? [column, displayLabel]
-      : [column];
-  });
-  return [
-    dataset.name,
-    dataset.originalFilename,
-    ...datasetNameParts(dataset.name),
-    ...fieldTerms,
-  ].filter((term): term is string => Boolean(term));
-}
-
-function datasetNameParts(name: string) {
-  const withoutPrepared = name.replace(/\s+prepared$/i, "").trim();
-  return Array.from(
-    new Set([
-      withoutPrepared,
-      ...withoutPrepared
-        .split("+")
-        .map((part) => part.trim())
-        .filter(Boolean),
-    ]),
-  );
-}
-
-function transformationTextTerms(log: TransformationStep[]) {
-  return Array.from(
-    new Set(
-      log.flatMap((step) => [
-        ...(step.affectedColumns ?? []),
-        ...(step.operations?.flatMap((operation) => operation.columns) ?? []),
-      ]),
-    ),
-  );
 }
 
 function MetadataPanel({ datasets }: { datasets: Dataset[] }) {
@@ -4259,10 +4194,8 @@ function selectVisiblePreviewColumns(columns: string[], limit: number) {
 }
 
 export function TransformationLogPanel({
-  highlightTerms = [],
   log,
 }: {
-  highlightTerms?: string[];
   log: TransformationStep[];
 }) {
   return (
@@ -4281,12 +4214,7 @@ export function TransformationLogPanel({
             .map((step) => (
               <article key={step.id} className="log-item">
                 <strong>{step.stepType.replaceAll("_", " ")}</strong>
-                <p>
-                  {renderInlineCodeText(step.description, [
-                    ...highlightTerms,
-                    ...transformationTextTerms([step]),
-                  ])}
-                </p>
+                <p>{step.description}</p>
                 <details>
                   <summary>Details</summary>
                   <dl className="log-details">
@@ -4382,7 +4310,7 @@ export function ExportStep({
     <section className="workflow-step export-page">
       <div className="section-heading">
         <p className="eyebrow">Step 7</p>
-        <h2>Export Dashboard Assets</h2>
+        <h2>Export Review Artifacts</h2>
       </div>
       <DecisionReadinessPanel readiness={decisionReadiness} />
       {needsAcknowledgement ? (
@@ -4397,7 +4325,7 @@ export function ExportStep({
       ) : null}
       <article className="card handoff-copilot-card">
         <div>
-          <p className="eyebrow">Decision handoff copilot</p>
+          <p className="eyebrow">Decision handoff summary</p>
           <h3>Review summary</h3>
           <p>
             Generate a review-ready narrative from readiness, quality, transformation, and dashboard facts.
@@ -4417,15 +4345,15 @@ export function ExportStep({
       </article>
       <article className="card export-options-card">
         <div className="export-options-header">
-          <p className="eyebrow">Available exports</p>
+          <p className="eyebrow">Review-only exports</p>
         </div>
         <div className="export-grid">
           <button className="export-option" disabled={!ready || !exportReady} onClick={onCsv}>
             <span className="export-option-type">CSV</span>
-            <span className="export-option-label">Prepared dataset</span>
+            <span className="export-option-label">Review dataset</span>
             <span className="export-option-meta">
-              Downloads the harmonized, cleaned rows used to generate the
-              dashboard.
+              Downloads the harmonized rows used to generate the dashboard.
+              Review caveats before sharing or acting.
             </span>
             <span className="export-option-detail">
               {formatCount(rowCount, "row")} prepared for analysis.
@@ -4437,7 +4365,7 @@ export function ExportStep({
             onClick={onLog}
           >
             <span className="export-option-type">JSON</span>
-            <span className="export-option-label">Decision handoff log</span>
+            <span className="export-option-label">Decision review log</span>
             <span className="export-option-meta">
               Includes evidence coverage, join review, quality caveats, and
               transformation history.
@@ -4454,9 +4382,9 @@ export function ExportStep({
             onClick={onProjectKit}
           >
             <span className="export-option-type">KIT</span>
-            <span className="export-option-label">Project kit</span>
+            <span className="export-option-label">Review project kit</span>
             <span className="export-option-meta">
-              Downloads a JSON kit with README text, prepared CSV, schema, chart config, and handoff log.
+              Downloads a JSON kit with README text, prepared CSV, schema, chart config, and review log.
             </span>
             <span className="export-option-detail">
               Built for second-pass review without saving data in the app.
@@ -4468,12 +4396,12 @@ export function ExportStep({
             onClick={onPng}
           >
             <span className="export-option-type">PNG</span>
-            <span className="export-option-label">Dashboard image</span>
+            <span className="export-option-label">Review dashboard image</span>
             <span className="export-option-meta">
-              Captures the full generated dashboard as a shareable static image.
+              Captures the full generated dashboard as a static image with caveats retained.
             </span>
             <span className="export-option-detail">
-              {formatCount(chartCount, "chart")} with recommended insights
+              {formatCount(chartCount, "chart")} with review prompts
               expanded.
             </span>
           </button>
@@ -4483,7 +4411,7 @@ export function ExportStep({
             onClick={onReport}
           >
             <span className="export-option-type">PDF</span>
-            <span className="export-option-label">Dashboard report</span>
+            <span className="export-option-label">Review dashboard report</span>
             <span className="export-option-meta">
               Packages the dashboard, quality checks, and transformation summary
               for review.

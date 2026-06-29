@@ -19,6 +19,9 @@ describe("metadata DB adapter", () => {
       "ai_usage_daily",
       "custom_templates",
       "feedback",
+      "form_registries",
+      "form_registry_versions",
+      "reusable_mappings",
       "template_versions",
       "user_profiles",
     ]);
@@ -106,6 +109,50 @@ describe("metadata DB adapter", () => {
       }),
     ).resolves.toMatchObject({
       tags: ["useful"],
+    });
+
+    const registry = await adapter.createFormRegistry({
+      fieldCount: 3,
+      formFamily: "xlsform",
+      ownerUserId: profile.id,
+      requiredFieldCount: 1,
+      schemaFingerprint: "schema-priority-v1",
+      sourceKind: "xlsform_schema",
+      title: "Priority form",
+    });
+    const registryVersion = await adapter.createFormRegistryVersion({
+      evidenceMappings: [
+        {
+          confidenceBucket: "high",
+          evidenceNeed: "Needs",
+          fieldName: "need_type",
+        },
+      ],
+      fieldCount: 3,
+      fieldSummaries: [
+        {
+          fieldName: "need_type",
+          fieldType: "select_one",
+        },
+      ],
+      registryId: registry.id,
+      requiredFieldCount: 1,
+      schemaFingerprint: "schema-priority-v1",
+      sourceKind: "xlsform_schema",
+      versionNumber: 1,
+    });
+    await expect(
+      adapter.createReusableMapping({
+        confidenceBucket: "high",
+        evidenceNeed: "Needs",
+        fieldName: "need_type",
+        ownerUserId: profile.id,
+        registryId: registry.id,
+        registryVersionId: registryVersion.id,
+      }),
+    ).resolves.toMatchObject({
+      evidenceNeed: "Needs",
+      fieldName: "need_type",
     });
 
     const methodNames = Object.getOwnPropertyNames(

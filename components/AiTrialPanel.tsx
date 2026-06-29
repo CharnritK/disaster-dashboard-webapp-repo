@@ -132,7 +132,7 @@ export function AiTrialPanel() {
           tone={status?.ai.mode === "available" ? "success" : "warning"}
           value={
             status?.ai.mode === "available"
-              ? "Available"
+              ? "Provider path enabled"
               : fallbackLabel(status?.ai.fallbackReason)
           }
         />
@@ -437,8 +437,8 @@ function responseStateCopy(response?: AIRecommendationResponse) {
     return {
       detail:
         "The server returned sanitized AI output and reconciled it against deterministic dashboard policy.",
-      label: "AI returned",
-      title: "AI-assisted recommendations are available",
+      label: "Provider returned",
+      title: "Sanitized AI output was reconciled for review",
       tone: "success" as const,
     };
   }

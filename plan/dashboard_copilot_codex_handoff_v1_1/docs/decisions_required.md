@@ -77,6 +77,11 @@ approved beta/admin email. The following decisions remain intentionally blocked:
 
 ## Form-Aware Disaster Intake Decisions
 
+2026-06-28 update: the session-only Decision Repair Layer, deterministic Next
+Best Action Coach, and protected-workflow repair UI slice are implemented
+locally. This update does not expand the persistence boundary or change the
+blocked decisions below.
+
 The 2026-06-21 form-aware disaster intake roadmap is approved only as local
 planning until implementation is explicitly started. The 2026-06-21
 product-standout local implementation goal starts the first safe implementation

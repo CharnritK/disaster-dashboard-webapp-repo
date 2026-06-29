@@ -293,13 +293,13 @@ function buildDeterministicCharts({
   charts.push({
     id: "chart-dashboard-signals",
     chartType: "summary",
-    title: "Dashboard signals",
+    title: "Dashboard field check",
     groupByField: primaryGroup,
     metricField: primaryMetric,
     aggregation: primaryMetric ? inferMetricAggregation(primaryMetric) : "count",
     section: "overview",
     priority: 1,
-    rationale: "Summarizes the field roles the dashboard is using for comparison, metrics, and review."
+    rationale: "Shows which grouping and metric fields are driving the dashboard so reviewers can confirm them before handoff."
   });
 
   if (hasMissingValues) {
@@ -415,7 +415,12 @@ function linkFactsToCharts(facts: DashboardInsightFact[], charts: ChartRecommend
 function getNumericMetricFields(dataset: Dataset) {
   const profile = dataset.profile;
   const fields = profile?.columns
-    .filter((column) => column.inferredType === "number" && !isCoordinateField(column.columnName))
+    .filter((column) =>
+      column.inferredType === "number" &&
+      !isCoordinateField(column.columnName) &&
+      !isGenericIdentifierField(column.columnName) &&
+      !isLowCardinalityGroupingCode(column)
+    )
     .map((column) => column.columnName) ?? [];
   return mergeValues(fields, profile?.potentialMetricFields.filter((field) => fields.includes(field)) ?? [], MAX_FIELDS);
 }
@@ -429,25 +434,63 @@ function getNumericFields(dataset: Dataset) {
 function getCategoricalFields(dataset: Dataset) {
   const profile = dataset.profile;
   if (!profile) return dataset.columns?.filter((field) => !isCoordinateField(field)).slice(0, MAX_FIELDS) ?? [];
-  const fieldNames = new Set(profile.columns.map((column) => column.columnName));
+  const categoricalFieldNames = new Set(
+    profile.columns
+      .filter((column) => isUsefulGroupingColumn(column, profile.rowCount))
+      .map((column) => column.columnName),
+  );
   const profileCategories = profile.columns
-    .filter((column) =>
-      fieldNames.has(column.columnName) &&
-      !isCoordinateField(column.columnName) &&
-      column.inferredType !== "number" &&
-      column.inferredType !== "date" &&
-      column.uniqueCount > 1 &&
-      column.uniqueCount <= Math.max(12, Math.ceil((profile.rowCount ?? 1) * 0.7))
-    )
+    .filter((column) => categoricalFieldNames.has(column.columnName))
     .map((column) => column.columnName);
   return mergeValues(
     [
-      ...profile.potentialGeographicFields.filter((field) => !isCoordinateField(field)),
-      ...profile.potentialDemographicFields,
+      ...profile.potentialGeographicFields.filter((field) => categoricalFieldNames.has(field)),
+      ...profile.potentialDemographicFields.filter((field) => categoricalFieldNames.has(field)),
       ...profileCategories
     ],
     [],
     MAX_FIELDS
+  );
+}
+
+function isUsefulGroupingColumn(
+  column: NonNullable<Dataset["profile"]>["columns"][number],
+  rowCount?: number,
+) {
+  const lowCardinalityCode = isLowCardinalityGroupingCode(column);
+  return (
+    !isCoordinateField(column.columnName) &&
+    (!isGenericIdentifierField(column.columnName) || lowCardinalityCode) &&
+    (column.inferredType !== "number" || lowCardinalityCode) &&
+    column.inferredType !== "date" &&
+    column.uniqueCount > 1 &&
+    column.uniqueCount <= Math.max(12, Math.ceil((rowCount ?? 1) * 0.7))
+  );
+}
+
+function isGenericIdentifierField(field: string) {
+  const normalized = field.toLowerCase();
+  if (isGeographicCodeField(normalized)) return false;
+  return /(^|_)(id|uuid|guid)$|_id$|identifier/.test(normalized);
+}
+
+function isLowCardinalityGroupingCode(
+  column: NonNullable<Dataset["profile"]>["columns"][number],
+) {
+  const normalized = column.columnName.toLowerCase();
+  const uniqueLimit = 6;
+  if (column.uniqueCount < 2 || column.uniqueCount > uniqueLimit) return false;
+  const codeLikeSuffix = /(^|_)(id|code)$/.test(normalized);
+  if (!codeLikeSuffix) return false;
+  const reviewDimensionCode =
+    /(^|_)(status|type|category|class|phase|severity|priority|need|sector|cluster|disaster|hazard|damage|response|service)(_|$)/.test(normalized);
+  return reviewDimensionCode || isGeographicCodeField(normalized);
+}
+
+function isGeographicCodeField(normalized: string) {
+  return (
+    normalized.includes("pcode") ||
+    /(admin|district|region|province|commune|ward|site|location).*(code|id)$/.test(normalized)
   );
 }
 

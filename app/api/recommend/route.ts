@@ -170,15 +170,15 @@ function generateServerFallback(context: WorkflowContext): AIRecommendationRespo
   return {
     source: "deterministic",
     summary: hasMulti && joinField
-      ? `Recommended: Review the likely join using ${joinField}, then generate the dashboard.`
-      : "Recommended: Generate a first dashboard from the profiled dataset.",
+      ? `Candidate path: review the likely join using ${joinField}, then generate a caveated dashboard.`
+      : "Candidate path: generate a first review dashboard from the profiled dataset.",
     recommendedPath: {
-      title: hasMulti ? "Review harmonization recommendation" : "Proceed with dashboard generation",
+      title: hasMulti ? "Review harmonization candidate" : "Generate review dashboard",
       rationale: hasMulti
-        ? "Multiple datasets were provided, so harmonization may improve the dashboard if fields overlap."
-        : "A single prepared dataset can already support a useful first dashboard.",
+        ? "Multiple datasets were provided, so harmonization may improve the dashboard if reviewers confirm matching fields."
+        : "A single prepared dataset can support a first review dashboard with caveats retained.",
       confidence: 0.68,
-      actions: hasMulti ? ["Accept recommendation", "Adjust"] : ["Prepare dataset"]
+      actions: hasMulti ? ["Use candidate", "Adjust"] : ["Prepare dataset"]
     },
     cleaningRecommendations: cleaningRecommendationsForProfiles(context.profiles),
     qualityConcerns: buildServerQualityConcerns(context),

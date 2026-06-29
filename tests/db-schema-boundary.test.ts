@@ -9,6 +9,9 @@ const REQUIRED_TABLES = [
   "ai_events",
   "feedback",
   "custom_templates",
+  "form_registries",
+  "form_registry_versions",
+  "reusable_mappings",
   "template_versions",
 ];
 
@@ -49,8 +52,13 @@ describe("metadata database drafts", () => {
     expect(rls).toMatch(/auth\.uid\(\)/);
     expect(rls).toMatch(/grant select on table public\.ai_usage_daily to authenticated/i);
     expect(rls).toMatch(/grant select on table public\.ai_events to authenticated/i);
+    expect(rls).toMatch(/grant select, insert on table public\.form_registries to authenticated/i);
+    expect(rls).toMatch(/grant select, insert on table public\.form_registry_versions to authenticated/i);
+    expect(rls).toMatch(/grant select, insert on table public\.reusable_mappings to authenticated/i);
     expect(rls).not.toMatch(/grant\s+(?:insert|update|delete)[^;]+public\.ai_usage_daily\s+to authenticated/i);
     expect(rls).not.toMatch(/grant\s+(?:insert|update|delete)[^;]+public\.ai_events\s+to authenticated/i);
+    expect(rls).not.toMatch(/grant\s+[^;]*update[^;]+public\.form_registries\s+to authenticated/i);
+    expect(rls).not.toMatch(/grant\s+[^;]*delete[^;]+public\.reusable_mappings\s+to authenticated/i);
   });
 
   it("keeps SQL RPC signatures and AI event routes aligned with server code", () => {
@@ -66,7 +74,12 @@ describe("metadata database drafts", () => {
     expect(rls).toContain("from public");
     expect(rls).not.toContain("public.reserve_ai_usage(uuid, date, text, integer)");
 
-    for (const route of ["/api/recommend", "/api/copilot", "/api/coach"]) {
+    for (const route of [
+      "/api/recommend",
+      "/api/copilot",
+      "/api/coach",
+      "/api/form-schema/interpret",
+    ]) {
       expect(schema).toContain(route);
       expect(adapter).toContain(route);
     }

@@ -13,23 +13,39 @@ const progressCards = [
     detail: "Public deterministic demo plus protected AI-assisted workspace.",
   },
   {
-    label: "Local code",
-    value: "Implemented",
-    detail: "Core beta paths exist and the local command gates are passing.",
+    label: "Review state",
+    value: "Local review",
+    detail: "Treat branch, preview, and test evidence as scoped review signals, not production approval.",
   },
   {
-    label: "External readiness",
-    value: "Not launched",
-    detail: "Production Supabase, migrations, email login, and deploy are not verified.",
+    label: "Verification",
+    value: "Evidence required",
+    detail: "Run fresh lint, tests, build, and route smoke checks before marking UI changes reviewed.",
   },
   {
     label: "Next decision",
-    value: "Preview first",
-    detail: "Validate auth, metadata storage, and smoke tests before production work.",
+    value: "Review gates",
+    detail: "Decide staging validation, migration timing, admin access, and production release separately.",
   },
 ];
 
 const statusRows = [
+  {
+    area: "Branch cleanup",
+    status: "Cleaned",
+    tone: "ready",
+    evidence:
+      "Merged and obsolete pending branches were deleted. Leftover uncommitted work from the old branch was backed up before the worktree was removed.",
+    gap: "No old pending branch remains as the active integration path; current branch work still needs fresh review evidence before merge.",
+  },
+  {
+    area: "Review branch assets",
+    status: "Under review",
+    tone: "watch",
+    evidence:
+      "Showcase notes, deterministic deck builders, verifier scripts, and synthetic sample files are review assets.",
+    gap: "Human review and visual spot-checks are still separate from automated checks.",
+  },
   {
     area: "Public demo",
     status: "In place",
@@ -44,7 +60,7 @@ const statusRows = [
     tone: "ready",
     evidence:
       "Protected app routes are split by data, prepare, readiness, dashboard, and export.",
-    gap: "Real login still needs a reviewed Supabase project and email flow.",
+    gap: "Staging magic-link evidence exists, but production auth and redirect URLs remain approval-gated.",
   },
   {
     area: "AI governance",
@@ -80,59 +96,66 @@ const statusRows = [
   },
   {
     area: "Deployment",
-    status: "Blocked by decision",
-    tone: "blocked",
+    status: "Preview only",
+    tone: "watch",
     evidence:
-      "Dry-run smoke script and release checklist exist; no production deploy was run.",
-    gap: "Need preview target, environment values, and production go/no-go.",
+      "Preview evidence can support review, but production deployment was not run.",
+    gap: "Production still needs explicit environment, auth, database, support, and release-owner approval.",
   },
 ];
 
 const decisions = [
   {
     rank: "D1",
-    decision: "Approve a preview deployment path",
+    decision: "Merge or reject the review branch",
     recommendation:
-      "Use preview-only first. Do not deploy production until auth, DB, and fallback smoke tests pass.",
-    neededFor: "External validation without touching production.",
+      "Merge only after the branch has fresh local checks and the review assets are still wanted in main.",
+    neededFor: "Closing the pending-branch cleanup without losing useful standalone assets.",
   },
   {
     rank: "D2",
-    decision: "Choose and configure the real Supabase project",
+    decision: "Complete the next preview smoke pass",
     recommendation:
-      "Use Supabase Auth and Supabase Postgres if you want the fewest moving parts.",
-    neededFor: "Magic-link login, protected app routes, metadata storage, and RLS review.",
+      "Use the preview and staging credentials to re-check login, quota denial, deterministic fallback, feedback/templates, and no-row-persistence.",
+    neededFor: "Fresh external validation without touching production.",
   },
   {
     rank: "D3",
+    decision: "Confirm production Supabase timing",
+    recommendation:
+      "Keep the approved Supabase-backed preview path separate from any production project or redirect URL changes.",
+    neededFor: "Avoiding accidental production auth or database mutation.",
+  },
+  {
+    rank: "D4",
     decision: "Approve database migration timing",
     recommendation:
       "Review schema and RLS first, then migrate only in a preview or staging database.",
     neededFor: "Persistent usage events, feedback, templates, and admin aggregates.",
   },
   {
-    rank: "D4",
+    rank: "D5",
     decision: "Define beta access and admin allowlists",
     recommendation:
       "Start narrow: named beta emails, named admins, no open self-serve signup.",
     neededFor: "Preventing accidental access and keeping support scope manageable.",
   },
   {
-    rank: "D5",
+    rank: "D6",
     decision: "Set the daily AI quota",
     recommendation:
       "Keep `AI_DAILY_QUOTA=20` for early beta unless real usage suggests otherwise.",
     neededFor: "Cost control and predictable fallback behavior.",
   },
   {
-    rank: "D6",
+    rank: "D7",
     decision: "Confirm public demo behavior",
     recommendation:
       "Keep `/demo` deterministic and sample-only. Do not expose anonymous AI.",
     neededFor: "Clear privacy boundary and simple public story.",
   },
   {
-    rank: "D7",
+    rank: "D8",
     decision: "Approve retention policy or leave it manual",
     recommendation:
       "Document retention now; automate deletion later after legal/product review.",
@@ -141,16 +164,17 @@ const decisions = [
 ];
 
 const nextSteps = [
-  "Freeze the current local beta scope and stop adding product surfaces.",
-  "Pick preview deployment target and Supabase project.",
-  "Configure preview env values without committing secrets.",
-  "Run login, quota, fallback, feedback, template, admin-denial, and no-row-persistence smoke checks.",
-  "Only then decide whether to run production migration or production deployment.",
+  "Review and merge or reject the active review branch.",
+  "If merged, delete stale branch references after main contains the commit.",
+  "Keep the public demo deterministic and sample-only while the showcase deck is reviewed.",
+  "Pick the next preview or staging validation target before touching production settings.",
+  "Only after preview evidence is current, decide whether to run production migration or production deployment.",
 ];
 
 const risks = [
-  "The codebase is heavily dirty, so scope control matters more than adding one more feature.",
-  "Local tests passing does not prove Supabase email login, redirect URLs, RLS, or production env values are correct.",
+  "A passing preview does not prove Supabase email login, redirect URLs, RLS, or production env values are correct.",
+  "Showcase deck scripts prove PPTX structure, not visual quality; the final deck still needs a human spot-check.",
+  "Review links and deck notes after merge so branch-only references do not become stale.",
   "The biggest product risk is making AI or exports sound like operational approval.",
   "The biggest technical risk is accidentally storing uploaded rows while wiring persistence.",
 ];
@@ -183,9 +207,9 @@ export default function ProgressPage() {
           <p className="eyebrow">Owner status</p>
           <h1>Progress toward controlled beta</h1>
           <p className="about-lede">
-            The local code now matches the controlled-beta direction. The next
-            bottleneck is not more features; it is deciding how to validate
-            Supabase, preview deployment, access policy, and production timing.
+            As of June 28, 2026, the fork main branch contains the completed
+            product-standout work. Current branch work still needs fresh review
+            evidence before merge. Production remains approval-gated.
           </p>
         </section>
 
@@ -241,7 +265,7 @@ export default function ProgressPage() {
 
         <section className="progress-two-column">
           <article className="about-note">
-            <p className="eyebrow">Recommended sequence</p>
+            <p className="eyebrow">Review sequence</p>
             <h2>Best next move</h2>
             <ol className="progress-list">
               {nextSteps.map((step) => (

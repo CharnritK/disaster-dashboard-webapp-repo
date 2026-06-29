@@ -1,0 +1,13 @@
+district_id,district_name,ops_zone,population,households,elderly_pct,disability_pct,poverty_pct,flood_risk_score,critical_facility_count,priority_rank
+D-101,North Quay,Coastal North,48200,12140,13.2,6.1,18.4,78,5,4
+D-102,Riverbend,Coastal North,36150,9020,15.7,7.8,24.6,91,4,2
+D-103,Harbor Point,Coastal East,58900,14880,10.4,5.2,16.8,83,7,5
+D-104,Old Market,Central Basin,42280,10640,18.9,9.1,31.5,96,6,1
+D-105,South Flats,Central Basin,51740,13210,12.5,5.9,22.2,87,5,3
+D-106,Airport Ward,Inland West,28500,7130,9.8,4.7,14.1,52,8,10
+D-107,Canal View,Coastal East,33420,8510,16.3,7.2,27.4,89,3,6
+D-108,Hillcrest,Inland West,27180,6880,20.5,8.4,19.7,45,4,11
+D-109,Mill District,Central Basin,46330,11770,11.8,5.5,25.9,74,6,7
+D-110,East Lagoon,Coastal East,39210,9930,14.6,6.8,28.1,92,4,8
+D-111,Depot Row,Inland South,24560,6120,10.1,4.9,17.6,58,5,12
+D-112,Lower Green,Inland South,31840,8040,17.9,7.5,,69,2,9

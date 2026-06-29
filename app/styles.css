@@ -1993,6 +1993,7 @@ label {
 .decision-brief-panel,
 .decision-readiness,
 .ai-guardrail-panel,
+.repair-actions-panel,
 .evidence-control-tower {
   background: var(--paper);
   border: 1px solid var(--line);
@@ -2006,6 +2007,7 @@ label {
 .decision-brief-panel h3,
 .decision-readiness h3,
 .ai-guardrail-panel h3,
+.repair-actions-panel h3,
 .evidence-control-tower h3 {
   font-size: 1.28rem;
   line-height: 1.2;
@@ -2014,6 +2016,72 @@ label {
 
 .evidence-control-tower {
   border-left: 5px solid var(--line-strong);
+}
+
+.repair-actions-panel {
+  border-left: 5px solid var(--status-warning-text);
+}
+
+.repair-actions-panel > div > p {
+  color: var(--muted);
+  margin: 0;
+}
+
+.repair-action-list {
+  display: grid;
+  gap: 12px;
+}
+
+.repair-action {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+}
+
+.repair-action.blocker {
+  border-color: var(--status-danger-border);
+}
+
+.repair-action.review {
+  border-color: var(--status-warning-border);
+}
+
+.repair-action-heading,
+.repair-action-meta {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: space-between;
+}
+
+.repair-action-heading h4 {
+  margin: 0;
+}
+
+.repair-action-heading span,
+.repair-action-meta span {
+  background: var(--neutral-soft);
+  border: 1px solid var(--neutral-border);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 820;
+  padding: 4px 8px;
+  text-transform: uppercase;
+}
+
+.repair-action-detail {
+  display: grid;
+  gap: 4px;
+}
+
+.repair-action-detail strong {
+  color: var(--muted);
+  font-size: 0.78rem;
+  text-transform: uppercase;
 }
 
 .evidence-control-tower.low {

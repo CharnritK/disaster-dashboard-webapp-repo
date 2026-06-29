@@ -98,6 +98,96 @@ begin
 end;
 $$;
 
+create table if not exists public.form_registries (
+  id uuid primary key default gen_random_uuid(),
+  owner_user_id uuid not null references auth.users(id) on delete cascade,
+  form_family text not null,
+  source_kind text not null,
+  schema_fingerprint text not null,
+  title text not null,
+  description text,
+  field_count integer not null,
+  required_field_count integer not null default 0,
+  mapping_count integer not null default 0,
+  review_status text not null default 'draft',
+  visibility text not null default 'private',
+  caveats text[] not null default '{}',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint form_registries_family_check check (form_family in ('generic_table', 'hxl', 'ocha_3w', 'ocha_5w', 'suggested_template', 'xlsform')),
+  constraint form_registries_source_kind_check check (source_kind in ('suggested_template', 'tabular_rows', 'xlsform_schema')),
+  constraint form_registries_counts_check check (field_count > 0 and required_field_count >= 0 and required_field_count <= field_count and mapping_count >= 0),
+  constraint form_registries_review_status_check check (review_status in ('draft', 'review_needed', 'reviewed', 'archived')),
+  constraint form_registries_visibility_check check (visibility in ('private', 'reviewed'))
+);
+
+comment on table public.form_registries is
+  'Metadata-only form registry. Stores reusable form identity, counts, caveats, and reviewed mapping summaries; never uploaded rows, files, prompts, model responses, OCR text, addresses, or coordinates.';
+
+create index if not exists form_registries_owner_status_idx
+  on public.form_registries (owner_user_id, review_status);
+
+create index if not exists form_registries_schema_fingerprint_idx
+  on public.form_registries (schema_fingerprint);
+
+create table if not exists public.form_registry_versions (
+  id uuid primary key default gen_random_uuid(),
+  registry_id uuid not null references public.form_registries(id) on delete cascade,
+  version_number integer not null,
+  source_kind text not null,
+  schema_fingerprint text not null,
+  field_count integer not null,
+  required_field_count integer not null default 0,
+  field_summaries jsonb not null default '[]'::jsonb,
+  evidence_mappings jsonb not null default '[]'::jsonb,
+  caveats text[] not null default '{}',
+  created_at timestamptz not null default now(),
+  constraint form_registry_versions_unique unique (registry_id, version_number),
+  constraint form_registry_versions_version_check check (version_number > 0),
+  constraint form_registry_versions_source_kind_check check (source_kind in ('suggested_template', 'tabular_rows', 'xlsform_schema')),
+  constraint form_registry_versions_counts_check check (field_count > 0 and required_field_count >= 0 and required_field_count <= field_count),
+  constraint form_registry_versions_field_summaries_array check (jsonb_typeof(field_summaries) = 'array'),
+  constraint form_registry_versions_evidence_mappings_array check (jsonb_typeof(evidence_mappings) = 'array')
+);
+
+comment on table public.form_registry_versions is
+  'Metadata-only form schema summaries and evidence mappings. JSONB fields contain names, roles, confidence buckets, and caveats only; example values and rows are forbidden.';
+
+comment on column public.form_registry_versions.field_summaries is
+  'Allowed: field names, labels, field types, required flags, evidence needs, confidence buckets. Forbidden: row values, samples, file contents, prompts, OCR text, addresses, or coordinates.';
+
+comment on column public.form_registry_versions.evidence_mappings is
+  'Allowed: evidence need, field name, confidence bucket, review status, short rationale. Forbidden: value pairs, raw responses, rows, prompts, and model outputs.';
+
+create index if not exists form_registry_versions_registry_idx
+  on public.form_registry_versions (registry_id, version_number);
+
+create table if not exists public.reusable_mappings (
+  id uuid primary key default gen_random_uuid(),
+  owner_user_id uuid not null references auth.users(id) on delete cascade,
+  registry_id uuid not null references public.form_registries(id) on delete cascade,
+  registry_version_id uuid references public.form_registry_versions(id) on delete set null,
+  evidence_need text not null,
+  field_name text not null,
+  confidence_bucket text not null,
+  review_status text not null default 'needs_review',
+  rationale text,
+  caveats text[] not null default '{}',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint reusable_mappings_confidence_check check (confidence_bucket in ('high', 'medium', 'low')),
+  constraint reusable_mappings_review_status_check check (review_status in ('accepted', 'needs_review', 'rejected'))
+);
+
+comment on table public.reusable_mappings is
+  'Reusable user mapping metadata only. Stores evidence-to-field names and review status, never source row values, value pairs, raw form responses, files, prompts, or model responses.';
+
+create index if not exists reusable_mappings_owner_registry_idx
+  on public.reusable_mappings (owner_user_id, registry_id);
+
+create index if not exists reusable_mappings_evidence_need_idx
+  on public.reusable_mappings (evidence_need);
+
 create table if not exists public.ai_usage_daily (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
@@ -212,7 +302,7 @@ create table if not exists public.ai_events (
   dashboard_recommendation_ids text[] not null default '{}',
   export_action text,
   metadata jsonb not null default '{}'::jsonb,
-  constraint ai_events_route_check check (route in ('/api/recommend', '/api/copilot', '/api/coach')),
+  constraint ai_events_route_check check (route in ('/api/recommend', '/api/copilot', '/api/coach', '/api/form-schema/interpret')),
   constraint ai_events_ai_mode_check check (ai_mode in ('deterministic', 'llm')),
   constraint ai_events_metadata_object_check check (jsonb_typeof(metadata) = 'object')
 );

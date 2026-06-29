@@ -1,0 +1,19 @@
+incident_id,district_id,reported_at,hazard_type,severity_score,water_depth_cm,roads_blocked,power_outage_households,injured_people,missing_people,verified,notes
+IR-9001,D-104,2026-06-12T05:20:00+07:00,flash_flood,9.4,142,8,5840,34,3,true,market evacuation route underwater
+IR-9002,D-102,2026-06-12T05:35:00+07:00,river_overflow,8.9,118,6,4210,18,1,true,pump station offline
+IR-9003,D-105,2026-06-12T05:42:00+07:00,flash_flood,8.1,96,5,3780,12,0,true,school zone partially flooded
+IR-9004,D-110,2026-06-12T06:05:00+07:00,coastal_surge,8.6,124,7,3360,16,2,false,lagoon embankment breach suspected
+IR-9005,D-107,2026-06-12T06:10:00+07:00,canal_overflow,7.8,91,4,2470,9,0,true,access road narrowed
+IR-9006,D-103,2026-06-12T06:22:00+07:00,coastal_surge,7.5,84,4,2190,7,0,true,harbor warehouse district affected
+IR-9007," D-104 ",2026-06-12T07:05:00+07:00,power_failure,7.2,64,3,6420,5,0,true,backup generator demand rising
+IR-9008,D-108,2026-06-12T07:15:00+07:00,landslide,6.9,12,2,680,22,0,true,hill road debris and trauma cases
+IR-9009,D-109,2026-06-12T07:40:00+07:00,urban_flood,6.7,58,3,1320,6,0,true,industrial drainage blocked
+IR-9010,D-101,2026-06-12T08:00:00+07:00,coastal_surge,6.4,72,2,1210,4,0,true,ferry pier closed
+IR-9011,D-112,2026-06-12T08:12:00+07:00,urban_flood,5.8,41,2,740,3,0,false,field report pending validation
+IR-9012,D-106,2026-06-12T08:30:00+07:00,wind_damage,4.6,8,1,420,2,0,true,minor terminal roof damage
+IR-9013,D-111,2026-06-12T08:44:00+07:00,wind_damage,4.2,6,1,310,1,0,true,depot access intact
+IR-9014,D-102,2026-06-12T09:05:00+07:00,medical_access,7.4,88,4,3980,21,0,true,clinic driveway blocked
+IR-9015,D-110,2026-06-12T09:28:00+07:00,shelter_access,7.1,103,5,3410,8,0,false,bus route washed out
+IR-9016,D-105,2026-06-12T09:50:00+07:00,water_supply,6.8,74,3,2890,4,0,true,boil water notice issued
+IR-9017,D-107,2026-06-12T10:15:00+07:00,sanitation,6.5,67,3,2100,3,0,true,latrine overflow risk rising
+IR-9018,D-109,2026-06-12T10:40:00+07:00,power_failure,5.9,44,2,1840,2,0,true,transformer station flooded
