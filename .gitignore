@@ -27,6 +27,7 @@ next-env.d.ts
 *.pem
 .swc
 .codex-tmp/
+/tmp/
 
 # debug
 npm-debug.log*

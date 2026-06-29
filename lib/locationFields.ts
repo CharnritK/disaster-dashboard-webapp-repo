@@ -49,6 +49,13 @@ export function isCoordinateField(field: string) {
   return isLatitudeField(field) || isLongitudeField(field);
 }
 
+export function isAdminCodeField(field: string) {
+  const normalized = normalizeField(field);
+  return /^(cod)?(pcode|admincode|adm\d?pcode|adm\d?code|admin\d?pcode|admin\d?code|iso\d*)$/.test(
+    normalized,
+  );
+}
+
 export function isLatitudeField(field: string) {
   const normalized = normalizeField(field);
   return ["lat", "latitude", "ycoord", "ycoordinate"].includes(normalized);
@@ -108,6 +115,7 @@ function findAreaField(dataset: Dataset, columns: string[]) {
   const profileGeoFields = dataset.profile?.potentialGeographicFields ?? [];
   return [...profileGeoFields, ...columns].find((field) => {
     if (!fieldNames.has(field) || isCoordinateField(field)) return false;
+    if (isAdminCodeField(field)) return false;
     const normalized = normalizeField(field);
     if (/(code|id|key|pcode|iso)$/.test(normalized)) return false;
     return /(admin|area|district|region|province|county|country|state|city|municipality|commune|ward|location|site)/.test(
@@ -119,7 +127,9 @@ function findAreaField(dataset: Dataset, columns: string[]) {
 function findLabelField(columns: string[]) {
   return columns.find((field) => {
     if (isCoordinateField(field)) return false;
+    if (isAdminCodeField(field)) return false;
     const normalized = normalizeField(field);
+    if (/(code|id|key|pcode|iso)$/.test(normalized)) return false;
     return /(name|label|site|location|place|district|adminarea)/.test(
       normalized,
     );

@@ -11,6 +11,24 @@ export type TemplateDraftInput = CustomTemplateInput &
 
 export class TemplateValidationError extends Error {}
 
+const SCHEMA_TYPE_LABELS = new Set([
+  "boolean",
+  "category",
+  "categorical",
+  "date",
+  "datetime",
+  "decimal",
+  "enum",
+  "float",
+  "integer",
+  "number",
+  "percent",
+  "percentage",
+  "string",
+  "text",
+  "unknown",
+]);
+
 export function parseTemplateDraft(body: unknown): TemplateDraftInput {
   if (!isRecord(body)) throw new TemplateValidationError("Template body must be an object.");
 
@@ -152,19 +170,33 @@ function safeObject(value: unknown, name: string) {
       if (!/^[A-Za-z0-9_.:-]{1,80}$/.test(key)) {
         throw new TemplateValidationError(`${name} has an unsafe key.`);
       }
+      if (item == null) {
+        return [key, item];
+      }
+      if (name === "exampleDataSchema") {
+        if (typeof item === "string" && isSchemaTypeLabel(item)) {
+          return [key, item.trim().toLowerCase()];
+        }
+        throw new TemplateValidationError(
+          `${name} values must be schema metadata, not example values.`,
+        );
+      }
       if (
-        item == null ||
         typeof item === "boolean" ||
         (typeof item === "number" && Number.isFinite(item)) ||
         typeof item === "string"
       ) {
         return [key, typeof item === "string" ? item.slice(0, 120) : item];
       }
-      throw new TemplateValidationError(`${name} values must be scalar.`);
+      throw new TemplateValidationError(`${name} values must be schema metadata, not example values.`);
     }),
   );
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isSchemaTypeLabel(value: string) {
+  return SCHEMA_TYPE_LABELS.has(value.trim().toLowerCase());
 }

@@ -11,10 +11,12 @@ import type { TransformationStep } from "@/types/transformations";
 import type { FormIntakeMetadata } from "@/types/formIntake";
 import { readinessStatusLabel } from "./decisionContext";
 import { toCsv } from "./exportCsv";
+import { getReadinessBlockers } from "./readinessGate";
 
 export type DecisionHandoffPacketInput = {
   generatedAt?: string;
   acceptedCaveats?: string[];
+  acknowledgedBlockerIds?: string[];
   decisionBrief: DecisionBrief;
   decisionOwner?: string;
   evidenceCoverage: EvidenceCoverageSummary;
@@ -42,6 +44,10 @@ export function buildDecisionHandoffPacket(input: DecisionHandoffPacketInput) {
     (item) => item.status === "missing",
   );
   const qualityIssues = input.qualityResults.filter((issue) => issue.status !== "pass");
+  const acknowledgedBlockerIds = sanitizeAcknowledgedBlockerIds(
+    input.acknowledgedBlockerIds,
+    readiness,
+  );
   const limitations = [
     ...missingEvidence.map(
       (item) => `Missing ${item.evidenceNeed}: ${item.nextAction}`,
@@ -91,6 +97,7 @@ export function buildDecisionHandoffPacket(input: DecisionHandoffPacketInput) {
       reviewer: input.reviewer ?? "Reviewer not assigned",
       reviewByDate: input.reviewByDate,
       acceptedCaveats: input.acceptedCaveats ?? [],
+      acknowledgedBlockerIds,
       unresolvedBlockers,
       sourceRegister,
       transformationLineage,
@@ -257,6 +264,17 @@ function aiModeSummary(mode: DecisionHandoffAiMode) {
     return "AI recommendations were unavailable. The app used deterministic recommendations. Review joins and caveats before action.";
   }
   return "Deterministic recommendations were used without external AI assistance.";
+}
+
+function sanitizeAcknowledgedBlockerIds(
+  ids: string[] | undefined,
+  readiness?: DecisionReadinessResult,
+) {
+  if (!ids?.length || readiness?.status !== "decision_unsafe") return [];
+  const validIds = new Set(getReadinessBlockers(readiness).map((blocker) => blocker.id));
+  return Array.from(
+    new Set(ids.filter((id) => /^blocker-\d+$/.test(id) && validIds.has(id))),
+  );
 }
 
 function sourceRegisterForDataset(dataset: Dataset) {

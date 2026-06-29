@@ -31,3 +31,23 @@ export const WORKFLOW_STEPS = [
 ] as const;
 
 export type WorkflowStep = (typeof WORKFLOW_STEPS)[number];
+
+export function isPriorWorkflowStep(
+  currentStep: WorkflowStep,
+  targetStep: WorkflowStep,
+) {
+  return WORKFLOW_STEPS.indexOf(targetStep) < WORKFLOW_STEPS.indexOf(currentStep);
+}
+
+export function canActivateWorkflowStep({
+  currentStep,
+  targetStep,
+  canNavigateTo,
+}: {
+  currentStep: WorkflowStep;
+  targetStep: WorkflowStep;
+  canNavigateTo: (step: WorkflowStep) => boolean;
+}) {
+  if (currentStep === targetStep) return false;
+  return isPriorWorkflowStep(currentStep, targetStep) || canNavigateTo(targetStep);
+}

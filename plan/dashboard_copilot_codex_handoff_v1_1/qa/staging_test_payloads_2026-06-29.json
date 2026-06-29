@@ -1,0 +1,96 @@
+{
+  "purpose": "Safe metadata-only staging smoke-test payloads for the controlled-beta QA run prepared on 2026-06-29.",
+  "scope": {
+    "environment": "approved staging preview only",
+    "allowedUse": [
+      "authenticated feedback metadata write",
+      "authenticated custom template metadata write",
+      "unauthenticated 401 route probes"
+    ],
+    "notAuthorizedFor": [
+      "production",
+      "real disaster response data",
+      "secret, token, cookie, magic-link, or account-detail capture",
+      "uploaded files, raw rows, prepared rows, prompts, model responses, reports, or exports"
+    ]
+  },
+  "authenticatedFeedback": {
+    "thumb": "up",
+    "tags": [
+      "useful"
+    ],
+    "comment": "Safe staging smoke test only. No operational data."
+  },
+  "authenticatedTemplateCreate": {
+    "title": "Staging smoke template",
+    "description": "Safe metadata-only staging smoke test.",
+    "decisionQuestion": "Which synthetic districts need review first?",
+    "intendedAction": "Review staging workflow only",
+    "decisionMaker": "QA reviewer",
+    "geographyTimeframe": "Synthetic admin areas, next 72 hours",
+    "requiredEvidence": [
+      "Need severity",
+      "Response capacity"
+    ],
+    "suggestedFields": [
+      {
+        "field_name": "admin_code",
+        "role": "join_key"
+      },
+      {
+        "field_name": "need_score",
+        "role": "evidence"
+      },
+      {
+        "field_name": "capacity_status",
+        "role": "evidence"
+      }
+    ],
+    "caveats": "Synthetic metadata-only smoke test.",
+    "exampleDataSchema": {
+      "admin_code": "string",
+      "need_score": "number",
+      "capacity_status": "category"
+    }
+  },
+  "authenticatedTemplatePatch": {
+    "title": "Staging smoke template updated",
+    "description": "Safe metadata-only staging smoke test update."
+  },
+  "unauthenticatedProbePayloads": {
+    "feedbackPost": {
+      "thumb": "up",
+      "tags": [
+        "useful"
+      ]
+    },
+    "templatePost": {
+      "title": "Unauth probe",
+      "decisionQuestion": "Test only",
+      "intendedAction": "Test only",
+      "decisionMaker": "Test only",
+      "geographyTimeframe": "Test only",
+      "requiredEvidence": [
+        "Test"
+      ],
+      "suggestedFields": [
+        {
+          "field_name": "admin_code",
+          "role": "evidence"
+        }
+      ],
+      "exampleDataSchema": {
+        "admin_code": "string"
+      }
+    },
+    "templatePatch": {
+      "title": "Unauth probe"
+    }
+  },
+  "evidenceRecordingRules": [
+    "Record route, method, status code, timestamp, and pass/fail only.",
+    "Do not paste response headers, cookies, local storage, bearer tokens, magic links, raw logs, raw DB rows, or personal account details.",
+    "For created objects, record only safe counts or an id prefix if the id is non-sensitive.",
+    "For screenshots, redact email addresses, account menus, tokens, URLs containing auth parameters, and database row details."
+  ]
+}

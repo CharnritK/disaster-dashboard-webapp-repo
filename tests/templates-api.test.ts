@@ -3,7 +3,10 @@ import { afterEach, describe, expect, it } from "vitest";
 import { PATCH as patchTemplateRoute } from "@/app/api/templates/[id]/route";
 import { GET as getTemplatesRoute, POST as postTemplatesRoute } from "@/app/api/templates/route";
 import { TEST_USER_HEADER } from "@/lib/auth/requestAuth";
-import { resetMetadataDbAdapterForTests } from "@/lib/db/metadataRuntime";
+import {
+  getMetadataDbAdapter,
+  resetMetadataDbAdapterForTests,
+} from "@/lib/db/metadataRuntime";
 import { parseTemplateDraft } from "@/lib/templates";
 
 afterEach(() => {
@@ -12,8 +15,19 @@ afterEach(() => {
 
 describe("template API", () => {
   it("requires auth", async () => {
-    const response = await getTemplatesRoute(new Request("http://localhost/api/templates"));
-    expect(response.status).toBe(401);
+    await expect(
+      getTemplatesRoute(new Request("http://localhost/api/templates")),
+    ).resolves.toMatchObject({ status: 401 });
+
+    await expect(
+      postTemplatesRoute(templateRequest(templateBody())),
+    ).resolves.toMatchObject({ status: 401 });
+
+    await expect(
+      patchTemplateRoute(templateRequest({ title: "Updated template" }), {
+        params: Promise.resolve({ id: "template-1" }),
+      }),
+    ).resolves.toMatchObject({ status: 401 });
   });
 
   it("creates and updates private draft templates", async () => {
@@ -39,6 +53,37 @@ describe("template API", () => {
     });
   });
 
+  it("lists only the caller's private drafts and reviewed templates", async () => {
+    const adapter = getMetadataDbAdapter();
+    await adapter.createCustomTemplate({
+      ownerUserId: "analyst-1",
+      title: "Analyst private draft",
+      visibility: "private",
+    });
+    await adapter.createCustomTemplate({
+      ownerUserId: "analyst-2",
+      title: "Other private draft",
+      visibility: "private",
+    });
+    await adapter.createCustomTemplate({
+      ownerUserId: "reviewer-1",
+      status: "reviewed",
+      title: "Reviewed shared template",
+      visibility: "reviewed",
+    });
+
+    const response = await getTemplatesRoute(authenticatedRequest("analyst-1"));
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.templates.map((template: { title: string }) => template.title)).toEqual(
+      expect.arrayContaining(["Analyst private draft", "Reviewed shared template"]),
+    );
+    expect(body.templates.map((template: { title: string }) => template.title)).not.toContain(
+      "Other private draft",
+    );
+  });
+
   it("rejects example row-like schema content", () => {
     expect(() =>
       parseTemplateDraft({
@@ -48,6 +93,28 @@ describe("template API", () => {
         },
       }),
     ).toThrow(/example rows or values/i);
+  });
+
+  it("rejects value-shaped example schema content while allowing type labels", () => {
+    expect(() =>
+      parseTemplateDraft({
+        ...templateBody(),
+        exampleDataSchema: {
+          admin_code: "string",
+          affected_population: "number",
+          verified: "boolean",
+        },
+      }),
+    ).not.toThrow();
+
+    expect(() =>
+      parseTemplateDraft({
+        ...templateBody(),
+        exampleDataSchema: {
+          admin_code: "D01",
+        },
+      }),
+    ).toThrow(/schema metadata/i);
   });
 
   it("rejects unsafe template patch content", async () => {
@@ -93,5 +160,13 @@ function templateRequest(body: unknown, userId?: string) {
     body: JSON.stringify(body),
     headers,
     method: "POST",
+  });
+}
+
+function authenticatedRequest(userId: string) {
+  return new Request("http://localhost/api/templates", {
+    headers: {
+      [TEST_USER_HEADER]: userId,
+    },
   });
 }

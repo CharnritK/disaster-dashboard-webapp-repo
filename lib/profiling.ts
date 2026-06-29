@@ -1,7 +1,7 @@
 import type { ColumnDescriptiveStats, ColumnProfile, Dataset, DatasetProfile } from "@/types/dataset";
-import { isCoordinateField } from "./locationFields";
+import { isAdminCodeField, isCoordinateField } from "./locationFields";
 
-const geoTerms = ["district", "admin", "area", "region", "province", "county", "country", "state", "city", "municipality", "commune", "ward", "site", "location", "lat", "latitude", "lon", "lng", "longitude", "code"];
+const geoTerms = ["district", "admin", "area", "region", "province", "county", "country", "state", "city", "municipality", "commune", "ward", "site", "location", "lat", "latitude", "lon", "lng", "longitude"];
 const demographicTerms = ["age", "gender", "sex", "disability", "household", "hh"];
 const metricTerms = ["count", "total", "number", "population", "score", "rate", "percent", "index", "access", "insecurity"];
 const joinTerms = ["id", "code", "key", "district", "admin", "iso", "pcode"];
@@ -38,6 +38,7 @@ function profileColumn(columnName: string, values: unknown[], rowCount: number):
   const inferredType = inferColumnType(present);
   const uniqueCount = new Set(present.map((value) => String(value).trim().toLowerCase())).size;
   const hasTerm = (terms: string[]) => terms.some((term) => lowerName.includes(term));
+  const isAdminCode = isAdminCodeField(columnName);
   const descriptiveStats = describeColumn(present, values, rowCount, inferredType);
   return {
     columnName,
@@ -47,8 +48,8 @@ function profileColumn(columnName: string, values: unknown[], rowCount: number):
     uniqueCount,
     sampleValues: Array.from(new Set(present.map((value) => String(value)))).slice(0, 5),
     descriptiveStats,
-    isPotentialJoinField: hasTerm(joinTerms) || uniqueCount / Math.max(rowCount, 1) > 0.8,
-    isPotentialGeographicField: isCoordinateField(columnName) || hasTerm(geoTerms),
+    isPotentialJoinField: isAdminCode || hasTerm(joinTerms) || uniqueCount / Math.max(rowCount, 1) > 0.8,
+    isPotentialGeographicField: isAdminCode || isCoordinateField(columnName) || hasTerm(geoTerms),
     isPotentialDemographicField: hasTerm(demographicTerms),
     isPotentialMetricField: inferredType === "number" || hasTerm(metricTerms)
   };

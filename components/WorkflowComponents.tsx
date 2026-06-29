@@ -1,6 +1,13 @@
 "use client";
 
-import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import {
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type KeyboardEvent as ReactKeyboardEvent,
+  type ReactNode,
+} from "react";
 import type {
   Dataset,
   ColumnProfile,
@@ -32,8 +39,16 @@ import {
   MAX_UPLOAD_SIZE_MB,
   SUPPORTED_FILE_TYPES,
   WORKFLOW_STEPS,
+  canActivateWorkflowStep,
   type WorkflowStep,
 } from "@/lib/config";
+import {
+  DEMO_GUIDED_FLOW_COPY,
+  DEMO_SAMPLE_ONLY_COPY,
+  DEMO_UPLOAD_TITLE,
+  STEP_LABELS,
+} from "@/lib/demoMessaging";
+import type { ReadinessBlocker } from "@/lib/readinessGate";
 import { runQualityChecks } from "@/lib/validation";
 import {
   buildEvidenceCoverageSummary,
@@ -61,17 +76,8 @@ import {
 } from "@/lib/chartMetrics";
 import { cleaningTransformLabel } from "@/lib/cleaningTransforms";
 import { isValidLatitude, isValidLongitude } from "@/lib/locationFields";
+import { summarizeJoinMatch, type JoinMatchSummary } from "@/lib/joinSummary";
 import { ChartFrame } from "@/components/charts/ChartFrame";
-
-const STEP_LABELS: Record<WorkflowStep, string> = {
-  brief: "Template",
-  upload: "Upload",
-  profile: "Profile",
-  recommend: "Harmonize",
-  validate: "Dataset",
-  dashboard: "Dashboard",
-  export: "Export",
-};
 
 const CHART_PALETTE = [
   "var(--chart-primary)",
@@ -81,6 +87,9 @@ const CHART_PALETTE = [
   "var(--chart-warning)",
   "var(--chart-neutral)",
 ];
+
+const DIALOG_FOCUSABLE_SELECTOR =
+  'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 export function StepIndicator({
   currentStep,
@@ -102,7 +111,11 @@ export function StepIndicator({
               ? "active"
               : "";
         const isCurrent = step === currentStep;
-        const canNavigate = canNavigateTo(step) && !isCurrent;
+        const canNavigate = canActivateWorkflowStep({
+          currentStep,
+          targetStep: step,
+          canNavigateTo,
+        });
         const isUnavailable = !canNavigate && !isCurrent;
         return (
           <button
@@ -161,6 +174,7 @@ export function DecisionBriefStep({
   onAiAssistedEnabledChange,
   onChange,
   onContinue,
+  sampleOnly = false,
 }: {
   aiAssistedAvailable: boolean;
   aiAssistedEnabled: boolean;
@@ -169,6 +183,7 @@ export function DecisionBriefStep({
   onAiAssistedEnabledChange: (enabled: boolean) => void;
   onChange: (brief: DecisionBrief) => void;
   onContinue: () => void;
+  sampleOnly?: boolean;
 }) {
   const updateField = <K extends keyof DecisionBrief>(field: K, value: DecisionBrief[K]) => {
     onChange({ ...brief, [field]: value });
@@ -179,8 +194,13 @@ export function DecisionBriefStep({
   const templateDefaults = createDecisionBriefFromTemplate(brief.useCaseId);
   const hasCustomBriefContext = isBriefCustomizedFromTemplate(brief, templateDefaults);
   const [isDecisionMapOpen, setIsDecisionMapOpen] = useState(false);
+  const decisionMapTriggerRef = useRef<HTMLButtonElement>(null);
   const decisionMapTitleId = useId();
   const decisionMapDescriptionId = useId();
+  const closeDecisionMap = () => {
+    setIsDecisionMapOpen(false);
+    decisionMapTriggerRef.current?.focus();
+  };
   return (
     <section className="workflow-step">
       <div className="section-heading">
@@ -208,9 +228,12 @@ export function DecisionBriefStep({
             <h3>{selectedTemplate.title}</h3>
             <p>{selectedTemplate.description}</p>
             <p className="helper-text">
-              Defaults are ready to run in deterministic mode. If you change the decision context, turn on AI-assisted workflow so the model can use your edited question, action, and evidence needs.
+              {sampleOnly
+                ? DEMO_GUIDED_FLOW_COPY
+                : "Defaults are ready to run in deterministic mode. If you change the decision context, turn on AI-assisted workflow so the model can use your edited question, action, and evidence needs."}
             </p>
             <button
+              ref={decisionMapTriggerRef}
               type="button"
               className="decision-map-trigger"
               onClick={() => setIsDecisionMapOpen(true)}
@@ -227,36 +250,44 @@ export function DecisionBriefStep({
                 : "Template defaults selected"}
             </strong>
             <p>
-              {hasCustomBriefContext
-                ? aiAssistedEnabled && aiAssistedAvailable
-                  ? "AI-assisted workflow is on. Your edited brief will be sent as minimized decision context with the profile metadata."
-                  : "Deterministic mode will continue with template rules, but it will not reinterpret your custom brief. Turn on AI-assisted workflow before harmonizing or generating dashboards."
-                : "Use the template as-is for the deterministic guided flow, or edit it and turn on AI-assisted workflow for context-aware recommendations."}
+              {sampleOnly
+                ? "This public demo runs as a guided flow without AI. Sign in for quota-governed AI assistance."
+                : hasCustomBriefContext
+                  ? aiAssistedEnabled && aiAssistedAvailable
+                    ? "AI-assisted workflow is on. Your edited brief will be sent as minimized decision context with the profile metadata."
+                    : "Deterministic mode will continue with template rules, but it will not reinterpret your custom brief. Turn on AI-assisted workflow before harmonizing or generating dashboards."
+                  : "Use the template as-is for the deterministic guided flow, or edit it and turn on AI-assisted workflow for context-aware recommendations."}
             </p>
           </div>
-          <label className="llm-toggle ai-context-toggle">
-            <input
-              type="checkbox"
-              checked={aiAssistedEnabled}
-              disabled={!aiAssistedAvailable}
-              onChange={(event) => onAiAssistedEnabledChange(event.target.checked)}
-            />
-            <span className="llm-toggle-copy">
-              <span>AI-assisted workflow</span>
-              <strong>
-                {aiAssistedAvailable
-                  ? aiAssistedEnabled
-                    ? "On"
-                    : "Off"
-                  : "Unavailable"}
-              </strong>
-            </span>
-            <span className="llm-toggle-track" aria-hidden="true">
-              <span className="llm-toggle-thumb" />
-            </span>
-          </label>
+          {!sampleOnly ? (
+            <label className="llm-toggle ai-context-toggle">
+              <input
+                type="checkbox"
+                checked={aiAssistedEnabled}
+                disabled={!aiAssistedAvailable}
+                onChange={(event) => onAiAssistedEnabledChange(event.target.checked)}
+              />
+              <span className="llm-toggle-copy">
+                <span>AI-assisted workflow</span>
+                <strong>
+                  {aiAssistedAvailable
+                    ? aiAssistedEnabled
+                      ? "On"
+                      : "Off"
+                    : "Unavailable"}
+                </strong>
+              </span>
+              <span className="llm-toggle-track" aria-hidden="true">
+                <span className="llm-toggle-thumb" />
+              </span>
+            </label>
+          ) : null}
         </div>
-        <DecisionPlaybookPanel playbook={selectedPlaybook} />
+        {sampleOnly ? (
+          <DemoAdvancedCaveats playbook={selectedPlaybook} />
+        ) : (
+          <DecisionPlaybookPanel playbook={selectedPlaybook} />
+        )}
         <div className="brief-form-grid">
           <label>
             Decision question
@@ -329,7 +360,9 @@ export function DecisionBriefStep({
             disabled={missingFields.length > 0}
             onClick={onContinue}
           >
-            Use template and continue
+            {sampleOnly
+              ? "Run the 3-minute sample walkthrough"
+              : "Use template and continue"}
           </button>
         </div>
         {isDecisionMapOpen ? (
@@ -338,7 +371,7 @@ export function DecisionBriefStep({
             descriptionId={decisionMapDescriptionId}
             template={collectionTemplate}
             titleId={decisionMapTitleId}
-            onClose={() => setIsDecisionMapOpen(false)}
+            onClose={closeDecisionMap}
           />
         ) : null}
       </article>
@@ -410,6 +443,25 @@ function DecisionPlaybookPanel({ playbook }: { playbook: DecisionPlaybook }) {
   );
 }
 
+function DemoAdvancedCaveats({ playbook }: { playbook: DecisionPlaybook }) {
+  return (
+    <details className="demo-advanced-caveats">
+      <summary>Advanced caveats</summary>
+      <div className="accordion-content">
+        <h3>{playbook.title}</h3>
+        <ul className="compact-list">
+          {[
+            ...playbook.knownCaveats.slice(0, 3),
+            ...playbook.sourceFreshnessExpectations.slice(0, 2),
+          ].map((caveat) => (
+            <li key={caveat}>{caveat}</li>
+          ))}
+        </ul>
+      </div>
+    </details>
+  );
+}
+
 function DecisionMapDialog({
   brief,
   descriptionId,
@@ -424,6 +476,7 @@ function DecisionMapDialog({
   onClose: () => void;
 }) {
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const dialogRef = useRef<HTMLElement>(null);
   const dataGroups = buildDecisionMapDataGroups(brief, template);
   const sourceConfigFields = template.fields.filter((field) =>
     ["Source quality", "Review context"].includes(field.evidenceNeed)
@@ -444,7 +497,7 @@ function DecisionMapDialog({
     },
     {
       label: "Join key",
-      value: "Use a stable administrative code across uploaded files.",
+      value: "Use a stable P-code / COD admin code across uploaded files.",
     },
     {
       label: "Row meaning",
@@ -459,11 +512,46 @@ function DecisionMapDialog({
 
   useEffect(() => {
     closeButtonRef.current?.focus();
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
+    const handleDialogKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        onClose();
+        return;
+      }
+
+      if (event.key !== "Tab") return;
+
+      const dialog = dialogRef.current;
+      if (!dialog) return;
+      const focusable = Array.from(
+        dialog.querySelectorAll<HTMLElement>(DIALOG_FOCUSABLE_SELECTOR),
+      ).filter((element) => element.tabIndex >= 0);
+      if (focusable.length === 0) {
+        event.preventDefault();
+        return;
+      }
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      const activeElement = document.activeElement;
+      if (!dialog.contains(activeElement)) {
+        event.preventDefault();
+        first.focus();
+        return;
+      }
+
+      if (event.shiftKey && activeElement === first) {
+        event.preventDefault();
+        last.focus();
+        return;
+      }
+
+      if (!event.shiftKey && activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
     };
-    document.addEventListener("keydown", closeOnEscape);
-    return () => document.removeEventListener("keydown", closeOnEscape);
+    document.addEventListener("keydown", handleDialogKeyDown);
+    return () => document.removeEventListener("keydown", handleDialogKeyDown);
   }, [onClose]);
 
   return (
@@ -474,6 +562,7 @@ function DecisionMapDialog({
       }}
     >
       <section
+        ref={dialogRef}
         aria-describedby={descriptionId}
         aria-labelledby={titleId}
         aria-modal="true"
@@ -659,21 +748,24 @@ export function UploadStep({
   onCreateFormDataset: (dataset: Dataset) => void;
   sampleOnly?: boolean;
 }) {
+  const uploadTitle = sampleOnly ? DEMO_UPLOAD_TITLE : "Upload Data";
   return (
     <section className="workflow-step">
       <div className="section-heading">
         <p className="eyebrow">Step 2</p>
-        <h2>Upload Data</h2>
+        <h2>{uploadTitle}</h2>
       </div>
-      <div className="sensitive-data-note" role="note">
-        <strong>Carefully consider data sources</strong>
-        <p>
-          Do not upload sensitive personal, medical, financial, or restricted
-          data. When AI recommendations are <em>on</em>, dataset details and
-          semantic comments may be sent to the configured LLM provider with
-          minimized sample values.
-        </p>
-      </div>
+      {!sampleOnly ? (
+        <div className="sensitive-data-note" role="note">
+          <strong>Carefully consider data sources</strong>
+          <p>
+            Do not upload sensitive personal, medical, financial, or restricted
+            data. When AI recommendations are <em>on</em>, dataset details and
+            semantic comments may be sent to the configured LLM provider with
+            minimized sample values.
+          </p>
+        </div>
+      ) : null}
       {!sampleOnly ? (
         <FormIntakeReviewPanel
           decisionBrief={decisionBrief}
@@ -682,12 +774,13 @@ export function UploadStep({
       ) : null}
       {datasets.length === 0 ? (
         <div className="empty-state upload-empty">
-          <h3>Add data to begin</h3>
+          <h3>{sampleOnly ? DEMO_SAMPLE_ONLY_COPY : "Add data to begin"}</h3>
           <p>
-            {SUPPORTED_FILE_TYPES.map((type) => type.toUpperCase()).join(
-              " or ",
-            )}{" "}
-            files, up to {MAX_UPLOAD_SIZE_MB}MB each.
+            {sampleOnly
+              ? DEMO_GUIDED_FLOW_COPY
+              : `${SUPPORTED_FILE_TYPES.map((type) => type.toUpperCase()).join(
+                  " or ",
+                )} files, up to ${MAX_UPLOAD_SIZE_MB}MB each.`}
           </p>
           <div className="action-row">
             {!sampleOnly && (
@@ -721,13 +814,18 @@ export function UploadStep({
           </div>
           {sampleOnly && (
             <p className="helper-text">
-              Public demo uses bundled samples only. Sign in for private uploads
-              and AI-assisted workflow.
+              Sign in for private uploads and AI-assisted workflow.
             </p>
           )}
         </div>
       ) : (
         <>
+          {sampleOnly ? (
+            <div className="sample-only-note" role="note">
+              <strong>{DEMO_SAMPLE_ONLY_COPY}</strong>
+              <span>{DEMO_GUIDED_FLOW_COPY}</span>
+            </div>
+          ) : null}
           <div className="action-row toolbar-row">
             {!sampleOnly && (
               <label className="primary-action compact">
@@ -1331,6 +1429,20 @@ export function RecommendationStep({
   const [targetColumn, setTargetColumn] = useState(
     join?.targetColumns[0] ?? "",
   );
+  const joinSummaryWarningId = useId();
+  useEffect(() => {
+    setShowAdjust(false);
+    setJoinType(join?.joinType ?? "left");
+    setSourceColumn(join?.sourceColumns[0] ?? "");
+    setTargetColumn(join?.targetColumns[0] ?? "");
+  }, [
+    join?.id,
+    join?.sourceDatasetId,
+    join?.targetDatasetId,
+    join?.joinType,
+    join?.sourceColumns[0],
+    join?.targetColumns[0],
+  ]);
   const adjustedJoin = join
     ? {
         ...join,
@@ -1342,6 +1454,32 @@ export function RecommendationStep({
         rationale: `User adjusted the recommendation to use ${sourceColumn || join.sourceColumns[0]} = ${targetColumn || join.targetColumns[0]} with a ${joinType} join.`,
       }
     : undefined;
+  const recommendedJoinSummaries = joins.flatMap((item, index) => {
+    const itemSource = datasets.find((dataset) => dataset.id === item.sourceDatasetId);
+    const itemTarget = datasets.find((dataset) => dataset.id === item.targetDatasetId);
+    if (!itemSource?.data || !itemTarget?.data) return [];
+    return [{
+      id: item.id,
+      label: joins.length > 1 ? `Join ${index + 1}` : undefined,
+      summary: summarizeJoinMatch(
+        itemSource.data,
+        itemTarget.data,
+        item.sourceColumns[0],
+        item.targetColumns[0],
+      ),
+    }];
+  });
+  const hasCompleteJoinSummaries =
+    !hasJoinPlan || recommendedJoinSummaries.length === joins.length;
+  const adjustedJoinSummary =
+    adjustedJoin && source?.data && target?.data
+      ? summarizeJoinMatch(
+          source.data,
+          target.data,
+          adjustedJoin.sourceColumns[0],
+          adjustedJoin.targetColumns[0],
+        )
+      : undefined;
   const highlightTerms = datasetTextTerms(datasets);
 
   return (
@@ -1362,8 +1500,26 @@ export function RecommendationStep({
             highlightTerms,
           )}
         </div>
+        {recommendedJoinSummaries.length > 0 ? (
+          <JoinTrustSummaryList summaries={recommendedJoinSummaries} />
+        ) : null}
+        {hasJoinPlan && !hasCompleteJoinSummaries ? (
+          <p className="helper-text" id={joinSummaryWarningId}>
+            Join match summary is unavailable for one or more dataset pairs.
+            Review the input data before accepting this plan.
+          </p>
+        ) : null}
         <div className="action-row">
-          <button className="primary-button" onClick={() => onAccept(joins)}>
+          <button
+            aria-describedby={
+              hasJoinPlan && !hasCompleteJoinSummaries
+                ? joinSummaryWarningId
+                : undefined
+            }
+            className="primary-button"
+            disabled={!hasCompleteJoinSummaries}
+            onClick={() => onAccept(joins)}
+          >
             {hasJoinPlan ? "Accept recommendation" : "Prepare dataset"}
           </button>
           {join && (
@@ -1420,10 +1576,16 @@ export function RecommendationStep({
               </select>
             </label>
           </div>
+          {adjustedJoinSummary ? (
+            <JoinTrustSummaryPanel summary={adjustedJoinSummary} />
+          ) : null}
           <div className="action-row">
             <button
               className="primary-button"
-              onClick={() => adjustedJoin && onAccept([adjustedJoin])}
+              disabled={!adjustedJoinSummary}
+              onClick={() =>
+                adjustedJoin && adjustedJoinSummary && onAccept([adjustedJoin])
+              }
             >
               Accept adjusted join
             </button>
@@ -1516,28 +1678,121 @@ function JoinReviewCard({
   );
 }
 
+function JoinTrustSummaryList({
+  summaries,
+}: {
+  summaries: { id: string; label?: string; summary: JoinMatchSummary }[];
+}) {
+  return (
+    <div className="join-trust-summary-list">
+      {summaries.map((item) => (
+        <JoinTrustSummaryPanel
+          key={item.id}
+          label={item.label}
+          summary={item.summary}
+        />
+      ))}
+    </div>
+  );
+}
+
+function JoinTrustSummaryPanel({
+  label,
+  summary,
+}: {
+  label?: string;
+  summary: JoinMatchSummary;
+}) {
+  const unmatchedCount =
+    summary.unmatchedLeftCount + summary.unmatchedRightCount;
+  const duplicateCount =
+    summary.duplicateLeftKeyCount + summary.duplicateRightKeyCount;
+  const blankKeyCount = summary.blankLeftKeyCount + summary.blankRightKeyCount;
+  return (
+    <div className="why-box">
+      <strong>{label ? `${label} trust summary:` : "Join trust summary:"}</strong>{" "}
+      {formatCount(summary.matchedCount, "source row")} matched across{" "}
+      {formatCount(summary.leftCount, "source row")} and{" "}
+      {formatCount(summary.rightCount, "target row")}.{" "}
+      {unmatchedCount > 0 || duplicateCount > 0 || blankKeyCount > 0
+        ? `${formatCount(unmatchedCount, "unmatched row")}, ${formatCount(duplicateCount, "duplicate key row")}, and ${formatCount(blankKeyCount, "blank key row")} need review.`
+        : "No unmatched, duplicate, or blank keys were detected."}
+      {summary.unmatchedLeftKeys.length > 0 ? (
+        <p>
+          Source unmatched key samples:{" "}
+          {summary.unmatchedLeftKeys.map((key) => (
+            <code className="inline-code" key={`left-${key}`}>
+              {key}
+            </code>
+          ))}
+        </p>
+      ) : null}
+      {summary.unmatchedRightKeys.length > 0 ? (
+        <p>
+          Target unmatched key samples:{" "}
+          {summary.unmatchedRightKeys.map((key) => (
+            <code className="inline-code" key={`right-${key}`}>
+              {key}
+            </code>
+          ))}
+        </p>
+      ) : null}
+      {summary.duplicateLeftKeys.length > 0 ? (
+        <p>
+          Source duplicate key samples:{" "}
+          {summary.duplicateLeftKeys.map((key) => (
+            <code className="inline-code" key={`left-duplicate-${key}`}>
+              {key}
+            </code>
+          ))}
+        </p>
+      ) : null}
+      {summary.duplicateRightKeys.length > 0 ? (
+        <p>
+          Target duplicate key samples:{" "}
+          {summary.duplicateRightKeys.map((key) => (
+            <code className="inline-code" key={`right-duplicate-${key}`}>
+              {key}
+            </code>
+          ))}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
 export function ValidationStep({
   aiGuardrail,
+  acknowledgedBlockerIds,
+  canGenerateDashboard,
   dataset,
   decisionReadiness,
   evidenceCoverage,
   joins,
   quality,
+  readinessBlockers,
   transformationLog,
   isWorking = false,
+  onBlockerAcknowledgementChange,
   onProceed,
 }: {
   aiGuardrail: AiGuardrailExplanation;
+  acknowledgedBlockerIds: string[];
+  canGenerateDashboard: boolean;
   dataset: Dataset;
   decisionReadiness?: DecisionReadinessResult;
   evidenceCoverage: EvidenceCoverageSummary;
   joins?: JoinRecommendation[];
   quality: QualityCheckResult[];
+  readinessBlockers: ReadinessBlocker[];
   transformationLog: TransformationStep[];
   isWorking?: boolean;
+  onBlockerAcknowledgementChange: (blockerId: string, acknowledged: boolean) => void;
   onProceed: () => void;
 }) {
   const blocking = quality.filter((issue) => issue.status === "fail");
+  const isDecisionUnsafe = decisionReadiness?.status === "decision_unsafe";
+  const acknowledgedBlockerIdSet = new Set(acknowledgedBlockerIds);
   const logHighlightTerms = [
     ...datasetTextTerms([dataset]),
     ...transformationTextTerms(transformationLog),
@@ -1553,6 +1808,50 @@ export function ValidationStep({
         readiness={decisionReadiness}
       />
       <AiGuardrailPanel explanation={aiGuardrail} />
+      {isDecisionUnsafe ? (
+        <article
+          aria-labelledby="readiness-blocker-checklist-heading"
+          className="decision-readiness high"
+        >
+          <div>
+            <p className="eyebrow">Review-only dashboard gate</p>
+            <h3 id="readiness-blocker-checklist-heading">Dashboard is review-only: unresolved evidence gaps remain</h3>
+            <p>
+              Acknowledge each unresolved blocker before generating a
+              review-only dashboard. This does not mark the evidence ready for
+              action.
+            </p>
+          </div>
+          <div className="evidence-choice-grid">
+            {readinessBlockers.length > 0 ? (
+              readinessBlockers.map((blocker) => (
+                <label
+                  className="checkbox-row"
+                  key={`${blocker.id}:${blocker.label}`}
+                >
+                  <input
+                    checked={acknowledgedBlockerIdSet.has(blocker.id)}
+                    onChange={(event) =>
+                      onBlockerAcknowledgementChange(
+                        blocker.id,
+                        event.target.checked,
+                      )
+                    }
+                    type="checkbox"
+                  />
+                  <span>{blocker.label}</span>
+                </label>
+              ))
+            ) : (
+              <p className="helper-text">
+                Readiness is unsafe but no blocker labels were available. Rerun
+                validation or review the prepared data before generating a
+                dashboard.
+              </p>
+            )}
+          </div>
+        </article>
+      ) : null}
       <article className="recommendation-card">
         <p className="eyebrow">Recommended</p>
         <h2>
@@ -1568,7 +1867,7 @@ export function ValidationStep({
         <div className="action-row">
           <button
             className="primary-button"
-            disabled={isWorking}
+            disabled={isWorking || !canGenerateDashboard}
             onClick={onProceed}
           >
             {isWorking ? "Generating..." : "Generate dashboard"}
@@ -1866,6 +2165,7 @@ export function DashboardPreview({
   decisionReadiness,
   recommendation,
   expandInsights = false,
+  exportMode = false,
   interactive = true,
   showInsightLinks = true,
 }: {
@@ -1874,6 +2174,7 @@ export function DashboardPreview({
   decisionReadiness?: DecisionReadinessResult;
   recommendation: DashboardRecommendation;
   expandInsights?: boolean;
+  exportMode?: boolean;
   interactive?: boolean;
   showInsightLinks?: boolean;
 }) {
@@ -1885,7 +2186,7 @@ export function DashboardPreview({
     { id: "insights", title: "Insights" },
     ...chartSections.map((section) => ({
       id: chartSectionPanelId(section.id),
-      title: section.title,
+      title: section.id === "overview" ? "Overview charts" : section.title,
     })),
   ];
 
@@ -1898,27 +2199,72 @@ export function DashboardPreview({
     });
   }
 
+  function focusMobilePanelTab(panelId: string) {
+    window.requestAnimationFrame(() => {
+      document.getElementById(`dashboard-mobile-tab-${panelId}`)?.focus();
+    });
+  }
+
+  function handleMobilePanelKeyDown(
+    event: ReactKeyboardEvent<HTMLButtonElement>,
+    panelId: string,
+  ) {
+    const currentIndex = mobilePanels.findIndex((panel) => panel.id === panelId);
+    if (currentIndex < 0) return;
+
+    const keyOffset: Record<string, number> = {
+      ArrowRight: 1,
+      ArrowDown: 1,
+      ArrowLeft: -1,
+      ArrowUp: -1,
+    };
+    const offset = keyOffset[event.key];
+    const nextIndex =
+      event.key === "Home"
+        ? 0
+        : event.key === "End"
+          ? mobilePanels.length - 1
+          : offset === undefined
+            ? undefined
+            : (currentIndex + offset + mobilePanels.length) %
+              mobilePanels.length;
+
+    if (nextIndex === undefined) return;
+    event.preventDefault();
+    const nextPanelId = mobilePanels[nextIndex].id;
+    setActiveMobilePanel(nextPanelId);
+    focusMobilePanelTab(nextPanelId);
+  }
+
   return (
-    <div ref={refNode} className="dashboard">
-      <div className="dashboard-mobile-tabs" role="tablist" aria-label="Dashboard sections">
-        {mobilePanels.map((panel) => (
-          <button
-            aria-controls={`dashboard-mobile-panel-${panel.id}`}
-            aria-selected={activeMobilePanel === panel.id}
-            className={activeMobilePanel === panel.id ? "selected" : undefined}
-            id={`dashboard-mobile-tab-${panel.id}`}
-            key={panel.id}
-            onClick={() => setActiveMobilePanel(panel.id)}
-            role="tab"
-            type="button"
-          >
-            {panel.title}
-          </button>
-        ))}
-      </div>
+    <div
+      ref={refNode}
+      className={exportMode ? "dashboard dashboard-export-layout" : "dashboard"}
+    >
+      {!exportMode && (
+        <div className="dashboard-mobile-tabs" role="tablist" aria-label="Dashboard sections">
+          {mobilePanels.map((panel) => (
+            <button
+              aria-controls={`dashboard-mobile-panel-${panel.id}`}
+              aria-selected={activeMobilePanel === panel.id}
+              className={activeMobilePanel === panel.id ? "selected" : undefined}
+              id={`dashboard-mobile-tab-${panel.id}`}
+              key={panel.id}
+              onClick={() => setActiveMobilePanel(panel.id)}
+              onKeyDown={(event) => handleMobilePanelKeyDown(event, panel.id)}
+              role="tab"
+              tabIndex={activeMobilePanel === panel.id ? 0 : -1}
+              type="button"
+            >
+              {panel.title}
+            </button>
+          ))}
+        </div>
+      )}
       <section
-        aria-labelledby="dashboard-mobile-tab-overview"
-        className={`dashboard-mobile-panel ${activeMobilePanel === "overview" ? "active" : ""}`}
+        aria-label={exportMode ? "Overview" : undefined}
+        aria-labelledby={exportMode ? undefined : "dashboard-mobile-tab-overview"}
+        className={`dashboard-mobile-panel ${exportMode || activeMobilePanel === "overview" ? "active" : ""}`}
         id="dashboard-mobile-panel-overview"
         role="tabpanel"
       >
@@ -1929,8 +2275,9 @@ export function DashboardPreview({
         />
       </section>
       <section
-        aria-labelledby="dashboard-mobile-tab-insights"
-        className={`dashboard-mobile-panel ${activeMobilePanel === "insights" ? "active" : ""}`}
+        aria-label={exportMode ? "Insights" : undefined}
+        aria-labelledby={exportMode ? undefined : "dashboard-mobile-tab-insights"}
+        className={`dashboard-mobile-panel ${exportMode || activeMobilePanel === "insights" ? "active" : ""}`}
         id="dashboard-mobile-panel-insights"
         role="tabpanel"
       >
@@ -1951,8 +2298,9 @@ export function DashboardPreview({
           : section.charts.length % 2 === 1;
         return (
           <section
-            aria-labelledby={`dashboard-mobile-tab-${panelId}`}
-            className={`dashboard-section dashboard-mobile-panel ${activeMobilePanel === panelId ? "active" : ""}`}
+            aria-label={exportMode ? section.title : undefined}
+            aria-labelledby={exportMode ? undefined : `dashboard-mobile-tab-${panelId}`}
+            className={`dashboard-section dashboard-mobile-panel ${exportMode || activeMobilePanel === panelId ? "active" : ""}`}
             id={`dashboard-mobile-panel-${panelId}`}
             key={panelId}
             role="tabpanel"
@@ -4212,6 +4560,7 @@ export function LandingHero({
   llmEnabled,
   llmAvailable = true,
   onLlmEnabledChange,
+  showLlmToggle = true,
   usageSlot,
   ctaSlot,
 }: {
@@ -4219,6 +4568,7 @@ export function LandingHero({
   llmEnabled: boolean;
   llmAvailable?: boolean;
   onLlmEnabledChange: (enabled: boolean) => void;
+  showLlmToggle?: boolean;
   usageSlot?: ReactNode;
   ctaSlot?: ReactNode;
 }) {
@@ -4240,21 +4590,23 @@ export function LandingHero({
           </div>
           {usageSlot}
           {ctaSlot}
-          <label className="llm-toggle">
-            <input
-              type="checkbox"
-              checked={llmEnabled}
-              disabled={!llmAvailable}
-              onChange={(event) => onLlmEnabledChange(event.target.checked)}
-            />
-            <span className="llm-toggle-copy">
-              <span>AI</span>
-              <strong>{llmEnabled ? "On" : "Off"}</strong>
-            </span>
-            <span className="llm-toggle-track" aria-hidden="true">
-              <span className="llm-toggle-thumb" />
-            </span>
-          </label>
+          {showLlmToggle !== false ? (
+            <label className="llm-toggle">
+              <input
+                type="checkbox"
+                checked={llmEnabled}
+                disabled={!llmAvailable}
+                onChange={(event) => onLlmEnabledChange(event.target.checked)}
+              />
+              <span className="llm-toggle-copy">
+                <span>AI</span>
+                <strong>{llmEnabled ? "On" : "Off"}</strong>
+              </span>
+              <span className="llm-toggle-track" aria-hidden="true">
+                <span className="llm-toggle-thumb" />
+              </span>
+            </label>
+          ) : null}
         </div>
       </div>
     </header>
