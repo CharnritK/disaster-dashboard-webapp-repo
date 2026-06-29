@@ -4,7 +4,7 @@ import type { QualityCheckResult } from "@/types/quality";
 import type { TransformationStep } from "@/types/transformations";
 import { fieldDisplayLabel, inferMetricAggregation } from "./chartMetrics";
 import { computeDashboardInsightFacts, factsToDashboardInsights } from "./dashboardInsights";
-import { findLocationFields, isCoordinateField, isLatitudeField, isLongitudeField } from "./locationFields";
+import { findLocationFields, isCoordinateField, isIdentifierField, isLatitudeField, isLongitudeField } from "./locationFields";
 import { enforceVizPolicies } from "./vizPolicy";
 
 const MAX_SUMMARY_METRICS = 5;
@@ -418,6 +418,7 @@ function getNumericMetricFields(dataset: Dataset) {
     .filter((column) =>
       column.inferredType === "number" &&
       !isCoordinateField(column.columnName) &&
+      !isIdentifierField(column.columnName) &&
       !isGenericIdentifierField(column.columnName) &&
       !isLowCardinalityGroupingCode(column)
     )
@@ -427,7 +428,7 @@ function getNumericMetricFields(dataset: Dataset) {
 
 function getNumericFields(dataset: Dataset) {
   return dataset.profile?.columns
-    .filter((column) => column.inferredType === "number")
+    .filter((column) => column.inferredType === "number" && !isIdentifierField(column.columnName))
     .map((column) => column.columnName) ?? [];
 }
 

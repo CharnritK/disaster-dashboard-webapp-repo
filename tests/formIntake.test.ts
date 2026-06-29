@@ -226,6 +226,6 @@ describe("form intake contract", () => {
     expect(workflowSource).toMatch(
       /!\s*sampleOnly\s*&&\s*\([\s\S]*<label className="primary-action compact">/,
     );
-    expect(workflowSource).toContain("Public demo uses bundled samples only");
+    expect(workflowSource).toContain("DEMO_SAMPLE_ONLY_COPY");
   });
 });

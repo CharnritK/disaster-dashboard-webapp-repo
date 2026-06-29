@@ -56,6 +56,13 @@ export function isAdminCodeField(field: string) {
   );
 }
 
+export function isIdentifierField(field: string) {
+  const normalized = normalizeField(field);
+  if (!normalized) return false;
+  if (isAdminCodeField(field)) return true;
+  return /(^id$|^code$|^key$|id$|code$|key$|pcode$|iso\d*$)/.test(normalized);
+}
+
 export function isLatitudeField(field: string) {
   const normalized = normalizeField(field);
   return ["lat", "latitude", "ycoord", "ycoordinate"].includes(normalized);

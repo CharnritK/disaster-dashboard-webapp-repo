@@ -43,7 +43,11 @@ import { computeDashboardInsightFacts } from "@/lib/dashboardInsights";
 import { downloadText, toCsv } from "@/lib/exportCsv";
 import { exportElementAsPng } from "@/lib/exportPng";
 import { exportElementAsPdf, formatPdfTimestamp } from "@/lib/exportPdf";
-import { buildDashboardProjectKit, buildDecisionHandoffPacket } from "@/lib/workflowExport";
+import {
+  acceptedCaveatsForReadiness,
+  buildDashboardProjectKit,
+  buildDecisionHandoffPacket,
+} from "@/lib/workflowExport";
 import { UsageMeter } from "@/components/UsageMeter";
 import { FeedbackForm } from "@/components/FeedbackForm";
 import { AiCoachPanel } from "@/components/AiCoachPanel";
@@ -149,6 +153,18 @@ export default function DashboardCopilotApp({
     state.decisionReadiness,
     acknowledgedBlockerIdSet,
   );
+  const evidenceCoverage = buildEvidenceCoverageSummary(
+    state.datasets,
+    state.decisionBrief,
+  );
+  const repairActions = buildRepairActions({
+    aiFallbackReason: state.aiRecommendations?.fallbackReason,
+    evidenceCoverage,
+    formMetadata: activeDataset?.inputHints?.formMetadata,
+    qualityResults: state.qualityResults,
+    readiness: state.decisionReadiness,
+    workflowStep: state.currentStep,
+  });
 
   useEffect(() => {
     workflowShellRef.current?.scrollIntoView({ block: "start" });
@@ -611,6 +627,7 @@ export default function DashboardCopilotApp({
         ? [state.preparedDataset]
         : [];
     const packet = buildDecisionHandoffPacket({
+      acceptedCaveats: acceptedCaveatsForReadiness(state.decisionReadiness),
       acknowledgedBlockerIds,
       decisionBrief: state.decisionBrief,
       evidenceCoverage: buildEvidenceCoverageSummary(datasets, state.decisionBrief),
@@ -634,6 +651,7 @@ export default function DashboardCopilotApp({
       ? state.datasets
       : [state.preparedDataset];
     const kit = buildDashboardProjectKit({
+      acceptedCaveats: acceptedCaveatsForReadiness(state.decisionReadiness),
       acknowledgedBlockerIds,
       decisionBrief: state.decisionBrief,
       evidenceCoverage: buildEvidenceCoverageSummary(datasets, state.decisionBrief),
@@ -665,6 +683,7 @@ export default function DashboardCopilotApp({
       const evidenceCoverage = buildEvidenceCoverageSummary(datasets, state.decisionBrief);
       const aiMode = currentAiMode(llmEnabled, state.aiRecommendations, state.warning);
       const packet = buildDecisionHandoffPacket({
+        acceptedCaveats: acceptedCaveatsForReadiness(state.decisionReadiness),
         acknowledgedBlockerIds,
         decisionBrief: state.decisionBrief,
         evidenceCoverage,

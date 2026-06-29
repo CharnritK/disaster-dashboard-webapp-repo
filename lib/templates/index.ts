@@ -29,6 +29,18 @@ const SCHEMA_TYPE_LABELS = new Set([
   "unknown",
 ]);
 
+const SUGGESTED_FIELD_ROLES = new Set([
+  "context",
+  "date",
+  "demographic",
+  "dimension",
+  "evidence",
+  "geography",
+  "join_key",
+  "metric",
+  "quality",
+]);
+
 export function parseTemplateDraft(body: unknown): TemplateDraftInput {
   if (!isRecord(body)) throw new TemplateValidationError("Template body must be an object.");
 
@@ -38,7 +50,7 @@ export function parseTemplateDraft(body: unknown): TemplateDraftInput {
   const decisionMaker = requiredText(body.decisionMaker, "decisionMaker", 160);
   const geographyTimeframe = requiredText(body.geographyTimeframe, "geographyTimeframe", 160);
   const requiredEvidence = textArray(body.requiredEvidence, "requiredEvidence", 12);
-  const suggestedFields = safeObjectArray(body.suggestedFields, "suggestedFields");
+  const suggestedFields = suggestedFieldArray(body.suggestedFields);
 
   return {
     caveats: optionalText(body.caveats, 600) ?? "",
@@ -149,12 +161,63 @@ function textArray(value: unknown, name: string, maxItems: number) {
   return value.map((item) => requiredText(item, name, 120));
 }
 
-function safeObjectArray(value: unknown, name: string) {
+function suggestedFieldArray(value: unknown) {
   if (value == null) return [];
   if (!Array.isArray(value) || value.length > 40) {
-    throw new TemplateValidationError(`${name} must be a short array.`);
+    throw new TemplateValidationError("suggestedFields must be a short array.");
   }
-  return value.map((item) => safeObject(item, name));
+  return value.map(parseSuggestedField);
+}
+
+function parseSuggestedField(value: unknown) {
+  if (!isRecord(value)) {
+    throw new TemplateValidationError("suggestedFields must contain objects.");
+  }
+
+  const allowedKeys = new Set([
+    "caveat",
+    "description",
+    "evidenceNeed",
+    "evidence_need",
+    "field_name",
+    "name",
+    "required",
+    "role",
+    "type",
+  ]);
+  const entries: Array<[string, string | boolean]> = [];
+  for (const [key, item] of Object.entries(value)) {
+    if (
+      !allowedKeys.has(key) ||
+      /row|sample|value|file|prompt|response|example/i.test(key)
+    ) {
+      throw new TemplateValidationError("suggestedFields cannot include example rows or values.");
+    }
+    if (!/^[A-Za-z0-9_.:-]{1,80}$/.test(key)) {
+      throw new TemplateValidationError("suggestedFields has an unsafe key.");
+    }
+
+    if (key === "field_name" || key === "name") {
+      entries.push([key, safeFieldName(item, key)]);
+    } else if (key === "role") {
+      entries.push([key, safeSuggestedFieldRole(item)]);
+    } else if (key === "type") {
+      entries.push([key, safeSchemaTypeLabel(item, "suggestedFields")]);
+    } else if (key === "required") {
+      if (typeof item !== "boolean") {
+        throw new TemplateValidationError("suggestedFields required must be boolean metadata.");
+      }
+      entries.push([key, item]);
+    } else {
+      entries.push([key, requiredText(item, key, 160)]);
+    }
+  }
+
+  if (!entries.some(([key]) => key === "field_name" || key === "name")) {
+    throw new TemplateValidationError("suggestedFields must include a field name.");
+  }
+
+  return Object.fromEntries(entries);
 }
 
 function safeObject(value: unknown, name: string) {
@@ -174,12 +237,7 @@ function safeObject(value: unknown, name: string) {
         return [key, item];
       }
       if (name === "exampleDataSchema") {
-        if (typeof item === "string" && isSchemaTypeLabel(item)) {
-          return [key, item.trim().toLowerCase()];
-        }
-        throw new TemplateValidationError(
-          `${name} values must be schema metadata, not example values.`,
-        );
+        return [key, safeSchemaTypeLabel(item, name)];
       }
       if (
         typeof item === "boolean" ||
@@ -199,4 +257,35 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function isSchemaTypeLabel(value: string) {
   return SCHEMA_TYPE_LABELS.has(value.trim().toLowerCase());
+}
+
+function safeFieldName(value: unknown, name: string) {
+  if (typeof value !== "string") {
+    throw new TemplateValidationError(`${name} must be schema metadata.`);
+  }
+  const trimmed = value.trim();
+  if (!/^[A-Za-z][A-Za-z0-9_.:-]{0,79}$/.test(trimmed)) {
+    throw new TemplateValidationError(`${name} has an unsafe field name.`);
+  }
+  return trimmed;
+}
+
+function safeSuggestedFieldRole(value: unknown) {
+  if (typeof value !== "string") {
+    throw new TemplateValidationError("suggestedFields role must be schema metadata.");
+  }
+  const normalized = value.trim().toLowerCase();
+  if (!SUGGESTED_FIELD_ROLES.has(normalized)) {
+    throw new TemplateValidationError("suggestedFields role must be schema metadata.");
+  }
+  return normalized;
+}
+
+function safeSchemaTypeLabel(value: unknown, name: string) {
+  if (typeof value === "string" && isSchemaTypeLabel(value)) {
+    return value.trim().toLowerCase();
+  }
+  throw new TemplateValidationError(
+    `${name} values must be schema metadata, not example values.`,
+  );
 }

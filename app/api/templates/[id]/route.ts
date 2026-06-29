@@ -1,11 +1,14 @@
 import { NextResponse } from "next/server";
 
+import { readJsonRequest } from "@/lib/apiSecurity";
 import { getRequestAuthContext } from "@/lib/auth/requestAuth";
 import {
   parseTemplatePatch,
   TemplateValidationError,
   updateTemplateDraft,
 } from "@/lib/templates";
+
+const TEMPLATE_REQUEST_MAX_BYTES = 20_000;
 
 type RouteContext = {
   params: Promise<{
@@ -20,7 +23,11 @@ export async function PATCH(request: Request, context: RouteContext) {
   const { id } = await context.params;
   let patch: ReturnType<typeof parseTemplatePatch>;
   try {
-    patch = parseTemplatePatch(await request.json());
+    const bodyResult = await readJsonRequest(request, TEMPLATE_REQUEST_MAX_BYTES);
+    if (!bodyResult.ok) {
+      return jsonNoStore({ error: bodyResult.error }, { status: bodyResult.status });
+    }
+    patch = parseTemplatePatch(bodyResult.body);
   } catch (error) {
     if (error instanceof TemplateValidationError) {
       return jsonNoStore({ error: error.message }, { status: 400 });

@@ -112,7 +112,9 @@ export function applyJoinRecommendation(
     id: crypto.randomUUID(),
     name: `${source.name} + ${target.name}`,
     fileType: "csv",
-    sourceType: "sample",
+    sourceType: source.sourceType === "upload" || target.sourceType === "upload"
+      ? "upload"
+      : "sample",
     uploadedAt: new Date().toISOString(),
     data: joined,
     rowCount: joined.length,

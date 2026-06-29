@@ -1,11 +1,14 @@
 import { NextResponse } from "next/server";
 
+import { readJsonRequest } from "@/lib/apiSecurity";
 import { getRequestAuthContext } from "@/lib/auth/requestAuth";
 import {
   FeedbackValidationError,
   parseFeedbackSubmission,
   saveFeedback,
 } from "@/lib/feedback";
+
+const FEEDBACK_REQUEST_MAX_BYTES = 12_000;
 
 export async function POST(request: Request) {
   const auth = await getRequestAuthContext(request);
@@ -20,7 +23,11 @@ export async function POST(request: Request) {
   }
 
   try {
-    const submission = parseFeedbackSubmission(await request.json());
+    const bodyResult = await readJsonRequest(request, FEEDBACK_REQUEST_MAX_BYTES);
+    if (!bodyResult.ok) {
+      return jsonNoStore({ error: bodyResult.error }, { status: bodyResult.status });
+    }
+    const submission = parseFeedbackSubmission(bodyResult.body);
     const saved = await saveFeedback(auth.userId, submission);
     return jsonNoStore({
       id: saved.id,

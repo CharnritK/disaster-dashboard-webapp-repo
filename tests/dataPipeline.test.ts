@@ -56,7 +56,11 @@ import {
   DECISION_TEMPLATES,
   validateDecisionBrief,
 } from "@/lib/decisionContext";
-import { buildDashboardProjectKit, buildDecisionHandoffPacket } from "@/lib/workflowExport";
+import {
+  acceptedCaveatsForReadiness,
+  buildDashboardProjectKit,
+  buildDecisionHandoffPacket,
+} from "@/lib/workflowExport";
 import { generateFallbackRecommendations, requestAIRecommendations } from "@/lib/recommendations";
 import { findLocationFields } from "@/lib/locationFields";
 import { enforceVizPolicy } from "@/lib/vizPolicy";
@@ -96,6 +100,24 @@ describe("data pipeline", () => {
     expect(dataset.profile?.potentialJoinFields).toContain("district_code");
     expect(dataset.profile?.potentialMetricFields).toContain("total_population");
     expect(dataset.profile?.columns.find((column) => column.columnName === "total_population")?.missingCount).toBe(1);
+  });
+
+  it("preserves leading-zero identifier fields and excludes them from metrics", () => {
+    const rows = parseCsv("admin_code,needs_score\n001,78\n010,62\n");
+    const dataset = withProfile(createTabularDataset("needs.csv", "csv", "sample", rows));
+    const adminCode = dataset.profile?.columns.find((column) => column.columnName === "admin_code");
+    const recommendation = generateDeterministicDashboardRecommendation(dataset);
+
+    expect(rows[0].admin_code).toBe("001");
+    expect(rows[1].admin_code).toBe("010");
+    expect(adminCode).toMatchObject({
+      inferredType: "string",
+      isPotentialJoinField: true,
+      isPotentialMetricField: false,
+    });
+    expect(dataset.profile?.potentialMetricFields).not.toContain("admin_code");
+    expect(recommendation.metricFields).not.toContain("admin_code");
+    expect(recommendation.charts.map((chart) => chart.metricField)).not.toContain("admin_code");
   });
 
   it("profiles lean descriptive statistics for numeric, date, and categorical fields", () => {
@@ -199,12 +221,13 @@ describe("data pipeline", () => {
   });
 
   it("recommends and applies compatible joins", () => {
-    const needs = withProfile(createTabularDataset("needs.csv", "csv", "sample", parseCsv("district_code,households\nD01,4\nD02,8\n")));
+    const needs = withProfile(createTabularDataset("needs.csv", "csv", "upload", parseCsv("district_code,households\nD01,4\nD02,8\n")));
     const population = withProfile(createTabularDataset("population.csv", "csv", "sample", parseCsv("district_code,total_population\nD01,100\nD02,200\n")));
     const [join] = generateDeterministicJoinRecommendations([needs, population]);
     const result = applyJoinRecommendation([needs, population], join);
 
     expect(join.sourceColumns[0]).toBe("district_code");
+    expect(result.dataset.sourceType).toBe("upload");
     expect(result.dataset.data?.[0].total_population).toBe(100);
     expect(result.dataset.data?.[0].__join_matched).toBe(true);
     expect(result.transformations[0].stepType).toBe("join");
@@ -1082,6 +1105,35 @@ describe("data pipeline", () => {
     expect(packet.aiAssistance.summary).toContain("deterministic review guidance");
   });
 
+  it("derives accepted export caveats from non-ready decision readiness", () => {
+    const brief = createDefaultDecisionBrief();
+    const dataset = withProfile(createTabularDataset(
+      "needs.csv",
+      "csv",
+      "sample",
+      parseCsv("district_name,needs_score\nNorth,78\n"),
+    ));
+    const quality = runQualityChecks(dataset, brief);
+    const readiness = assessDecisionReadiness(dataset, brief, quality).readiness;
+    const acceptedCaveats = acceptedCaveatsForReadiness(readiness);
+
+    expect(acceptedCaveats.length).toBeGreaterThan(0);
+
+    const packet = buildDecisionHandoffPacket({
+      acceptedCaveats,
+      decisionBrief: brief,
+      decisionReadiness: readiness,
+      evidenceCoverage: buildEvidenceCoverageSummary([dataset], brief),
+      datasets: [dataset],
+      selectedJoinRecommendations: [],
+      qualityResults: quality,
+      transformationLog: [],
+      aiMode: "deterministic",
+    });
+
+    expect(packet.dossier.acceptedCaveats).toEqual(acceptedCaveats);
+  });
+
   it("builds a handoff dossier v2 with owner, blockers, source register, and lineage", () => {
     const brief = createDefaultDecisionBrief();
     const dataset = withProfile(createTabularDataset(
@@ -1316,7 +1368,7 @@ describe("data pipeline", () => {
     expect(kit.readme).toContain("`review-dataset.csv`: formula-neutralized review dataset rows");
     expect(kit.readme).toContain("`decision-review-log.json`: decision context");
     const dashboardConfig = JSON.parse(kit.files["dashboard-config.json"]);
-    const handoffLog = JSON.parse(kit.files["decision-handoff-log.json"]);
+    const handoffLog = JSON.parse(kit.files["decision-review-log.json"]);
     expect(dashboardConfig.charts.length).toBeGreaterThan(0);
     expect(kit.decisionHandoff.dossier.acknowledgedBlockerIds).toEqual([
       "blocker-1",
