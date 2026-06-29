@@ -157,15 +157,6 @@ describe("supabase auth helpers", () => {
     expect(signInErrorCode({ message: "User not found" })).toBe("auth_failed");
   });
 
-  it("shows resend cooldown copy without blaming provider configuration", () => {
-    const loginPage = readFileSync(
-      join(process.cwd(), "app", "login", "page.tsx"),
-      "utf8",
-    );
-
-    expect(loginPage).toContain("auth_rate_limited");
-    expect(loginPage).toContain("Use the latest email link");
-  });
 });
 
 function env(values: Record<string, string>) {

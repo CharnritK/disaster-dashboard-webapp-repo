@@ -117,7 +117,7 @@ const DECISION_PLAYBOOK_COPY: Record<
     handoffLanguage:
       "Use this handoff as a review packet for prioritization. It identifies covered, ambiguous, and missing evidence, but does not authorize operational action without owner review.",
     nextCollectionAsks: [
-      "Confirm a stable admin area or p-code field.",
+      "Confirm a stable admin area or P-code / COD admin code field.",
       "Add the current need severity and affected population estimate.",
       "Document response gap and available capacity using consistent units.",
     ],
@@ -217,9 +217,9 @@ export function buildSuggestedDataCollectionTemplate(
       type: "text",
       required: true,
       evidenceNeed: "Admin geography",
-      description: "Stable join key or p-code for the administrative area.",
-      example: "D01",
-      caveat: "Use the same code system across every uploaded dataset.",
+      description: "Stable P-code / COD admin code for the administrative area.",
+      example: "MDG01",
+      caveat: "Use the same COD administrative code system across every uploaded dataset.",
     },
     {
       name: "observation_date",
@@ -588,13 +588,13 @@ const RESPONSE_PRIORITIZATION_EVIDENCE: EvidenceRule[] = [
   {
     id: "admin-geography",
     label: "Admin geography",
-    patterns: [/district|admin|region|province|county|pcode|code/i],
-    strongTerms: ["admin", "pcode", "district", "region", "province", "county", "code"],
+    patterns: [/district|admin|region|province|county|pcode|adm\d?_?p?code/i],
+    strongTerms: ["admin", "pcode", "district", "region", "province", "county"],
     usefulTypes: ["string"],
     caveat:
       "Do not compare response priorities without a usable geographic or administrative field.",
     nextAction:
-      "Add or combine a stable area name or p-code field before using rankings for action.",
+      "Add or combine a stable area name or P-code / COD admin code field before using rankings for action.",
   },
   {
     id: "need-severity",

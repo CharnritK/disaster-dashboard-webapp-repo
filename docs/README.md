@@ -9,6 +9,8 @@ This folder holds the project-facing documentation for Dashboard Copilot.
 - [Release Readiness Checklist](release-readiness.md): controlled-beta gates, current staging-preview state, and production approval boundary.
 - [Deployment Smoke Tests](deployment-smoke-tests.md): safe preview validation steps and DB/privacy checks.
 - [Data Retention Draft](data-retention.md): retention policy posture and automation gate.
+- [Production Readiness Decision](decisions/production-readiness.md): explicit production approval boundary and unresolved owner decisions.
+- [Upload Viability Decision](decisions/upload-viability.md): approved 10 MB per-file upload cap decision and remaining 25 MB/performance gate.
 - [Visualization Policy](visualization-policy.md): chart, map, denominator, caveat, and accessibility guardrails enforced by the app.
 - [Codex Starter Prompts](codex-starter-prompts.md): reusable prompts for extending, reviewing, or adapting the project with Codex.
 - [Showcase Script](showcase-script.md): an onboarding/proof flow for presenting the project without treating the demo as launch approval.

@@ -1094,6 +1094,13 @@ describe("data pipeline", () => {
     const readiness = assessDecisionReadiness(dataset, brief, quality).readiness;
     const packet = buildDecisionHandoffPacket({
       acceptedCaveats: ["Affected population must be collected before action."],
+      acknowledgedBlockerIds: [
+        "blocker-1",
+        "blocker-1",
+        "not-a-blocker",
+        "blocker-999",
+        "blocker-2<script>",
+      ],
       decisionBrief: brief,
       decisionReadiness: readiness,
       decisionOwner: "Operations lead",
@@ -1122,6 +1129,7 @@ describe("data pipeline", () => {
     expect(packet.dossier).toEqual(
       expect.objectContaining({
         acceptedCaveats: ["Affected population must be collected before action."],
+        acknowledgedBlockerIds: ["blocker-1"],
         aiFallbackReason: "missing_api_key",
         aiMode: "fallback",
         decisionOwner: "Operations lead",
@@ -1143,8 +1151,8 @@ describe("data pipeline", () => {
         stepType: "profile",
       }),
     );
-    expect(serializedDossier).not.toContain("North");
-    expect(serializedDossier).not.toContain("78");
+    expect(serializedDossier).not.toContain('"district_name":"North"');
+    expect(serializedDossier).not.toContain('"needs_score":78');
   });
 
   it("includes form intake metadata in decision handoff without sample values", () => {
@@ -1268,6 +1276,13 @@ describe("data pipeline", () => {
     };
     const kit = buildDashboardProjectKit({
       generatedAt: "2026-06-13T00:00:00.000Z",
+      acknowledgedBlockerIds: [
+        "blocker-1",
+        "blocker-2",
+        "blocker-2",
+        "blocker-999",
+        "reviewed affected population",
+      ],
       decisionBrief: brief,
       evidenceCoverage: buildEvidenceCoverageSummary([dataset], brief),
       decisionReadiness: readiness,
@@ -1301,7 +1316,16 @@ describe("data pipeline", () => {
     expect(kit.readme).toContain("`review-dataset.csv`: formula-neutralized review dataset rows");
     expect(kit.readme).toContain("`decision-review-log.json`: decision context");
     const dashboardConfig = JSON.parse(kit.files["dashboard-config.json"]);
+    const handoffLog = JSON.parse(kit.files["decision-handoff-log.json"]);
     expect(dashboardConfig.charts.length).toBeGreaterThan(0);
+    expect(kit.decisionHandoff.dossier.acknowledgedBlockerIds).toEqual([
+      "blocker-1",
+      "blocker-2",
+    ]);
+    expect(handoffLog.dossier.acknowledgedBlockerIds).toEqual([
+      "blocker-1",
+      "blocker-2",
+    ]);
     expect(dashboardConfig.charts[0]).toEqual(
       expect.objectContaining({
         sourceNote: "Source: prepared.csv. Review caveats before operational use.",

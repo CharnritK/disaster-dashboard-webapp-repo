@@ -27,10 +27,10 @@ next-env.d.ts
 *.pem
 .swc
 .codex-tmp/
-/artifacts/
-/outputs/
+/tmp/
 
 # debug
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*

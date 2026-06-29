@@ -5,6 +5,7 @@ import {
   firstQueryValue,
   normalizeAuthRedirectPath,
 } from "@/lib/auth/redirects";
+import { loginMessage } from "@/lib/auth/loginMessaging";
 import { getSupabasePublicConfig } from "@/lib/supabase/env";
 
 type LoginPageProps = {
@@ -30,7 +31,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
         <h1 id="login-title">Sign in to Dashboard Copilot</h1>
         <p className="auth-lede">
           Authenticated access unlocks quota-governed AI assistance. The public
-          workflow remains deterministic and session-only.
+          demo remains a guided, session-only flow.
         </p>
 
         {message ? (
@@ -50,12 +51,15 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             disabled={!authConfigured}
             required
           />
+          <p className="auth-helper">
+            We use your email only to send a sign-in link.
+          </p>
           <button
             className="primary-button"
             type="submit"
             disabled={!authConfigured}
           >
-            Send sign-in link
+            {authConfigured ? "Send sign-in link" : "Sign-in unavailable"}
           </button>
         </form>
 
@@ -66,62 +70,4 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
       </section>
     </main>
   );
-}
-
-function loginMessage({
-  authConfigured,
-  error,
-  sent,
-  status,
-}: {
-  authConfigured: boolean;
-  error?: string;
-  sent?: string;
-  status?: string;
-}) {
-  if (!authConfigured) {
-    return {
-      tone: "warning",
-      copy: "Supabase Auth is not configured in this environment.",
-    };
-  }
-
-  if (sent === "1") {
-    return {
-      tone: "success",
-      copy: "Check your email for the secure sign-in link.",
-    };
-  }
-
-  if (status === "signed_out") {
-    return {
-      tone: "neutral",
-      copy: "You have been signed out.",
-    };
-  }
-
-  if (error === "invalid_email") {
-    return {
-      tone: "warning",
-      copy: "Enter a valid email address.",
-    };
-  }
-
-  if (error === "auth_rate_limited") {
-    return {
-      tone: "warning",
-      copy:
-        "A sign-in link was requested recently. Use the latest email link or wait a minute before requesting another.",
-    };
-  }
-
-  if (error === "auth_failed" || error === "callback_failed") {
-    return {
-      tone: "warning",
-      copy:
-        "Sign-in could not be completed. Try again or check the provider configuration.",
-    };
-  }
-
-  return null;
 }

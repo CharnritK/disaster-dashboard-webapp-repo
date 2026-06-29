@@ -64,7 +64,7 @@ Start with these documents if you are reviewing, submitting, or adapting the pro
 - [Typhoon Kestrel Sample Guide](data/samples/typhoon-kestrel-demo-guide.md): synthetic multi-file disaster scenario for richer review demos.
 - [Repo-local Codex Skills](docs/copilot/): skills for visualization standards, bootstrapping another decision-support app, and adapting decision templates.
 - [Controlled-Beta Handoff v1.1](plan/dashboard_copilot_codex_handoff_v1_1/README.md): active controlled-beta execution package, task history, QA evidence, and remaining gates.
-- [Final Handoff Package](plan/final_handoff_package/README.md): foundation and release-gate context for the controlled-beta work.
+- [Plan Archive](plan/archive/README.md): historical prompt packs and design-kit artifacts retained only for traceability.
 
 ## Run Locally
 
@@ -98,7 +98,12 @@ Deterministic mode is the default launch posture. AI may be enabled only after t
 
 Persistent storage is allowed only for account/profile metadata, AI usage, AI events, feedback, custom templates, template versions, and non-sensitive eval metadata. Uploaded files, uploaded rows, prepared rows, full datasets, exported reports/files, full LLM request bodies, full prompts, API keys, service-role keys, private tokens, and sensitive operational data must not be persisted.
 
-Current status as of 2026-06-28: the fork main branch contains the completed product-standout work, PR #7 is open for showcase salvage assets, obsolete pending branches have been removed, and production remains untouched. Public launch remains blocked until product, domain, safety/privacy, export, accessibility, release, and support owners are named and their gates are closed or explicitly deferred.
+Current status as of 2026-06-29: the public demo is appropriate for sharing as
+a deterministic, synthetic-sample preview. Supabase-backed magic-link login has
+been user-confirmed for controlled-beta testing, and production remains
+untouched. Production launch remains blocked until product, domain,
+safety/privacy, export, accessibility, release, and support owners are named and
+their gates are closed or explicitly deferred.
 
 ## Configuration
 
@@ -128,7 +133,7 @@ LLM_DASHBOARD_REQUEST_TIMEOUT_MS=45000
 LLM_HANDOFF_REQUEST_TIMEOUT_MS=30000
 LLM_MAX_COMPLETION_TOKENS=3200
 AI_DAILY_QUOTA=20
-MAX_UPLOAD_SIZE_MB=1
+MAX_UPLOAD_SIZE_MB=10
 RECOMMEND_REQUEST_MAX_BYTES=200000
 RECOMMEND_RATE_LIMIT_MAX_REQUESTS=20
 RECOMMEND_RATE_LIMIT_WINDOW_MS=60000
@@ -158,7 +163,7 @@ When LLM recommendations are on, the app sends minimized dataset profile metadat
 
 ## Current Controlled-Beta Scope
 
-- CSV and XLSX upload validation with a 1MB default limit.
+- CSV and XLSX upload validation with a 10 MB per-file default limit.
 - Bundled multi-dataset sample with needs assessment, population baseline, join coverage, trend, demographic, and quality-review signals.
 - Decision templates for response prioritization plus beta service gap monitoring and preparedness risk screening workflows.
 - Deterministic profiling, join recommendations, dashboard recommendations, combined preparation/quality checks, and scoped preparation transformation logging.

@@ -8,7 +8,12 @@ import type { DecisionBrief, DecisionReadinessResult } from "@/types/decision";
 import type { AIRecommendationResponse, DashboardRecommendation, JoinRecommendation, QualityConcern } from "@/types/recommendations";
 import type { QualityCheckResult } from "@/types/quality";
 import type { TransformationStep } from "@/types/transformations";
-import type { WorkflowStep } from "@/lib/config";
+import { canActivateWorkflowStep, type WorkflowStep } from "@/lib/config";
+import {
+  DEMO_AI_CTA,
+  DEMO_SAFETY_STRIP,
+  DEMO_SESSION_CHIP,
+} from "@/lib/demoMessaging";
 import { buildDeterministicDecisionHandoffSummary } from "@/lib/copilotHandoff";
 import { loadSampleDatasets, parseFile, type SampleDatasetKind } from "@/lib/fileParsers";
 import { createFormDatasetFromRows } from "@/lib/formIntake";
@@ -25,13 +30,19 @@ import {
   validateDecisionBrief,
 } from "@/lib/decisionContext";
 import {
+  canGenerateDashboard,
+  getReadinessBlockers,
+  readinessAcknowledgementScopeKey,
+  watermarkLabelForStatus,
+} from "@/lib/readinessGate";
+import {
   generateDeterministicDashboardRecommendation,
   reconcileDashboardRecommendation
 } from "@/lib/dashboardRecommendations";
 import { computeDashboardInsightFacts } from "@/lib/dashboardInsights";
 import { downloadText, toCsv } from "@/lib/exportCsv";
 import { exportElementAsPng } from "@/lib/exportPng";
-import { exportElementAsPdf } from "@/lib/exportPdf";
+import { exportElementAsPdf, formatPdfTimestamp } from "@/lib/exportPdf";
 import { buildDashboardProjectKit, buildDecisionHandoffPacket } from "@/lib/workflowExport";
 import { UsageMeter } from "@/components/UsageMeter";
 import { FeedbackForm } from "@/components/FeedbackForm";
@@ -74,6 +85,13 @@ type WorkflowState = {
   warning?: string;
 };
 
+type ReadinessAcknowledgementState = {
+  scopeKey: string;
+  blockerIds: string[];
+};
+
+const EMPTY_ACKNOWLEDGED_BLOCKER_IDS: string[] = [];
+
 const initialState: WorkflowState = {
   decisionBrief: createDefaultDecisionBrief(),
   datasets: [],
@@ -103,44 +121,46 @@ export default function DashboardCopilotApp({
   const [loading, setLoading] = useState(false);
   const [handoffLoading, setHandoffLoading] = useState(false);
   const [llmEnabled, setLlmEnabled] = useState(aiApiAvailable);
+  const [readinessAcknowledgement, setReadinessAcknowledgement] =
+    useState<ReadinessAcknowledgementState>({
+      scopeKey: "",
+      blockerIds: [],
+    });
   const dashboardRef = useRef<HTMLDivElement>(null);
+  const exportDashboardRef = useRef<HTMLDivElement>(null);
   const workflowShellRef = useRef<HTMLDivElement>(null);
 
   const activeDataset = state.preparedDataset ?? state.datasets.find((dataset) => dataset.data?.length) ?? state.datasets[0];
   const joinRecommendations = state.aiRecommendations?.joinRecommendations ?? [];
   const joinPlan = selectJoinPlan(state.datasets, joinRecommendations);
   const missingDecisionFields = validateDecisionBrief(state.decisionBrief);
-  const evidenceCoverage = useMemo(
-    () =>
-      state.datasets.length > 0
-        ? buildEvidenceCoverageSummary(state.datasets, state.decisionBrief)
-        : undefined,
-    [state.datasets, state.decisionBrief],
-  );
-  const repairActions = useMemo(
-    () =>
-      workspaceMode
-        ? buildRepairActions({
-            aiFallbackReason: state.aiRecommendations?.fallbackReason,
-            evidenceCoverage,
-            qualityResults: state.qualityResults,
-            readiness: state.decisionReadiness,
-            workflowStep: state.currentStep,
-          })
-        : [],
-    [
-      evidenceCoverage,
-      state.aiRecommendations?.fallbackReason,
-      state.currentStep,
-      state.decisionReadiness,
-      state.qualityResults,
-      workspaceMode,
-    ],
+  const readinessBlockers = getReadinessBlockers(state.decisionReadiness);
+  const acknowledgementScopeKey = readinessAcknowledgementScopeKey({
+    decisionBrief: state.decisionBrief,
+    preparedDataset: state.preparedDataset,
+    decisionReadiness: state.decisionReadiness,
+  });
+  const acknowledgedBlockerIds =
+    readinessAcknowledgement.scopeKey === acknowledgementScopeKey
+      ? readinessAcknowledgement.blockerIds
+      : EMPTY_ACKNOWLEDGED_BLOCKER_IDS;
+  const acknowledgedBlockerIdSet = new Set(acknowledgedBlockerIds);
+  const dashboardGenerationEnabled = canGenerateDashboard(
+    state.decisionReadiness,
+    acknowledgedBlockerIdSet,
   );
 
   useEffect(() => {
     workflowShellRef.current?.scrollIntoView({ block: "start" });
   }, [state.currentStep]);
+
+  useEffect(() => {
+    setReadinessAcknowledgement((current) =>
+      current.scopeKey === acknowledgementScopeKey
+        ? current
+        : { scopeKey: acknowledgementScopeKey, blockerIds: [] },
+    );
+  }, [acknowledgementScopeKey]);
 
   useEffect(() => {
     if (!workspaceMode || !isWorkspaceWorkflowPath(pathname)) return;
@@ -151,7 +171,13 @@ export default function DashboardCopilotApp({
       if (isStepCompatibleWithWorkspacePath(current.currentStep, pathname)) {
         return current;
       }
-      if (canNavigateToStepFromState(current, routeStep)) {
+      if (
+        canNavigateToStepFromState(
+          current,
+          routeStep,
+          new Set(acknowledgedBlockerIds),
+        )
+      ) {
         return {
           ...current,
           currentStep: routeStep,
@@ -163,12 +189,48 @@ export default function DashboardCopilotApp({
         warning: "Complete the earlier workflow steps before opening this workspace view.",
       };
     });
-  }, [pathname, workspaceMode]);
+  }, [acknowledgedBlockerIds, pathname, workspaceMode]);
 
   function syncWorkspaceRoute(step: WorkflowStep) {
     if (!workspaceMode) return;
     const nextPath = workspacePathForStep(step);
     if (pathname !== nextPath) router.push(nextPath);
+  }
+
+  function updateReadinessBlockerAcknowledgement(
+    blockerId: string,
+    acknowledged: boolean,
+  ) {
+    setReadinessAcknowledgement((current) => {
+      const currentIds =
+        current.scopeKey === acknowledgementScopeKey ? current.blockerIds : [];
+      const nextIds = acknowledged
+        ? Array.from(new Set([...currentIds, blockerId]))
+        : currentIds.filter((id) => id !== blockerId);
+
+      return {
+        scopeKey: acknowledgementScopeKey,
+        blockerIds: nextIds,
+      };
+    });
+    setState((current) =>
+      current.dashboardRecommendation
+        ? {
+            ...current,
+            dashboardRecommendation: undefined,
+            handoffSummary: undefined,
+            warning:
+              "Dashboard recommendations were cleared because readiness blocker acknowledgements changed.",
+            currentStep:
+              current.currentStep === "dashboard" || current.currentStep === "export"
+                ? "validate"
+                : current.currentStep,
+          }
+        : current,
+    );
+    if (state.currentStep === "dashboard" || state.currentStep === "export") {
+      syncWorkspaceRoute("validate");
+    }
   }
 
   async function addFiles(files: FileList | null) {
@@ -344,7 +406,7 @@ export default function DashboardCopilotApp({
           );
         }
       } else {
-        warning = "AI is off. Deterministic profiling, evidence coverage, readiness checks, and dashboard review guidance remain available.";
+        warning = aiOffWorkflowWarning(demoMode);
       }
       setState((current) => ({
         ...current,
@@ -433,6 +495,12 @@ export default function DashboardCopilotApp({
   async function generateDashboardFromValidation() {
     if (loading) return;
     if (!state.preparedDataset) return;
+    if (!dashboardGenerationEnabled) {
+      setErrors([
+        "Acknowledge every unresolved evidence blocker before generating a review-only dashboard.",
+      ]);
+      return;
+    }
     const preparedDataset = state.preparedDataset.profile
       ? state.preparedDataset
       : { ...state.preparedDataset, profile: profileDataset(state.preparedDataset) };
@@ -507,7 +575,7 @@ export default function DashboardCopilotApp({
             warning = llmFallbackWarning(ai, "dashboard view");
           }
         } else {
-          warning = "AI is off. Deterministic profiling, evidence coverage, readiness checks, and dashboard review guidance remain available.";
+          warning = aiOffWorkflowWarning(demoMode);
         }
       } catch (error) {
         warning = llmFallbackWarning(
@@ -543,6 +611,7 @@ export default function DashboardCopilotApp({
         ? [state.preparedDataset]
         : [];
     const packet = buildDecisionHandoffPacket({
+      acknowledgedBlockerIds,
       decisionBrief: state.decisionBrief,
       evidenceCoverage: buildEvidenceCoverageSummary(datasets, state.decisionBrief),
       decisionReadiness: state.decisionReadiness,
@@ -565,6 +634,7 @@ export default function DashboardCopilotApp({
       ? state.datasets
       : [state.preparedDataset];
     const kit = buildDashboardProjectKit({
+      acknowledgedBlockerIds,
       decisionBrief: state.decisionBrief,
       evidenceCoverage: buildEvidenceCoverageSummary(datasets, state.decisionBrief),
       decisionReadiness: state.decisionReadiness,
@@ -595,6 +665,7 @@ export default function DashboardCopilotApp({
       const evidenceCoverage = buildEvidenceCoverageSummary(datasets, state.decisionBrief);
       const aiMode = currentAiMode(llmEnabled, state.aiRecommendations, state.warning);
       const packet = buildDecisionHandoffPacket({
+        acknowledgedBlockerIds,
         decisionBrief: state.decisionBrief,
         evidenceCoverage,
         decisionReadiness: state.decisionReadiness,
@@ -642,16 +713,21 @@ export default function DashboardCopilotApp({
   }
 
   async function exportReport() {
-    if (!dashboardRef.current || !state.preparedDataset) return;
+    if (!state.preparedDataset) return;
+    const exportElement = getDashboardExportElement(exportDashboardRef.current);
+    if (!exportElement) {
+      setErrors(["Export surface is still rendering. Try again in a moment."]);
+      return;
+    }
     try {
       setLoading(true);
-      await exportElementAsPdf(dashboardRef.current, {
+      await exportElementAsPdf(exportElement, {
         filename: "dashboard-copilot-report.pdf",
         title: `Dashboard Copilot Report: ${state.preparedDataset.name}`,
         metadata: [
           `Rows: ${state.preparedDataset.rowCount ?? 0}`,
           `Columns: ${state.preparedDataset.columnCount ?? 0}`,
-          `Generated: ${new Date().toLocaleString()}`
+          `Generated: ${formatPdfTimestamp()}`
         ],
         qualityResults: state.qualityResults,
         decisionReadiness: state.decisionReadiness,
@@ -665,10 +741,18 @@ export default function DashboardCopilotApp({
   }
 
   async function exportPng() {
-    if (!dashboardRef.current) return;
+    const exportElement = getDashboardExportElement(exportDashboardRef.current);
+    if (!exportElement) {
+      setErrors(["Export surface is still rendering. Try again in a moment."]);
+      return;
+    }
     try {
       setLoading(true);
-      await exportElementAsPng(dashboardRef.current, "dashboard-copilot-dashboard.png");
+      await exportElementAsPng(
+        exportElement,
+        "dashboard-copilot-dashboard.png",
+        { watermarkLabel: watermarkLabelForStatus(state.decisionReadiness?.status) },
+      );
     } catch {
       setErrors(["PNG export failed. Try again after the dashboard finishes rendering."]);
     } finally {
@@ -682,13 +766,33 @@ export default function DashboardCopilotApp({
     if (step === "profile") return state.profilesReady;
     if (step === "recommend") return Boolean(state.aiRecommendations);
     if (step === "validate") return Boolean(state.preparedDataset);
-    if (step === "dashboard") return Boolean(state.preparedDataset && state.dashboardRecommendation);
-    if (step === "export") return Boolean(state.preparedDataset && state.dashboardRecommendation);
+    if (step === "dashboard") {
+      return Boolean(
+        state.preparedDataset &&
+          state.dashboardRecommendation &&
+          dashboardGenerationEnabled,
+      );
+    }
+    if (step === "export") {
+      return Boolean(
+        state.preparedDataset &&
+          state.dashboardRecommendation &&
+          dashboardGenerationEnabled,
+      );
+    }
     return false;
   }
 
   function navigateToStep(step: WorkflowStep) {
-    if (!canNavigateToStep(step)) return;
+    if (
+      !canActivateWorkflowStep({
+        currentStep: state.currentStep,
+        targetStep: step,
+        canNavigateTo: canNavigateToStep,
+      })
+    ) {
+      return;
+    }
     setState((current) => ({ ...current, currentStep: step }));
     syncWorkspaceRoute(step);
   }
@@ -698,7 +802,7 @@ export default function DashboardCopilotApp({
       setLlmEnabled(false);
       setState((current) => ({
         ...current,
-        warning: "AI is off. Deterministic profiling, evidence coverage, readiness checks, and dashboard review guidance remain available."
+        warning: aiOffWorkflowWarning(demoMode)
       }));
       return;
     }
@@ -708,8 +812,8 @@ export default function DashboardCopilotApp({
       warning: enabled
         ? undefined
         : current.aiRecommendations?.source === "llm" || current.dashboardRecommendation
-          ? "AI is off. Deterministic profiling, evidence coverage, readiness checks, and dashboard review guidance remain available. Existing generated guidance remains until you rerun the workflow or change data."
-          : "AI is off. Deterministic profiling, evidence coverage, readiness checks, and dashboard review guidance remain available."
+          ? "AI is off. Deterministic profiling, evidence coverage, readiness checks, and dashboard recommendations remain available. Existing generated recommendations remain until you rerun the workflow or change data."
+          : aiOffWorkflowWarning(demoMode)
     }));
   }
 
@@ -745,15 +849,22 @@ export default function DashboardCopilotApp({
           llmEnabled={llmEnabled}
           llmAvailable={aiApiAvailable}
           onLlmEnabledChange={handleLlmEnabledChange}
+          showLlmToggle={!demoMode}
           usageSlot={<UsageMeter enabled={aiApiAvailable} />}
           ctaSlot={demoMode ? (
             <a className="primary-action compact" href="/login?next=/app/data">
-              Sign in to use AI-assisted workflow
+              {DEMO_AI_CTA}
             </a>
           ) : undefined}
         />
       )}
       <div className="app-shell" ref={workflowShellRef}>
+        {demoMode ? (
+          <div className="demo-framing" role="note" aria-label="Public demo boundaries">
+            <span>{DEMO_SAFETY_STRIP}</span>
+            <span className="demo-session-chip">{DEMO_SESSION_CHIP}</span>
+          </div>
+        ) : null}
         <StepIndicator currentStep={state.currentStep} canNavigateTo={canNavigateToStep} onNavigate={navigateToStep} />
         {errors.length > 0 && <Notice tone="error" items={errors} />}
         {state.warning && <Notice tone="warn" items={[state.warning]} />}
@@ -769,6 +880,7 @@ export default function DashboardCopilotApp({
                 onAiAssistedEnabledChange={handleLlmEnabledChange}
                 onChange={updateDecisionBrief}
                 onContinue={proceedFromDecisionBrief}
+                sampleOnly={demoMode}
               />
             )}
             {state.currentStep === "upload" && (
@@ -813,9 +925,12 @@ export default function DashboardCopilotApp({
                   qualityResults: state.qualityResults,
                 })}
                 decisionReadiness={state.decisionReadiness}
-                repairActions={repairActions}
+                readinessBlockers={readinessBlockers}
+                acknowledgedBlockerIds={acknowledgedBlockerIds}
+                canGenerateDashboard={dashboardGenerationEnabled}
                 transformationLog={state.transformationLog}
                 isWorking={loading}
+                onBlockerAcknowledgementChange={updateReadinessBlockerAcknowledgement}
                 onProceed={generateDashboardFromValidation}
               />
             )}
@@ -851,11 +966,12 @@ export default function DashboardCopilotApp({
                 <FeedbackForm enabled={aiApiAvailable} />
                 <div className="export-render-target" aria-hidden="true" inert>
                   <DashboardPreview
-                    refNode={dashboardRef}
+                    refNode={exportDashboardRef}
                     dataset={state.preparedDataset}
                     decisionReadiness={state.decisionReadiness}
                     recommendation={state.dashboardRecommendation}
                     expandInsights
+                    exportMode
                     interactive={false}
                     showInsightLinks={false}
                   />
@@ -876,14 +992,37 @@ export default function DashboardCopilotApp({
   );
 }
 
-function canNavigateToStepFromState(state: WorkflowState, step: WorkflowStep) {
+function getDashboardExportElement(element: HTMLDivElement | null) {
+  if (!element?.classList.contains("dashboard-export-layout")) {
+    return null;
+  }
+  return element;
+}
+
+function canNavigateToStepFromState(
+  state: WorkflowState,
+  step: WorkflowStep,
+  acknowledgedBlockerIds: ReadonlySet<string>,
+) {
   if (step === "brief") return true;
   if (step === "upload") return validateDecisionBrief(state.decisionBrief).length === 0;
   if (step === "profile") return state.profilesReady;
   if (step === "recommend") return Boolean(state.aiRecommendations);
   if (step === "validate") return Boolean(state.preparedDataset);
-  if (step === "dashboard") return Boolean(state.preparedDataset && state.dashboardRecommendation);
-  if (step === "export") return Boolean(state.preparedDataset && state.dashboardRecommendation);
+  if (step === "dashboard") {
+    return Boolean(
+      state.preparedDataset &&
+        state.dashboardRecommendation &&
+        canGenerateDashboard(state.decisionReadiness, acknowledgedBlockerIds),
+    );
+  }
+  if (step === "export") {
+    return Boolean(
+      state.preparedDataset &&
+        state.dashboardRecommendation &&
+        canGenerateDashboard(state.decisionReadiness, acknowledgedBlockerIds),
+    );
+  }
   return false;
 }
 
@@ -995,6 +1134,12 @@ function currentAiMode(
   if (recommendations?.source === "llm") return "llm";
   if (recommendations?.fallbackReason || warning) return "fallback";
   return "deterministic";
+}
+
+function aiOffWorkflowWarning(demoMode: boolean) {
+  return demoMode
+    ? "Guided flow without AI is active for the public demo."
+    : "AI is off. Deterministic profiling, evidence coverage, readiness checks, and dashboard recommendations remain available.";
 }
 
 function qualityIssueSummary(issue: QualityCheckResult) {

@@ -1,5 +1,6 @@
 import type { Dataset } from "@/types/dataset";
 import type { JoinRecommendation } from "@/types/recommendations";
+import { isAdminCodeField } from "./locationFields";
 
 function normalize(value: unknown) {
   return String(value ?? "").trim().toLowerCase();
@@ -47,6 +48,13 @@ function scoreJoin(source: Dataset, target: Dataset, sourceColumn: string, targe
   const intersection = Array.from(sourceSet).filter((value) => targetSet.has(value));
   const overlap = intersection.length / Math.max(Math.min(sourceSet.size, targetSet.size), 1);
   const sourceMatched = sourceValues.filter((value) => targetSet.has(value)).length / Math.max(sourceValues.length, 1);
-  const nameScore = sourceColumn.toLowerCase() === targetColumn.toLowerCase() ? 0.35 : 0.12;
+  const sameAdminCodeVocabulary =
+    isAdminCodeField(sourceColumn) && isAdminCodeField(targetColumn);
+  const nameScore =
+    sourceColumn.toLowerCase() === targetColumn.toLowerCase()
+      ? 0.35
+      : sameAdminCodeVocabulary
+        ? 0.28
+        : 0.12;
   return { overlap, sourceMatched, confidence: nameScore + overlap * 0.5 + sourceMatched * 0.2 };
 }

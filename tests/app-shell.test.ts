@@ -20,6 +20,18 @@ describe("authenticated app shell", () => {
     expect(workflowShell).toContain("DashboardCopilotApp");
   });
 
+  it("captures dashboard exports from a dedicated static export surface", () => {
+    const app = readFileSync(
+      join(process.cwd(), "components", "DashboardCopilotApp.tsx"),
+      "utf8",
+    );
+
+    expect(app).toContain("const exportDashboardRef = useRef<HTMLDivElement>(null)");
+    expect(app).toContain("getDashboardExportElement(exportDashboardRef.current)");
+    expect(app).toContain('classList.contains("dashboard-export-layout")');
+    expect(app).toContain("refNode={exportDashboardRef}");
+  });
+
   it("declares operational workspace routes and route-backed workflow state", () => {
     const routes = [
       join(process.cwd(), "app", "app", "(workflow)", "data", "page.tsx"),
@@ -51,7 +63,12 @@ describe("authenticated app shell", () => {
 
     expect(workflow).toContain('role="tablist"');
     expect(workflow).toContain("dashboard-mobile-panel");
+    expect(workflow).toContain("dashboard-export-layout");
     expect(styles).toContain(".dashboard-mobile-tabs");
     expect(styles).toContain(".dashboard-mobile-panel.active");
+    expect(styles).toContain(".dashboard-export-layout .dashboard-grid");
+    expect(styles).toContain("grid-template-columns: repeat(2, minmax(0, 1fr)) !important");
+    expect(styles).toContain(".dashboard-export-layout .pie-layout");
+    expect(styles).toContain(".dashboard-export-layout .bar-row");
   });
 });
