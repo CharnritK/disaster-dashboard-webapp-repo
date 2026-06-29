@@ -14,7 +14,7 @@ Reviewers cited paths from memory; the real paths/facts are:
 
 | Claim in reviews | Verified reality | Impact on tasks |
 |---|---|---|
-| `config.ts:11` `MAX_UPLOAD_SIZE_MB` default 1 | ✅ `lib/config.ts:11-15` — default **1**, env-overridable, min 0.1 | Task **D1** valid |
+| `config.ts:11` `MAX_UPLOAD_SIZE_MB` default 1 | ✅ `lib/config.ts:11-15` — default now **10**, env-overridable, min 0.1 | Task **D1** partially complete |
 | Step‑5 label "Dataset" ambiguous | ✅ `components/WorkflowComponents.tsx:71` — `validate: "Dataset"` (step id is `validate`) | Task **A4** valid, trivial |
 | `WorkflowComponents.tsx:4210` LandingHero | Component exists in same file (line nums drift) | Task **A1** valid |
 | Demo can't upload / `forceDeterministic` | ✅ `components/DashboardCopilotApp.tsx:88,93,98-99,751,756` — `onFiles={demoMode ? undefined : addFiles}`, `sampleOnly={demoMode}` | Preserve; Task **B5** test |
@@ -66,7 +66,7 @@ Frequency = # of the 3 reviews that raised it. Confidence = High (≥2 reviews *
 | F5 | **Step‑5 label "Dataset"** ambiguous → "Validate"/"Readiness". | 3 | Med (clarity) | High | `WorkflowComponents.tsx:71` |
 | F6 | **AI copy conflict** — "turn on AI-assisted workflow" while toggle is Unavailable; hide inert toggle in demo, fix helper copy. | 3 | Med (looks broken) | High | `DashboardCopilotApp.tsx:1017`, `WorkflowComponents.tsx` |
 | F7 | **A11y live-verify**: modal focus trap, APG tablist keyboard, dark-mode focus-ring contrast, axe pass, async `aria-live`. | 3 | High (public-sector) | Med→High | a11y inferred; Lighthouse 96 (Gemini) |
-| F8 | **Upload cap 1 MB** unrealistic → raise (10–25 MB) + progress + row/col counts pre-commit (authed). | 2 (Claude, GPT) | High (authed) | High | `lib/config.ts:13` |
+| F8 | **Upload cap was 1 MB** unrealistic → default raised to 10 MB; keep 25 MB/progress work gated by evidence. | 2 (Claude, GPT) | High (authed) | High | `lib/config.ts:13` |
 | F9 | **Session-only / synthetic-sample-only not restated in-flow** — persistent chip + near-upload copy. | 3 | Med (data responsibility) | High | demo copy gap |
 | F10 | **"deterministic" jargon** in user copy → plain language. | 2 (Gemini, GPT) | Med | High | Step‑1 helper copy |
 | F11 | **Step‑2 mismatch in demo**: titled "Upload Data" + "don't upload sensitive data" note, but no upload exists → retitle "Choose sample data", drop note. | 2 (Claude, Gemini) | Med | High | `UploadStep` demo branch |
@@ -118,7 +118,7 @@ Each item maps to findings (F#) and to a task (§4). "Gate" = the milestone it u
 
 ### Gate 3 — Before production (weeks)
 - **F1t** Configure Supabase auth; verify migrations; close `/progress` D1–D8; finalize retention policy *(F17)*
-- **D1u** Raise upload cap (env default 10–25 MB) + parse progress + row/col counts pre-commit + client-side size check *(F8)*
+- **D1u** Upload cap raised to 10 MB; only revisit 25 MB/parse progress after fixture-backed performance evidence *(F8)*
 - **F3** env→DB admin allowlist *(F17)*
 - **F4t** Privacy/session-only persistence tests (no raw rows/files/prompts) hardened + documented *(F17)*
 - **F5t** Privacy-preserving production analytics for completion/drop-off/errors *(F3 prod)*
@@ -221,7 +221,7 @@ Effort key: **S** ≤0.5d · **M** 0.5–2d · **L** 2–5d.
 
 ### Workstream F — Production gating (AGENT_RELEASE)
 
-- **D1u — Raise upload cap + ingestion UX.** *(F8, Gate 3, M)* Files: `lib/config.ts:11-15` (default 10–25 MB via `MAX_UPLOAD_SIZE_MB`), upload UI (`components/WorkflowComponents.tsx`), `lib/fileParsers.ts`. Change: raise default; client-side size pre-check on drop; parse progress; show row/col counts pre-commit. Deps: none.
+- **D1u — Raise upload cap + ingestion UX.** *(F8, Gate 3, M)* Files: `lib/config.ts:11-15` (default 10 MB via `MAX_UPLOAD_SIZE_MB`), upload UI (`components/WorkflowComponents.tsx`), `lib/fileParsers.ts`. Change: default raised; keep environment override, client-side size pre-check, and row/column visibility; parse progress remains optional if fixture evidence shows slow parses. Deps: none.
 - **F1t — Auth config + migrations + D1–D8 + retention.** *(F17, Gate 3, L)* Files: env/`docs/decisions/auth-provider.md`, `db/**`, `app/progress/page.tsx`, `docs/data-retention.md`. Mostly ops + content; verify migrations on staging. Deps: none.
 - **F3 — env→DB admin allowlist.** *(F17, Gate 3, M)* Files: `lib/adminMetrics/index.ts:10-16`, `lib/db/metadataAdapter.ts`, `db/**`. Change: read allowlist from a metadata table (fallback to `env.ADMIN_EMAILS`). Deps: F1t.
 - **F4t — Privacy persistence hardening.** *(F17, Gate 3, M)* Files: extend `tests/privacy-no-row-persistence.test.ts`, `tests/db-schema-boundary.test.ts`; `docs/data-retention.md`. Deps: F1t.
@@ -281,7 +281,7 @@ Harness: **Vitest** (`npm run test` → `vitest run`). Existing tests live in `t
 **`tests/location-fields.test.ts` (extend, node)** — P‑code patterns (e.g., `MDG01`) recognized as admin codes; hints/examples include COD references (E3).
 
 ### F — production
-**`tests/config.test.ts` (extend, node)** — `MAX_UPLOAD_SIZE_MB` honors env override; new default ≥10; `MAX_UPLOAD_SIZE_BYTES` derives correctly; sub-min values clamp to 0.1 (D1u).
+**`tests/config.test.ts` (extend, node)** — `MAX_UPLOAD_SIZE_MB` honors env override; default is 10; `MAX_UPLOAD_SIZE_BYTES` derives correctly; sub-min values clamp to 0.1 (D1u).
 **`tests/admin-metrics.test.ts` (extend, node)** — `isAdminUser` resolves from the DB allowlist when present and falls back to `env.ADMIN_EMAILS`; case-insensitive; empty/whitespace handled (F3).
 **`tests/privacy-no-row-persistence.test.ts` + `tests/db-schema-boundary.test.ts` (extend, node)** — assert no raw rows/files/prompts persist across the new analytics + admin-allowlist code paths (F4t).
 **`tests/upload-validation.test.ts` (new, node)** — pure size-check helper rejects > cap, accepts ≤ cap, reports human-readable limit (D1u client pre-check).

@@ -1,5 +1,8 @@
 # Dashboard Copilot — Design System
 
+> Archived reference only. This kit may contain outdated UI copy and limits.
+> The active app source lives in `app/`, `components/`, `lib/`, and `docs/`.
+
 Design system for **Dashboard Copilot**, a recommendation-first web app by [DataKind](https://www.datakind.org/) that turns humanitarian and disaster-response datasets (CSV/XLSX) into transparent, reviewable dashboards. The product is a single guided workflow: **Template → Upload → Profile → Harmonize → Dataset → Dashboard → Export**, with an AI on/off toggle and deterministic fallbacks. Nothing is hidden: joins, cleaning transforms, quality caveats, and transformation logs stay visible so analysts can review what changed before sharing.
 
 **Sources**

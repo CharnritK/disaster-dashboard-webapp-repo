@@ -17,7 +17,8 @@ persistence expansion.
   `plan/dashboard_copilot_codex_handoff_v1_1/qa/product_review_roadmap_delivery_2026-06-29.md`.
 - Staging evidence capture is prepared in
   `plan/dashboard_copilot_codex_handoff_v1_1/qa/staging_evidence_capture_2026-06-29.md`.
-- Upload viability remains pending in `docs/decisions/upload-viability.md`.
+- Upload viability is approved at 10 MB per uploaded file in
+  `docs/decisions/upload-viability.md`.
 - Production readiness is blocked until explicit approval is recorded here.
 
 ## Required Production Decision Fields

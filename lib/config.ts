@@ -10,7 +10,7 @@ export function positiveNumberFromConfig(
 
 export const MAX_UPLOAD_SIZE_MB = positiveNumberFromConfig(
   process.env.MAX_UPLOAD_SIZE_MB,
-  1,
+  10,
   0.1,
 );
 

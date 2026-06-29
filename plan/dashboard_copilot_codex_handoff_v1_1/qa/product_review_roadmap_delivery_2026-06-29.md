@@ -209,7 +209,8 @@ Remaining plan completion requires one of the following external actions:
 - approved staging magic-link session and authenticated route checks;
 - approved staging metadata-only feedback/template write checks;
 - approved staging admin aggregate, DB/RLS, and log privacy checks;
-- user decision on upload viability;
+- 25 MB upload-cap expansion and parse-progress work, if fixture-backed
+  performance evidence shows 10 MB is insufficient;
 - explicit production approval before production deployment, environment,
   Supabase, migration, admin/beta allowlist, provider/model/quota, analytics,
   retention, or persistence changes.
@@ -228,8 +229,8 @@ Prepared follow-up artifacts:
 - `plan/dashboard_copilot_codex_handoff_v1_1/qa/staging_test_payloads_2026-06-29.json`
   provides safe metadata-only feedback/template fixtures and anonymous probe
   payload shapes.
-- `docs/decisions/upload-viability.md` records the pending upload-size
-  decision without changing the current `1 MB` default.
+- `docs/decisions/upload-viability.md` records the approved 10 MB per-file
+  upload cap and keeps 25 MB/performance expansion behind evidence.
 - `docs/decisions/production-readiness.md` records the pending production
   approval fields without authorizing or performing production work.
 

@@ -6,15 +6,12 @@ external validation without touching production.
 Approved path: preview-only first. Do not deploy production until auth, DB, and
 fallback smoke tests pass.
 
-Current preview status as of 2026-06-14: the staging Supabase project and
+Current preview status as of 2026-06-29: the staging Supabase project and
 branch-scoped Vercel Preview have been configured, schema/RLS was applied to
-staging only, public and unauthenticated preview checks pass, and earlier
-magic-link login was user-confirmed for the approved beta/admin email. The
-current preview can return `sent=1` for `POST /auth/signin`; immediate repeat
-requests may hit Supabase OTP resend protection. The app maps that cooldown to
-`auth_rate_limited` after the next preview redeploy. Use this checklist for the
-next authenticated metadata-persistence and admin-aggregate smoke pass after
-the latest magic link is clicked.
+staging only, public and unauthenticated preview checks pass, and magic-link
+login has been user-confirmed for controlled-beta testing. Use this checklist
+for the next metadata-persistence, admin-aggregate, DB/RLS, and log-privacy
+smoke pass before production approval.
 
 ## Preconditions
 
@@ -125,9 +122,9 @@ Only after schema/RLS review and approved preview DB setup:
 - No uploaded rows, prepared rows, exported files, full prompts, full responses,
   screenshots, or operational incident details are stored.
 
-## T031 Pending Authenticated Checks
+## Pending Authenticated Checks
 
-After clicking the latest magic link for the approved beta/admin email:
+After signing in with an approved beta/admin email:
 
 - Verify `/app/usage` renders for the signed-in user and exposes only that
   user's usage metadata.

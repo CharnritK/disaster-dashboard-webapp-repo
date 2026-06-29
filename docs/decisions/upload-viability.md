@@ -2,20 +2,21 @@
 
 Date prepared: 2026-06-29
 
-Verdict: `PENDING_USER_DECISION`
+Verdict: `APPROVED_OPTION_B`
 
-This records the open Gate 2 upload-viability decision from
+This records the Gate 2 upload-viability decision from
 `docs/superpowers/plans/2026-06-29-product-review-roadmap-delivery.md`.
-No upload-cap code change has been made under this decision record.
+The default per-file cap has been raised to 10 MB while keeping the existing
+environment override.
 
 ## Decision Needed
 
 Should the controlled beta accept realistic 3W/HDX-style files larger than
-the current default upload cap?
+the original 1 MB default upload cap?
 
 Current local behavior:
 
-- `MAX_UPLOAD_SIZE_MB` default remains `1`.
+- `MAX_UPLOAD_SIZE_MB` default is `10`.
 - The value remains environment-overridable through existing config.
 - Public `/demo` remains sample-only and upload-free.
 
@@ -44,12 +45,12 @@ Recommended first increase if realistic beta files are in scope.
 
 Required implementation if approved:
 
-- Raise default `MAX_UPLOAD_SIZE_MB` from `1` to `10`.
+- Raise default `MAX_UPLOAD_SIZE_MB` from `1` to `10`. `Done`
 - Keep environment override support.
 - Add or extend config tests for default, override, byte derivation, and
-  lower-bound clamping.
-- Add client-side size precheck before parsing.
-- Show row/column counts before commit when practical.
+  lower-bound clamping. `Done`
+- Reject oversize files before parsing. `Existing parser precheck`
+- Show row/column counts before commit when practical. `Existing behavior`
 - Keep uploaded data session-only.
 
 Tradeoff:
@@ -84,13 +85,15 @@ Tradeoff:
 
 ## Current Recommendation
 
-Approve Option B only when the next controlled-beta evidence run explicitly
-needs realistic files over `1 MB`. Otherwise defer and keep the current cap.
+Use Option B for controlled-beta testing: 10 MB per uploaded file is large
+enough for realistic small-to-medium evidence files while keeping browser
+memory and parse-time risk bounded. Move to 25 MB only with specific fixture
+evidence and browser performance testing.
 
 ## Approval Record
 
-- Decision owner: `Pending`
-- Selected option: `Pending`
-- Approved default cap: `Pending`
-- Required test fixture characteristics: `Pending`
-- Date approved: `Pending`
+- Decision owner: `User`
+- Selected option: `Option B - Raise Default To 10 MB`
+- Approved default cap: `10 MB per uploaded file`
+- Required test fixture characteristics: `Not required for this scoped config change`
+- Date approved: `2026-06-29`

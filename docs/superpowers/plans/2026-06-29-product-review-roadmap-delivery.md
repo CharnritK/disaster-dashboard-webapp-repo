@@ -866,15 +866,16 @@ Expected: all pass. Browser smoke should confirm keyboard operation on the affec
 
 ## Gate 2 Approval Checkpoint: Upload Viability
 
-**Decision required:** Is controlled beta expected to accept realistic 3W/HDX-style files larger than 1 MB?
+**Decision approved:** Controlled beta should accept realistic small-to-medium 3W/HDX-style files larger than the original 1 MB default.
 
-If yes, move upload viability into Gate 2. If no, defer to Gate 3.
+This moves the upload viability slice into Gate 2 while keeping 25 MB and parse
+progress behind fixture-backed performance evidence.
 
 Approved implementation slice:
 
-- Raise default `MAX_UPLOAD_SIZE_MB` from `1` to a decided value, recommended `10` before `25`.
-- Add client-side size precheck before parsing.
-- Show row/column counts before commit.
+- Raise default `MAX_UPLOAD_SIZE_MB` from `1` to `10`. `Done`
+- Reject oversize files before parsing. `Existing parser precheck`
+- Show row/column counts before commit. `Existing behavior`
 - Add parse progress only if it can be done without fragile UX or large refactor.
 
 **Files:**
