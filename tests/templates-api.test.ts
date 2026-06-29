@@ -117,6 +117,47 @@ describe("template API", () => {
     ).toThrow(/schema metadata/i);
   });
 
+  it("rejects row-like suggested field metadata", () => {
+    expect(() =>
+      parseTemplateDraft({
+        ...templateBody(),
+        suggestedFields: [
+          {
+            field_name: "district_code",
+            role: "join_key",
+            sampleValue: "D01",
+          },
+        ],
+      }),
+    ).toThrow(/example rows or values/i);
+
+    expect(() =>
+      parseTemplateDraft({
+        ...templateBody(),
+        suggestedFields: [
+          {
+            field_name: "district_code",
+            role: "D01",
+          },
+        ],
+      }),
+    ).toThrow(/schema metadata/i);
+  });
+
+  it("rejects oversized template bodies before parsing", async () => {
+    const response = await postTemplatesRoute(
+      templateRequest(
+        {
+          ...templateBody(),
+          description: "x".repeat(21_000),
+        },
+        "analyst-1",
+      ),
+    );
+
+    expect(response.status).toBe(413);
+  });
+
   it("rejects unsafe template patch content", async () => {
     const created = await postTemplatesRoute(templateRequest(templateBody(), "analyst-1"));
     const createdBody = await created.json();

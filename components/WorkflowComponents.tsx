@@ -1481,8 +1481,6 @@ export function RecommendationStep({
           adjustedJoin.targetColumns[0],
         )
       : undefined;
-  const highlightTerms = datasetTextTerms(datasets);
-
   return (
     <section className="workflow-step">
       <div className="section-heading">
@@ -1783,10 +1781,6 @@ export function ValidationStep({
   const blocking = quality.filter((issue) => issue.status === "fail");
   const isDecisionUnsafe = decisionReadiness?.status === "decision_unsafe";
   const acknowledgedBlockerIdSet = new Set(acknowledgedBlockerIds);
-  const logHighlightTerms = [
-    ...datasetTextTerms([dataset]),
-    ...transformationTextTerms(transformationLog),
-  ];
   return (
     <section className="workflow-step">
       <div className="section-heading">

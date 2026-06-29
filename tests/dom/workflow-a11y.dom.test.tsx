@@ -298,7 +298,7 @@ describe("workflow accessibility behavior", () => {
     );
 
     const generateButton = screen.getByRole("button", {
-      name: /generate dashboard/i,
+      name: /generate review dashboard/i,
     }) as HTMLButtonElement;
     expect(
       screen.getByRole("heading", {
@@ -328,10 +328,10 @@ describe("workflow accessibility behavior", () => {
     );
 
     expect(
-      (screen.getByRole("button", { name: /generate dashboard/i }) as HTMLButtonElement)
+      (screen.getByRole("button", { name: /generate review dashboard/i }) as HTMLButtonElement)
         .disabled,
     ).toBe(false);
-    await user.click(screen.getByRole("button", { name: /generate dashboard/i }));
+    await user.click(screen.getByRole("button", { name: /generate review dashboard/i }));
     expect(onProceed).toHaveBeenCalledTimes(1);
   });
 });

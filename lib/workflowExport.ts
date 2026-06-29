@@ -253,6 +253,13 @@ export function buildDashboardProjectKit(input: DashboardProjectKitInput) {
   };
 }
 
+export function acceptedCaveatsForReadiness(
+  readiness?: DecisionReadinessResult,
+) {
+  if (!readiness || readiness.status === "ready") return [];
+  return Array.from(new Set(readiness.caveats)).slice(0, 20);
+}
+
 function aiModeSummary(mode: DecisionHandoffAiMode) {
   if (mode === "llm") {
     return "AI guidance was used, with deterministic validation and caveats retained.";

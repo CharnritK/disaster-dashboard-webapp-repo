@@ -20,6 +20,14 @@ describe("coach API", () => {
       fallbackReason: "unauthenticated",
       source: "deterministic",
     });
+    expect(getEntitlementService().eventRecordsForTests()).toMatchObject([
+      {
+        attemptedProviderCall: false,
+        fallbackReason: "unauthenticated",
+        route: "/api/coach",
+        succeeded: false,
+      },
+    ]);
   });
 
   it("does not call provider when disabled", async () => {
@@ -34,6 +42,7 @@ describe("coach API", () => {
   it("reserves quota and returns sanitized AI hints under quota", async () => {
     vi.stubEnv("LLM_ENABLED", "true");
     vi.stubEnv("LLM_API_KEY", "test-key");
+    vi.stubEnv("LLM_QUALITY_GUIDANCE_MODEL", "quality-model");
     const fetchMock = vi.fn().mockResolvedValue(
       new Response(
         JSON.stringify({
@@ -66,12 +75,15 @@ describe("coach API", () => {
     });
 
     expect(fetchMock).toHaveBeenCalledOnce();
+    const providerBody = JSON.parse(String(fetchMock.mock.calls[0][1]?.body));
+    expect(providerBody.model).toBe("quality-model");
     await expect(
       getEntitlementService().getDailyUsage("analyst-1"),
     ).resolves.toMatchObject({ used: 1 });
     expect(getEntitlementService().eventRecordsForTests()).toMatchObject([
       {
         attemptedProviderCall: true,
+        model: "quality-model",
         route: "/api/coach",
         succeeded: true,
       },
@@ -130,6 +142,36 @@ describe("coach API", () => {
       source: "deterministic",
     });
     expect(fetchMock).toHaveBeenCalledOnce();
+    expect(getEntitlementService().eventRecordsForTests()).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          attemptedProviderCall: false,
+          fallbackReason: "quota_exceeded",
+          route: "/api/coach",
+          succeeded: false,
+        }),
+      ]),
+    );
+  });
+
+  it("returns typed fallback for oversized coach bodies", async () => {
+    const response = await postCoachRoute(
+      coachRequest({ step: "dashboard", note: "x".repeat(4_200) }, "analyst-1"),
+    );
+
+    await expect(response.json()).resolves.toMatchObject({
+      fallbackReason: "request_too_large",
+      source: "deterministic",
+    });
+  });
+
+  it("returns typed fallback for non-object coach bodies", async () => {
+    const response = await postCoachRoute(coachRequest(["dashboard"], "analyst-1"));
+
+    await expect(response.json()).resolves.toMatchObject({
+      fallbackReason: "invalid_request",
+      source: "deterministic",
+    });
   });
 });
 

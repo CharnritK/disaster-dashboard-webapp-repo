@@ -1,4 +1,5 @@
 import { MAX_UPLOAD_SIZE_BYTES, MAX_UPLOAD_SIZE_MB, SUPPORTED_FILE_TYPES } from "@/lib/config";
+import { isIdentifierField } from "@/lib/locationFields";
 import type {
   Dataset,
   DatasetFormatAssessment,
@@ -53,13 +54,14 @@ export function parseCsv(text: string): Record<string, unknown>[] {
   if (row.some((value) => value.trim() !== "")) rows.push(row);
   const headers = buildHeaders(rows[0] ?? []);
   return rows.slice(1).map((values) =>
-    Object.fromEntries(headers.map((header, index) => [header, coerceValue(values[index] ?? "")]))
+    Object.fromEntries(headers.map((header, index) => [header, coerceValue(values[index] ?? "", header)]))
   );
 }
 
-export function coerceValue(value: string): unknown {
+export function coerceValue(value: string, columnName?: string): unknown {
   const trimmed = value.trim();
   if (trimmed === "") return null;
+  if (columnName && isIdentifierField(columnName)) return trimmed;
   if (/^-?\d+(\.\d+)?$/.test(trimmed)) return Number(trimmed);
   if (/^(true|false)$/i.test(trimmed)) return /^true$/i.test(trimmed);
   return trimmed;

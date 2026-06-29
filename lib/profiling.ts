@@ -1,5 +1,5 @@
 import type { ColumnDescriptiveStats, ColumnProfile, Dataset, DatasetProfile } from "@/types/dataset";
-import { isAdminCodeField, isCoordinateField } from "./locationFields";
+import { isAdminCodeField, isCoordinateField, isIdentifierField } from "./locationFields";
 
 const geoTerms = ["district", "admin", "area", "region", "province", "county", "country", "state", "city", "municipality", "commune", "ward", "site", "location", "lat", "latitude", "lon", "lng", "longitude"];
 const demographicTerms = ["age", "gender", "sex", "disability", "household", "hh"];
@@ -35,7 +35,8 @@ export function profileTabularDataset(dataset: Dataset): DatasetProfile {
 function profileColumn(columnName: string, values: unknown[], rowCount: number): ColumnProfile {
   const present = values.filter((value) => value !== null && value !== undefined && String(value).trim() !== "");
   const lowerName = columnName.toLowerCase();
-  const inferredType = inferColumnType(present);
+  const isIdentifier = isIdentifierField(columnName);
+  const inferredType = isIdentifier ? "string" : inferColumnType(present);
   const uniqueCount = new Set(present.map((value) => String(value).trim().toLowerCase())).size;
   const hasTerm = (terms: string[]) => terms.some((term) => lowerName.includes(term));
   const isAdminCode = isAdminCodeField(columnName);
@@ -51,7 +52,7 @@ function profileColumn(columnName: string, values: unknown[], rowCount: number):
     isPotentialJoinField: isAdminCode || hasTerm(joinTerms) || uniqueCount / Math.max(rowCount, 1) > 0.8,
     isPotentialGeographicField: isAdminCode || isCoordinateField(columnName) || hasTerm(geoTerms),
     isPotentialDemographicField: hasTerm(demographicTerms),
-    isPotentialMetricField: inferredType === "number" || hasTerm(metricTerms)
+    isPotentialMetricField: !isIdentifier && (inferredType === "number" || hasTerm(metricTerms))
   };
 }
 

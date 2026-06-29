@@ -1,50 +1,76 @@
 import { NextResponse } from "next/server";
 
+import { readJsonRequest } from "@/lib/apiSecurity";
 import { getRequestAuthContext } from "@/lib/auth/requestAuth";
 import { deterministicCoachHints } from "@/lib/coach";
 import { requestAiCoachHints } from "@/lib/coach/ai";
-import { getEntitlementService } from "@/lib/entitlement";
-import { getLlmServerConfig } from "@/lib/serverConfig";
+import { getEntitlementService, type AiFallbackReason } from "@/lib/entitlement";
+import { getLlmServerConfig, resolveLlmTaskConfig } from "@/lib/serverConfig";
+import type { CopilotTaskType } from "@/types/recommendations";
+
+const COACH_REQUEST_MAX_BYTES = 4_096;
+const COACH_TASK_TYPE = "quality_repair_guidance";
 
 export async function POST(request: Request) {
-  const body = await readBoundedJson(request);
+  const bodyResult = await readJsonRequest(request, COACH_REQUEST_MAX_BYTES);
+  const body = bodyResult.ok && isRecord(bodyResult.body) ? bodyResult.body : {};
   const step = typeof body.step === "string" ? body.step : "brief";
   const fallback = {
     hints: deterministicCoachHints(step as never),
     source: "deterministic",
   };
+  if (!bodyResult.ok || !isRecord(bodyResult.body)) {
+    return jsonNoStore({
+      ...fallback,
+      fallbackReason:
+        !bodyResult.ok && bodyResult.status === 413
+          ? "request_too_large"
+          : "invalid_request",
+    });
+  }
 
+  const entitlement = getEntitlementService();
+  const llmConfig = getLlmServerConfig();
+  const taskConfig = resolveLlmTaskConfig(COACH_TASK_TYPE);
   const auth = await getRequestAuthContext(request);
   if (!auth) {
+    await entitlement.recordAiEvent({
+      attemptedProviderCall: false,
+      fallbackReason: "unauthenticated",
+      route: "/api/coach",
+      succeeded: false,
+      taskType: taskConfig.taskType,
+    });
     return jsonNoStore({
       ...fallback,
       fallbackReason: "unauthenticated",
     });
   }
 
-  const entitlement = getEntitlementService();
   const decision = await entitlement.checkAiEntitlement(
     auth,
-    "quality_repair_guidance",
+    taskConfig.taskType,
   );
   if (!decision.allowed) {
+    const fallbackReason = decision.reason ?? "not_entitled";
+    await recordCoachFallback(entitlement, {
+      fallbackReason,
+      taskType: taskConfig.taskType,
+      userId: auth.userId,
+    });
     return jsonNoStore({
       ...fallback,
-      fallbackReason: decision.reason ?? "not_entitled",
+      fallbackReason,
     });
   }
 
-  const config = getLlmServerConfig();
-  const preflightReason = preProviderFallbackReason(config);
+  const preflightReason = preProviderFallbackReason(llmConfig);
   if (preflightReason) {
-    await entitlement.recordAiEvent({
-      attemptedProviderCall: false,
+    await recordCoachFallback(entitlement, {
       fallbackReason: preflightReason,
-      model: config.model,
-      provider: config.provider,
-      route: "/api/coach",
-      succeeded: false,
-      taskType: "quality_repair_guidance",
+      model: taskConfig.model,
+      provider: llmConfig.provider,
+      taskType: taskConfig.taskType,
       userId: auth.userId,
     });
 
@@ -57,9 +83,14 @@ export async function POST(request: Request) {
   const reservation = await entitlement.reserveAiUsage(
     auth.userId,
     decision.usageDate,
-    "quality_repair_guidance",
+    taskConfig.taskType,
   );
   if (!reservation.reserved) {
+    await recordCoachFallback(entitlement, {
+      fallbackReason: reservation.reason,
+      taskType: taskConfig.taskType,
+      userId: auth.userId,
+    });
     return jsonNoStore({
       ...fallback,
       fallbackReason: reservation.reason,
@@ -68,10 +99,10 @@ export async function POST(request: Request) {
 
   const event = await entitlement.recordAiEvent({
     attemptedProviderCall: true,
-    model: config.model,
-    provider: config.provider,
+    model: taskConfig.model,
+    provider: llmConfig.provider,
     route: "/api/coach",
-    taskType: "quality_repair_guidance",
+    taskType: taskConfig.taskType,
     userId: auth.userId,
   });
 
@@ -83,10 +114,10 @@ export async function POST(request: Request) {
       step,
     },
     {
-      apiKey: config.apiKey,
-      model: config.model,
-      provider: config.provider,
-      timeoutMs: config.workflowTimeoutMs,
+      apiKey: llmConfig.apiKey,
+      model: taskConfig.model,
+      provider: llmConfig.provider,
+      timeoutMs: taskConfig.timeoutMs,
     },
   );
 
@@ -111,11 +142,33 @@ export async function POST(request: Request) {
 
 function preProviderFallbackReason(
   config: ReturnType<typeof getLlmServerConfig>,
-) {
+): AiFallbackReason | undefined {
   if (!config.enabled) return "ai_disabled";
   if (!config.apiKey) return "missing_api_key";
   if (config.provider !== "openai") return "unsupported_provider";
   return undefined;
+}
+
+function recordCoachFallback(
+  entitlement: ReturnType<typeof getEntitlementService>,
+  input: {
+    fallbackReason: AiFallbackReason;
+    model?: string;
+    provider?: string;
+    taskType: CopilotTaskType;
+    userId: string;
+  },
+) {
+  return entitlement.recordAiEvent({
+    attemptedProviderCall: false,
+    fallbackReason: input.fallbackReason,
+    model: input.model,
+    provider: input.provider,
+    route: "/api/coach",
+    succeeded: false,
+    taskType: input.taskType,
+    userId: input.userId,
+  });
 }
 
 function jsonNoStore(body: unknown, init?: ResponseInit) {
@@ -124,12 +177,6 @@ function jsonNoStore(body: unknown, init?: ResponseInit) {
   return response;
 }
 
-async function readBoundedJson(request: Request) {
-  const text = await request.text();
-  if (text.length > 4_096) return {};
-  try {
-    return JSON.parse(text) as Record<string, unknown>;
-  } catch {
-    return {};
-  }
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }

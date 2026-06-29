@@ -42,6 +42,21 @@ describe("feedback API", () => {
     });
   });
 
+  it("rejects oversized feedback bodies before parsing", async () => {
+    const response = await postFeedbackRoute(
+      feedbackRequest(
+        {
+          comment: "x".repeat(12_500),
+          tags: ["useful"],
+          thumb: "up",
+        },
+        "analyst-1",
+      ),
+    );
+
+    expect(response.status).toBe(413);
+  });
+
   it("rejects invalid tags and row-like fields", () => {
     expect(() =>
       parseFeedbackSubmission({

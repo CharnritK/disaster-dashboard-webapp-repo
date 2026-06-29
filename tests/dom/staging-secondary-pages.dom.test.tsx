@@ -79,7 +79,7 @@ describe("staging-facing secondary pages with local mocks", () => {
 
     render(createElement(FeedbackPage));
 
-    expect(screen.getByRole("heading", { name: /review the ai beta/i })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: /review workflow output/i })).toBeTruthy();
     expect(screen.getByText(/metadata-only feedback/i)).toBeTruthy();
     await user.click(screen.getByLabelText("useful"));
     await user.click(screen.getByRole("button", { name: /submit feedback/i }));

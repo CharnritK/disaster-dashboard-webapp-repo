@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { readJsonRequest } from "@/lib/apiSecurity";
 import { getRequestAuthContext } from "@/lib/auth/requestAuth";
 import {
   createTemplateDraft,
@@ -7,6 +8,8 @@ import {
   parseTemplateDraft,
   TemplateValidationError,
 } from "@/lib/templates";
+
+const TEMPLATE_REQUEST_MAX_BYTES = 20_000;
 
 export async function GET(request: Request) {
   const auth = await getRequestAuthContext(request);
@@ -21,9 +24,13 @@ export async function POST(request: Request) {
   if (!auth) return jsonNoStore({ error: "Sign in required." }, { status: 401 });
 
   try {
+    const bodyResult = await readJsonRequest(request, TEMPLATE_REQUEST_MAX_BYTES);
+    if (!bodyResult.ok) {
+      return jsonNoStore({ error: bodyResult.error }, { status: bodyResult.status });
+    }
     const result = await createTemplateDraft(
       auth.userId,
-      parseTemplateDraft(await request.json()),
+      parseTemplateDraft(bodyResult.body),
     );
     return jsonNoStore(result, { status: 201 });
   } catch (error) {

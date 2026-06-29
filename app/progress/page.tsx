@@ -25,7 +25,7 @@ const progressCards = [
   {
     label: "Next decision",
     value: "Review gates",
-    detail: "Decide staging validation, migration timing, admin access, and production release separately.",
+    detail: "Finish branch review and staging smoke before any production Supabase or deployment work.",
   },
 ];
 
@@ -56,11 +56,11 @@ const statusRows = [
   },
   {
     area: "Authenticated workspace",
-    status: "In place locally",
+    status: "Preview staged",
     tone: "ready",
     evidence:
-      "Protected app routes are split by data, prepare, readiness, dashboard, and export.",
-    gap: "Staging magic-link evidence exists, but production auth and redirect URLs remain approval-gated.",
+      "Protected app routes are split by data, prepare, readiness, dashboard, and export; Supabase-backed magic-link login was user-confirmed on preview.",
+    gap: "Codex still needs a clicked-session staging smoke for protected routes, metadata writes, usage, feedback, templates, and admin aggregates.",
   },
   {
     area: "AI governance",
@@ -72,11 +72,11 @@ const statusRows = [
   },
   {
     area: "Metadata persistence",
-    status: "Built, not migrated",
+    status: "Staged only",
     tone: "watch",
     evidence:
-      "Metadata adapter, schema draft, RLS draft, and privacy guard tests exist.",
-    gap: "No production migration has been run. RLS and grants need review first.",
+      "Metadata adapter, staging schema/RLS, and privacy guard tests exist.",
+    gap: "Production migration has not been run. Direct staging DB row checks and production RLS/grant review remain gates.",
   },
   {
     area: "Feedback and templates",
@@ -97,10 +97,10 @@ const statusRows = [
   {
     area: "Deployment",
     status: "Preview only",
-    tone: "watch",
+    tone: "blocked",
     evidence:
-      "Preview evidence can support review, but production deployment was not run.",
-    gap: "Production still needs explicit environment, auth, database, support, and release-owner approval.",
+      "Preview deployment evidence and smoke scripts exist; no production deploy was run.",
+    gap: "Need completed authenticated staging smoke plus explicit production go/no-go.",
   },
 ];
 
@@ -114,10 +114,10 @@ const decisions = [
   },
   {
     rank: "D2",
-    decision: "Complete the next preview smoke pass",
+    decision: "Complete preview smoke",
     recommendation:
-      "Use the preview and staging credentials to re-check login, quota denial, deterministic fallback, feedback/templates, and no-row-persistence.",
-    neededFor: "Fresh external validation without touching production.",
+      "Stay preview-only. Do not deploy production until auth, DB, quota, fallback, feedback, template, and admin smoke tests pass.",
+    neededFor: "External validation without touching production.",
   },
   {
     rank: "D3",
@@ -165,14 +165,14 @@ const decisions = [
 
 const nextSteps = [
   "Review and merge or reject the active review branch.",
-  "If merged, delete stale branch references after main contains the commit.",
   "Keep the public demo deterministic and sample-only while the showcase deck is reviewed.",
-  "Pick the next preview or staging validation target before touching production settings.",
+  "Use the existing preview/staging path for the remaining smoke checks.",
+  "Run login, quota, fallback, feedback, template, admin-denial, and no-row-persistence smoke checks.",
   "Only after preview evidence is current, decide whether to run production migration or production deployment.",
 ];
 
 const risks = [
-  "A passing preview does not prove Supabase email login, redirect URLs, RLS, or production env values are correct.",
+  "Local tests and user-confirmed login do not prove metadata writes, redirect URLs, RLS, or production env values are correct.",
   "Showcase deck scripts prove PPTX structure, not visual quality; the final deck still needs a human spot-check.",
   "Review links and deck notes after merge so branch-only references do not become stale.",
   "The biggest product risk is making AI or exports sound like operational approval.",
@@ -207,9 +207,9 @@ export default function ProgressPage() {
           <p className="eyebrow">Owner status</p>
           <h1>Progress toward controlled beta</h1>
           <p className="about-lede">
-            As of June 28, 2026, the fork main branch contains the completed
-            product-standout work. Current branch work still needs fresh review
-            evidence before merge. Production remains approval-gated.
+            The active review branch carries post-main review assets and
+            consistency hardening. The next bottleneck is not more features; it
+            is finishing review evidence, preview smoke, and production gating.
           </p>
         </section>
 

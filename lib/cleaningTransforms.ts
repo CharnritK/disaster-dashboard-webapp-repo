@@ -1,5 +1,6 @@
 import type { ColumnProfile, DatasetProfile } from "@/types/dataset";
 import type { CleaningRecommendation, CleaningTransformType } from "@/types/recommendations";
+import { isIdentifierField } from "./locationFields";
 
 export const CLEANING_TRANSFORM_TYPES: CleaningTransformType[] = [
   "trim_whitespace",
@@ -28,7 +29,8 @@ export function cleaningRecommendationsForProfiles(
   const allColumns = uniqueColumnsFrom(columns.map((column) => column.columnName));
   if (allColumns.length === 0) return [];
   const numericColumns = columnsFor(columns, (column) =>
-    column.inferredType === "number" || column.isPotentialMetricField
+    !isIdentifierField(column.columnName) &&
+      (column.inferredType === "number" || column.isPotentialMetricField)
   );
   const booleanColumns = columnsFor(columns, (column) => column.inferredType === "boolean");
   const missingColumns = columnsFor(columns, (column) => column.missingPercentage > 0);
@@ -106,7 +108,11 @@ export function cleaningRecommendationsForRows(
   const uniqueColumns = uniqueColumnsFrom(columns);
   const trimColumns = columnsWithTransformCandidates(rows, uniqueColumns, "trim_whitespace");
   const blankColumns = columnsWithTransformCandidates(rows, uniqueColumns, "normalize_empty_strings");
-  const numericColumns = columnsWithTransformCandidates(rows, uniqueColumns, "convert_numeric_strings");
+  const numericColumns = columnsWithTransformCandidates(
+    rows,
+    uniqueColumns.filter((column) => !isIdentifierField(column)),
+    "convert_numeric_strings",
+  );
   const booleanColumns = columnsWithTransformCandidates(rows, uniqueColumns, "convert_boolean_strings");
   return [
     trimColumns.length
@@ -203,13 +209,17 @@ export function normalizeCleaningRecommendation(
       : recommendation.affectedColumns,
     availableColumns
   );
-  if (columns.length === 0) return null;
+  const safeColumns =
+    transformType === "convert_numeric_strings"
+      ? columns.filter((column) => !isIdentifierField(column))
+      : columns;
+  if (safeColumns.length === 0) return null;
   return {
     ...recommendation,
-    affectedColumns: columns,
+    affectedColumns: safeColumns,
     transform: {
       type: transformType,
-      columns
+      columns: safeColumns
     }
   };
 }
